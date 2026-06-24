@@ -37,10 +37,43 @@
         .splash-loading-text { margin-top: 24px; font-size: 7px; font-weight: 800; color: #64748b; letter-spacing: 4px; text-transform: uppercase; }
         @keyframes pulseGlow { 0% { transform: translateY(0px); } 100% { transform: translateY(-4px); } }
         
-        .premium-header { position: absolute; top: 32px; left: 52px; z-index: 9999; background: linear-gradient(135deg, rgba(15, 22, 36, 0.65), rgba(8, 12, 20, 0.4)); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); padding: 14px 28px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.08); border-top: 1px solid rgba(255, 255, 255, 0.15); box-shadow: 0 10px 40px rgba(0,0,0,0.4); pointer-events: auto; cursor: pointer; opacity: 0; transform: translateY(-20px); animation: slideInHeader 1s cubic-bezier(0.16, 1, 0.3, 1) 4.5s forwards; transition: all 0.3s ease; white-space: nowrap; }
+        /* HEADER & INTEGRATED HUD BANNER */
+        .premium-header { 
+            position: absolute; top: 32px; left: 52px; z-index: 9999; 
+            background: linear-gradient(135deg, rgba(15, 22, 36, 0.65), rgba(8, 12, 20, 0.4)); 
+            backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); 
+            padding: 14px 28px; border-radius: 12px; 
+            border: 1px solid rgba(255, 255, 255, 0.08); border-top: 1px solid rgba(255, 255, 255, 0.15); 
+            box-shadow: 0 10px 40px rgba(0,0,0,0.4); pointer-events: auto; cursor: pointer; 
+            opacity: 0; transform: translateY(-20px); 
+            animation: slideInHeader 1s cubic-bezier(0.16, 1, 0.3, 1) 4.5s forwards; 
+            transition: all 0.3s ease; white-space: nowrap;
+            display: flex; flex-direction: column; align-items: flex-start;
+        }
         @keyframes slideInHeader { to { opacity: 1; transform: translateY(0); } }
         .premium-header h1 { font-size: 18px; font-weight: 300; letter-spacing: 1.5px; text-transform: uppercase; background: linear-gradient(to right, #ffffff, #a0aec0); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 4px; transition: all 0.3s ease; pointer-events: none; }
         .premium-header p { font-size: 9px; color: #94a3b8; font-weight: 500; letter-spacing: 3px; text-transform: uppercase; margin: 0; transition: all 0.3s ease; pointer-events: none;}
+        
+        /* MARKETING HUD BANNER (INSIDE HEADER) */
+        #marketing-hud-banner {
+            display: none;
+            align-items: center;
+            gap: 8px;
+            margin-top: 12px;
+            padding: 6px 14px;
+            background: linear-gradient(135deg, rgba(255,255,255,0.15), rgba(255,255,255,0.05));
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            opacity: 0;
+            transform: translateY(-10px);
+            transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+            max-width: 100%;
+        }
+        #marketing-hud-banner.active { display: flex; opacity: 1; transform: translateY(0); }
+        .hud-banner-icon { display: flex; align-items: center; justify-content: center; width: 22px; height: 22px; background: rgba(0,0,0,0.2); border-radius: 50%; font-size: 12px; }
+        .hud-banner-text { color: #fff; font-size: 11px; font-weight: 700; letter-spacing: 0.5px; text-shadow: 0 2px 4px rgba(0,0,0,0.5); white-space: normal; line-height: 1.3; }
+
         .premium-compass-container { position: absolute; top: 32px; right: 32px; z-index: 9999; width: 50px; height: 50px; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); pointer-events: auto; cursor: pointer; opacity: 0; animation: slideInHeader 1s cubic-bezier(0.16, 1, 0.3, 1) 4.5s forwards; transition: all 0.3s ease; }
         .compass-indicator { position: absolute; top: -4px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; border-bottom: 8px solid #ffffff; filter: drop-shadow(0 -2px 4px rgba(255,255,255,0.8)); z-index: 2; pointer-events: none; }
         .compass-dial { width: 100%; height: 100%; position: relative; transition: transform 0.1s linear; pointer-events: none; }
@@ -340,9 +373,18 @@
             .linea-solida, .linea-punteada { stroke-width: 1.5px !important; }
             .linea-neon { stroke-width: 2px !important; }
             .linea-calle-borde { stroke-width: 2px !important; }
-            .premium-header { top: 12px; left: 50%; transform: translateX(-50%) !important; width: 92%; max-width: 320px; text-align: center; padding: 8px 16px; z-index: 999999; white-space: nowrap; }
-            .premium-header h1 { font-size: 11px; margin-bottom: 2px; }
-            .premium-header p { font-size: 7px; letter-spacing: 1px; }
+            .premium-header { 
+                top: 12px; left: 50%; transform: translateX(-50%) !important; 
+                width: 92%; max-width: 340px; text-align: center; padding: 10px 16px; 
+                z-index: 999999; white-space: normal; align-items: center; 
+            }
+            .premium-header h1 { font-size: 12px; margin-bottom: 2px; }
+            .premium-header p { font-size: 8px; letter-spacing: 1px; }
+            
+            #marketing-hud-banner { margin-top: 8px; padding: 5px 12px; width: 100%; justify-content: center; }
+            .hud-banner-text { font-size: 10px; line-height: 1.2;}
+            .hud-banner-icon { width: 18px; height: 18px; font-size: 10px; }
+
             .premium-compass-container { top: 12px; right: 12px; width: 34px; height: 34px; z-index: 999999; }
             .compass-n { font-size: 8px; top: 2px; } .compass-s, .compass-e, .compass-w { font-size: 6px; }
             
@@ -533,12 +575,19 @@
 
         <div class="watermark">Diseñado por <b>Deus Vult</b> <span class="version">V.40.1 DeepLink Edition</span> | AustralDrone.CL</div>
         
-        <div class="premium-header" title="Mantén presionado para abrir el Modo Pines">
+        <!-- HEADER INTEGRADO (HUD BANNER INCLUIDO) Y SIN TOOLTIPS (TITLE) -->
+        <div class="premium-header">
             <h1 id="ui-main-title">PROYECTO INMOBILIARIO</h1>
             <p id="ui-subtitle">Masterplan Interactivo 360°</p>
+            
+            <div id="marketing-hud-banner">
+                <div class="hud-banner-icon" id="hud-banner-icon">⭐</div>
+                <div class="hud-banner-text" id="hud-banner-text">--</div>
+            </div>
         </div>
 
-        <div class="premium-compass-container" id="js-compass-container" title="Mantén presionado para abrir el Modo Arquitecto">
+        <!-- COMPASS SIN TOOLTIP -->
+        <div class="premium-compass-container" id="js-compass-container">
             <div class="compass-indicator"></div>
             <div class="compass-dial" id="js-compass">
                 <div class="compass-n">N</div>
@@ -591,7 +640,16 @@
         // MOTOR BLINDADO V.40.1: ASYNC VAULT + DEEP LINKING + WEBGL FALLBACK
         // ==========================================================================
         
-        let ConfigProyecto = { titulo: "PROYECTO INMOBILIARIO", subtitulo: "Masterplan Interactivo 360°" };
+        let ConfigProyecto = { 
+            titulo: "PROYECTO INMOBILIARIO", 
+            subtitulo: "Masterplan Interactivo 360°",
+            whatsapp: "",
+            colorPrincipal: "#10b981",
+            logoUrl: "",
+            bannerActivo: false,
+            bannerTipo: "descuento",
+            bannerTexto: ""
+        };
         let OrigenDrone = null;
         let NorteOffset = 0; 
         let BaseDatosLotes = [];
@@ -607,7 +665,6 @@
         let isHeatmapActive = false;
         let isWebGLSupported = true; // Variable global para Graceful Degradation
 
-        // DETECTOR DE GPU (WEBGL)
         function detectWebGL() {
             try {
                 const canvas = document.createElement('canvas');
@@ -615,14 +672,98 @@
             } catch(e) { return false; }
         }
 
+        // ==========================================================================
+        // ESCUDO DE SEGURIDAD (ANTI-INSPECTOR & ANTI-CLICK DERECHO)
+        // ==========================================================================
+        function setupSecurityShield() {
+            // 1. Bloquear Click Derecho
+            document.addEventListener('contextmenu', (e) => {
+                if (!isDevModeDrawActive && !isDevModePinsActive) {
+                    e.preventDefault();
+                }
+            });
+
+            // 2. Bloquear Atajos de Teclado (F12, Ctrl+U, Ctrl+Shift+I)
+            document.addEventListener('keydown', (e) => {
+                if (!isDevModeDrawActive && !isDevModePinsActive) {
+                    // F12
+                    if (e.key === 'F12' || e.keyCode === 123) {
+                        e.preventDefault();
+                    }
+                    // Ctrl + Shift + I / J / C
+                    if (e.ctrlKey && e.shiftKey && (e.key.toLowerCase() === 'i' || e.key.toLowerCase() === 'j' || e.key.toLowerCase() === 'c')) {
+                        e.preventDefault();
+                    }
+                    // Ctrl + U
+                    if (e.ctrlKey && e.key.toLowerCase() === 'u') {
+                        e.preventDefault();
+                    }
+                }
+            });
+        }
+
+        // ==========================================================================
+        // CEREBRO JAVASCRIPT: LECTOR DE BRANDING Y MARKETING (OPCIONES 1 Y 5)
+        // ==========================================================================
         function applyProjectConfig() {
-            document.getElementById('head-title-tag').innerText = `Masterplan 360 | ${ConfigProyecto.titulo}`;
+            // 1. Aplicar Textos Base
+            document.getElementById('head-title-tag').innerText = `Masterplan 360 | ${ConfigProyecto.titulo || "PROYECTO"}`;
             const splashTitle = document.getElementById('splash-title');
-            if(splashTitle) splashTitle.innerText = ConfigProyecto.titulo;
+            if(splashTitle) splashTitle.innerText = ConfigProyecto.titulo || "PROYECTO";
             const uiTitle = document.getElementById('ui-main-title');
-            if(uiTitle) uiTitle.innerText = ConfigProyecto.titulo;
+            if(uiTitle) uiTitle.innerText = ConfigProyecto.titulo || "PROYECTO";
             const uiSub = document.getElementById('ui-subtitle');
-            if(uiSub) uiSub.innerText = ConfigProyecto.subtitulo;
+            if(uiSub) uiSub.innerText = ConfigProyecto.subtitulo || "";
+
+            // 2. Aplicar Branding (Logo Personalizado)
+            const splashLogo = document.querySelector('.splash-main-logo');
+            if (splashLogo && ConfigProyecto.logoUrl) {
+                splashLogo.src = ConfigProyecto.logoUrl;
+            }
+
+            // 3. Aplicar WhatsApp Dinámico a todos los enlaces del proyecto
+            if (ConfigProyecto.whatsapp) {
+                const cleanNumber = ConfigProyecto.whatsapp.replace(/\D/g,''); 
+                const waLinks = document.querySelectorAll('a[href^="https://wa.me/"]');
+                waLinks.forEach(link => {
+                    link.href = `https://wa.me/${cleanNumber}`;
+                });
+            }
+
+            // 4. Inyección de Color Corporativo
+            if (ConfigProyecto.colorPrincipal) {
+                let col = ConfigProyecto.colorPrincipal;
+                const style = document.createElement('style');
+                style.innerHTML = `
+                    .splash-progress-bar { background: ${col} !important; box-shadow: 0 0 10px ${col} !important; }
+                    .compass-n { color: ${col} !important; text-shadow: 0 0 5px ${col} !important; }
+                    .btn-directions, .dock-btn.primary, .btn-save { background: ${col} !important; box-shadow: 0 4px 15px rgba(0,0,0,0.3) !important; border: 1px solid rgba(255,255,255,0.2) !important;}
+                    #js-gps-result b { color: ${col} !important; }
+                `;
+                document.head.appendChild(style);
+            }
+
+            // 5. Consola de Marketing (HUD Banner)
+            const banner = document.getElementById('marketing-hud-banner');
+            if (banner) {
+                if (ConfigProyecto.bannerActivo && ConfigProyecto.bannerTexto) {
+                    const iconMap = {
+                        "descuento": "🔥", "cyber": "💻", "blackfriday": "⬛", 
+                        "verde": "🌱", "ultimos": "🚨", "lanzamiento": "🚀", 
+                        "bono": "🎁", "personalizado": "✨"
+                    };
+                    
+                    document.getElementById('hud-banner-icon').innerText = iconMap[ConfigProyecto.bannerTipo] || "⭐";
+                    document.getElementById('hud-banner-text').innerText = ConfigProyecto.bannerTexto;
+                    
+                    // Mostramos el banner encendiéndolo desde el header tras cargar
+                    setTimeout(() => {
+                        banner.classList.add('active');
+                    }, 4500); 
+                } else {
+                    banner.classList.remove('active');
+                }
+            }
         }
 
         function saveToLocal() {
@@ -739,6 +880,7 @@
             renderSidebarList(BaseDatosLotes);
             setupPegmanEngine();
             setupGesturalBackdoor(); 
+            setupSecurityShield(); 
 
             initPannellum();
             runSplashScreen();
@@ -850,7 +992,6 @@
                 hotspots.push({ "id": uniqueId, "pitch": punto.pitch, "yaw": punto.yaw, "createTooltipFunc": generarMarcadorHorizonte, "createTooltipArgs": punto });
             });
 
-            // GRACEFUL DEGRADATION: Si no hay WebGL, no renderizamos los nodos invisibles del SVG para no saturar memoria CSS3D
             if(isWebGLSupported) {
                 allDrawnLines.forEach((linea) => {
                     linea.puntos.forEach((coord, pIdx) => {
@@ -866,7 +1007,7 @@
         }
 
         function syncSVGElements() {
-            if(!isWebGLSupported) return; // Si no hay WebGL, anulamos el render del SVG
+            if(!isWebGLSupported) return; 
             
             const svg = document.getElementById('loteo-svg');
             if(!svg) return;
@@ -1002,7 +1143,6 @@
                 if (!lineData && lineId === currentTempLineId) lineData = { tipo: currentLineType, puntos: currentLinePoints };
                 if (!lineData) return;
 
-                // CÁLCULO DE PROXIMIDAD: Asigna estatus de Pin a Polígono (Lote Vendido vs Disponible)
                 if (cacheObj.gNode && lineData.tipo !== 'calle') {
                     if (lineData.puntos && lineData.puntos.length > 0) {
                         let cP = 0, cY = 0;
@@ -1130,7 +1270,6 @@
                 let mock = getMockEvent(e);
                 pegmanLastX = mock.clientX; pegmanLastY = mock.clientY;
                 
-                // Anclaje ajustado a imagen pequeña de 14px (7px al centro)
                 ghost.style.left = (pegmanLastX - 7) + 'px';
                 ghost.style.top = (pegmanLastY - 2) + 'px';
                 ghost.classList.add('active');
@@ -1207,13 +1346,13 @@
                 const spText = document.getElementById('splash-loading-text');
                 if(spText) spText.innerText = "MODO DE COMPATIBILIDAD (SIN GPU)...";
                 const svg = document.getElementById('loteo-svg');
-                if(svg) svg.style.display = 'none'; // Prevenir cálculos innecesarios
+                if(svg) svg.style.display = 'none'; 
             }
 
             visor360 = pannellum.viewer('panorama-container', {
                 "type": "equirectangular", "panorama": "loteo360.jpg", "autoLoad": true, "compass": false, 
                 "hfov": 130, "pitch": 60, "yaw": -45, "hotSpots": getHotspotsConfig(),
-                "fallback": "loteo360.jpg" // Pannellum cargará un visor estático si falla WebGL
+                "fallback": "loteo360.jpg" 
             });
 
             setTimeout(() => { 
@@ -1255,7 +1394,6 @@
                 visor360.setHfov(DEFAULT_HFOV, 2500); 
                 visor360.setPitch(-40, 2500); 
                 
-                // RUTEO DEEP LINKING (EJ: ?lote=06)
                 const urlParams = new URLSearchParams(window.location.search);
                 const targetLoteId = urlParams.get('lote');
                 
@@ -1273,7 +1411,7 @@
                     }
                     
                     setTimeout(() => {
-                        if(!targetLoteId) visor360.lookAt(-89, 65, 115, 3000); // Solo hacer paneo si NO hay deep link
+                        if(!targetLoteId) visor360.lookAt(-89, 65, 115, 3000); 
                         
                         setTimeout(() => {
                             isIntroAnimating = false; 
@@ -1856,8 +1994,11 @@
             }
 
             let actionGrid = `<div class="card-actions-grid">`;
+            
+            let waNum = ConfigProyecto.whatsapp ? ConfigProyecto.whatsapp.replace(/\D/g,'') : "569XXXXXXXX";
+
             if (args.status === 'disponible') { 
-                actionGrid += `<a href="https://wa.me/569XXXXXXXX" target="_blank" class="btn-action-new whatsapp" draggable="false"><svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24"><path d="M12.01 2.01c-5.52 0-9.99 4.47-9.99 9.99 0 1.77.46 3.44 1.28 4.9L2 22l5.24-1.26c1.42.79 3.06 1.25 4.77 1.25 5.52 0 10-4.48 10-10s-4.48-10-10-10zm5.66 14.4c-.26.74-1.52 1.4-2.11 1.47-.56.07-1.32.22-4.14-1.55-3.41-2.13-5.61-5.67-5.78-5.89-.16-.22-1.38-1.84-1.38-3.53s.88-2.52 1.2-2.73c.31-.21.68-.26.91-.26.23 0 .46.01.66.01.24 0 .56-.09.87.69.32.81 1.09 2.65 1.18 2.84.1.2.16.42.04.64-.11.22-.17.35-.35.56-.17.2-.36.43-.51.6-.17.18-.35.38-.14.75.2.35.91 1.51 1.95 2.43 1.34 1.19 2.48 1.56 2.82 1.72.35.16.55.13.76-.08.2-.21.87-1 1.1-1.34.23-.34.46-.28.78-.17.32.11 2.04.96 2.39 1.12.35.16.58.24.66.38.09.13.09.77-.17 1.51z"/></svg> Agendar</a>`;
+                actionGrid += `<a href="https://wa.me/${waNum}" target="_blank" class="btn-action-new whatsapp" draggable="false"><svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24"><path d="M12.01 2.01c-5.52 0-9.99 4.47-9.99 9.99 0 1.77.46 3.44 1.28 4.9L2 22l5.24-1.26c1.42.79 3.06 1.25 4.77 1.25 5.52 0 10-4.48 10-10s-4.48-10-10-10zm5.66 14.4c-.26.74-1.52 1.4-2.11 1.47-.56.07-1.32.22-4.14-1.55-3.41-2.13-5.61-5.67-5.78-5.89-.16-.22-1.38-1.84-1.38-3.53s.88-2.52 1.2-2.73c.31-.21.68-.26.91-.26.23 0 .46.01.66.01.24 0 .56-.09.87.69.32.81 1.09 2.65 1.18 2.84.1.2.16.42.04.64-.11.22-.17.35-.35.56-.17.2-.36.43-.51.6-.17.18-.35.38-.14.75.2.35.91 1.51 1.95 2.43 1.34 1.19 2.48 1.56 2.82 1.72.35.16.55.13.76-.08.2-.21.87-1 1.1-1.34.23-.34.46-.28.78-.17.32.11 2.04.96 2.39 1.12.35.16.58.24.66.38.09.13.09.77-.17 1.51z"/></svg> Agendar</a>`;
                 actionGrid += `<a href="#" class="btn-action-new" draggable="false"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 20l-5.447-2.724A2 2 0 013 15.382V5.618a2 2 0 011.105-1.789l4.79-2.395a2 2 0 011.79 0l4.79 2.395a2 2 0 011.105 1.789v9.764a2 2 0 01-1.105 1.789L10.79 19.605a2 2 0 01-1.79 0z"></path></svg> Ver Plano</a>`;
                 if(args.videoUrl) actionGrid += videoBtn;
             } else {
@@ -1887,7 +2028,6 @@
             hotSpotDiv.style.width = '0px'; hotSpotDiv.style.height = '0px';
             const wrapper = document.createElement('div'); wrapper.className = 'horizon-hud-wrapper';
             
-            // Extracción inteligente de Unidad y Valor
             let distArr = (args.distancia || '0 KM').split(' ');
             let timeArr = (args.tiempo || '0 MIN').split(' ');
             
