@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PANEL DE CONTROL FRESIA 360</title>
-    <!-- Tipografía Apple-like -->
+    <title>Panel de Administración | Bóveda Inmobiliaria</title>
+    <!-- Tipografía Premium -->
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         /* ==========================================================================
@@ -28,7 +28,7 @@
             --focus-ring: rgba(10, 132, 255, 0.4);
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
         
         body { 
             background-color: #000;
@@ -40,14 +40,17 @@
             display: flex; justify-content: center; align-items: flex-start; 
             min-height: 100vh; padding: 40px 20px 120px 20px; 
             -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
             overflow-x: hidden;
             transition: background-image 0.8s ease-in-out;
+            scrollbar-width: none; /* Firefox */
         }
 
+        /* Ocultar Scrollbar en Chrome/Edge pero mantener funcionalidad */
         ::-webkit-scrollbar { width: 0px; background: transparent; }
 
         /* ==========================================================================
-           VENTANA MAESTRA TIPO MACOS
+           VENTANA MAESTRA TIPO MACOS / WINDOWS 11 GLASS
            ========================================================================== */
         .mac-window {
             width: 100%; max-width: 1200px;
@@ -82,7 +85,7 @@
         .light.min { background-color: var(--mac-yellow); }
         .light.max { background-color: var(--mac-green); }
 
-        .mac-title { font-size: 13px; font-weight: 600; color: var(--text-muted); letter-spacing: 0.5px; text-transform: uppercase; }
+        .mac-title { font-size: 11px; font-weight: 700; color: var(--text-muted); letter-spacing: 1px; text-transform: uppercase; }
 
         .mac-actions { display: flex; align-items: center; gap: 12px; }
         .user-pill { font-size: 11px; background: rgba(255,255,255,0.1); padding: 4px 12px; border-radius: 20px; font-weight: 600; display: none; }
@@ -133,7 +136,7 @@
         .btn-save { background: var(--mac-blue); color: #fff; border: none; padding: 8px 20px; border-radius: 8px; font-weight: 600; font-size: 12px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(10,132,255,0.3); }
         .btn-save:hover { background: var(--mac-blue-hover); transform: translateY(-1px); }
 
-        /* DOCK TIPO MACOS */
+        /* DOCK NAVEGACIÓN INFERIOR */
         .mac-dock {
             position: fixed; bottom: 25px; left: 50%; transform: translateX(-50%);
             background: rgba(30, 30, 35, 0.6); backdrop-filter: blur(30px) saturate(200%); -webkit-backdrop-filter: blur(30px);
@@ -166,7 +169,7 @@
         .tab-section { display: none; animation: fadeIn 0.4s ease; }
         .tab-section.active { display: block; }
 
-        /* SEARCH BAR MACOS SPOTLIGHT */
+        /* SEARCH BAR */
         .search-bar-container { margin-bottom: 24px; position: relative; display: flex; justify-content: center; }
         .search-bar-container input { 
             width: 100%; max-width: 500px; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); 
@@ -177,7 +180,7 @@
         .search-icon { position: absolute; left: calc(50% - 220px); top: 50%; transform: translateY(-50%); color: var(--text-muted); transition: all 0.3s; pointer-events: none;}
         .search-bar-container input:focus ~ .search-icon, .search-bar-container input:not(:placeholder-shown) ~ .search-icon { left: calc(50% - 235px); color: #fff; }
 
-        /* ESTRUCTURA CARDS MACOS */
+        /* ESTRUCTURA CARDS */
         .global-config-card, .lote-row { 
             background: var(--card-bg); padding: 24px; border-radius: 16px; 
             border: 1px solid var(--glass-border); margin-bottom: 16px;
@@ -216,7 +219,7 @@
         .lote-field input:focus, .lote-field select:focus { border-color: var(--mac-blue); background: rgba(0,0,0,0.6); box-shadow: 0 0 0 3px var(--focus-ring); }
         .lote-field input::placeholder { color: rgba(255,255,255,0.4); font-weight: 400; }
         
-        /* MOTOR DE SUBIDA MACOS */
+        /* MOTOR DE SUBIDA */
         .upload-group { display: flex; gap: 10px; align-items: stretch; width: 100%; }
         .btn-upload {
             background: rgba(255,255,255,0.1); border: 1px solid var(--glass-border);
@@ -260,7 +263,7 @@
         }
         #toast.show { top: 30px; opacity: 1; }
 
-        /* ADAPTACIÓN MÓVIL */
+        /* ADAPTACIÓN MÓVIL ESTRICTA */
         @media (max-width: 768px) {
             body { padding: 10px; padding-bottom: 110px; }
             .mac-window { border-radius: 16px; }
@@ -295,7 +298,7 @@
                 <span class="light min"></span>
                 <span class="light max"></span>
             </div>
-            <div class="mac-title">PANEL DE CONTROL FRESIA 360</div>
+            <div class="mac-title">PANEL DE CONTROL PRINCIPAL</div>
             <div class="mac-actions">
                 <div class="user-pill" id="display-user">--</div>
             </div>
@@ -304,7 +307,14 @@
         <!-- PANTALLA DE LOGIN -->
         <div id="login-screen">
             <div class="login-avatar">
-                <svg width="40" height="40" fill="none" stroke="#fff" stroke-width="1.5" viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <!-- Ícono Premium Inmobiliario (Edificio/Torre Minimalista) -->
+                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 21h18"/>
+                    <path d="M5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16"/>
+                    <path d="M9 21v-4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v4"/>
+                    <path d="M9 7h6"/>
+                    <path d="M9 11h6"/>
+                </svg>
             </div>
             <div class="login-form">
                 <div class="input-group">
@@ -323,7 +333,7 @@
         <!-- PANTALLA DE GESTIÓN (DASHBOARD) -->
         <div id="dashboard-screen">
             <div class="dashboard-header-bar">
-                <h2>PANEL DE CONTROL FRESIA 360</h2>
+                <h2>Panel de Administración</h2>
                 <div class="controls-actions">
                     <button class="btn-logout" onclick="cerrarSesion()">Cerrar Sesión</button>
                     <button class="btn-save" id="btn-save-master" onclick="guardarCambios()">
@@ -372,11 +382,11 @@
                 </div>
             </div>
 
-            <!-- TAB: FONDOS DE PANTALLA (NUEVO) -->
+            <!-- TAB: FONDOS DE PANTALLA -->
             <div id="tab-wallpapers" class="tab-section">
                 <div class="global-config-card">
-                    <h3>Apariencia del Escritorio (macOS Style)</h3>
-                    <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 15px;">Selecciona el ambiente de trabajo para tu Bóveda. El diseño translúcido se adaptará automáticamente.</p>
+                    <h3>Apariencia del Escritorio</h3>
+                    <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 15px;">Selecciona el ambiente de trabajo para tu Panel. El diseño translúcido se adaptará automáticamente.</p>
                     
                     <div class="wallpaper-grid">
                         <div class="wallpaper-card" data-bg="solid-graphite" onclick="setWallpaper('solid-graphite')" style="background: linear-gradient(135deg, #2b2b2b 0%, #000000 100%);">
@@ -435,11 +445,11 @@
     <!-- ALERTA DE ÉXITO -->
     <div id="toast">
         <svg id="toast-icon" width="20" height="20" fill="var(--mac-green)" viewBox="0 0 24 24"><path d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10zm-.997-6l7.07-7.071-1.414-1.414-5.656 5.657-2.829-2.829-1.414 1.414L11.003 16z"></path></svg>
-        <span id="toast-msg">Bóveda Actualizada Exitosamente</span>
+        <span id="toast-msg">Panel Actualizado Exitosamente</span>
     </div>
 
     <script>
-        // CONFIGURACIÓN CENTRAL INTACTA
+        // CONFIGURACIÓN CENTRAL
         const FILENAME = "datos.json";
         let shaActual = ""; 
         let masterData = {}; 
@@ -600,7 +610,7 @@
                 const url = `https://api.github.com/repos/${user}/${repo}/contents/${path}`;
 
                 const payload = {
-                    message: `📸 Imagen subida para lote ${loteId} (Vía Bóveda Fresia 360)`,
+                    message: `📸 Imagen subida para lote ${loteId} (Vía Panel de Administración)`,
                     content: base64Data
                 };
 
@@ -679,7 +689,7 @@
             const containerLotes = document.getElementById('lotes-container');
             containerLotes.innerHTML = "";
             if(masterData.lotes.length === 0) {
-                containerLotes.innerHTML = `<div style="text-align:center; color:var(--text-muted); padding:20px; font-weight: 500;">No hay lotes configurados en la bóveda.</div>`;
+                containerLotes.innerHTML = `<div style="text-align:center; color:var(--text-muted); padding:20px; font-weight: 500;">No hay lotes configurados en la base de datos.</div>`;
             } else {
                 masterData.lotes.forEach((lote) => {
                     const row = document.createElement('div');
@@ -729,7 +739,6 @@
                                     </select>
                                 </div>
                                 
-                                <!-- NUEVO CAMPO DE IMAGEN CON BOTÓN DE SUBIDA -->
                                 <div class="lote-field col-span-full">
                                     <label>URL Imagen del Lote</label>
                                     <div class="upload-group">
@@ -848,7 +857,7 @@
             const url = `https://api.github.com/repos/${user}/${repo}/contents/${FILENAME}`;
 
             const payload = {
-                message: "🏢 Actualización de Bóveda: Textos e Inventario",
+                message: "🏢 Actualización de Textos e Inventario (Vía Panel de Administración)",
                 content: contentEncoded,
                 sha: shaActual 
             };
@@ -863,7 +872,7 @@
                 if (response.ok) {
                     const result = await response.json();
                     shaActual = result.content.sha; 
-                    mostrarToast("Bóveda Actualizada Exitosamente", true);
+                    mostrarToast("Panel Actualizado Exitosamente", true);
                 } else {
                     const err = await response.json();
                     alert("⛔ Error al guardar: " + err.message);
