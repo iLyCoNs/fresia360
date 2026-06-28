@@ -30,12 +30,12 @@
         .linea-calle-borde { fill: none; stroke: rgba(255, 255, 255, 0.6); stroke-width: calc(var(--stroke-dyn) * 3); pointer-events: none; }
         .linea-calle-asfalto { fill: none; stroke: rgba(30, 35, 45, 0.85); stroke-width: calc(var(--stroke-dyn) * 2.2); pointer-events: auto; cursor: pointer; transition: stroke 0.3s; }
         .linea-calle-asfalto:hover { stroke: rgba(80, 85, 95, 0.9); }
-        .vertex-marker { width: 8px; height: 8px; background: #ffffff; border: 2px solid #1e293b; border-radius: 50%; transform: translate(-50%, -50%); cursor: grab; pointer-events: auto; box-shadow: 0 2px 5px rgba(0,0,0,0.6); transition: all 0.2s; z-index: 1000 !important; }
+        .vertex-marker { width: 12px; height: 12px; background: #ffffff; border: 3px solid #1e293b; border-radius: 50%; transform: translate(-50%, -50%); cursor: grab; pointer-events: auto; box-shadow: 0 2px 5px rgba(0,0,0,0.6); transition: background 0.2s, border-color 0.2s, box-shadow 0.2s; z-index: 1000 !important; }
         .vertex-marker::after { content: ''; position: absolute; top: -20px; left: -20px; right: -20px; bottom: -20px; border-radius: 50%; background: transparent; }
         .vertex-marker:hover { transform: translate(-50%, -50%) scale(1.4); background: #F59E0B; border-color: #ffffff; box-shadow: 0 0 10px rgba(245, 158, 11, 0.9); }
-        .vertex-marker.is-dragging { cursor: grabbing !important; transform: translate(-50%, -50%) scale(1.6); background: #10B981 !important; }
+        .vertex-marker.is-dragging { cursor: grabbing !important; transform: translate(-50%, -50%) scale(1.6); background: #10B981 !important; border-color: #ffffff !important;}
         .vertex-marker.drawing-node { background: #F59E0B; border-color: #ffffff; }
-        #snap-cursor { position: fixed; width: 16px; height: 16px; border: 2px solid #10b981; border-radius: 50%; transform: translate(-50%, -50%); pointer-events: none; z-index: 9999999; opacity: 0; transition: opacity 0.1s; background: rgba(16, 185, 129, 0.2); }
+        #snap-cursor { position: fixed; width: 20px; height: 20px; border: 2px solid #10b981; border-radius: 50%; transform: translate(-50%, -50%); pointer-events: none; z-index: 9999999; opacity: 0; transition: opacity 0.1s; background: rgba(16, 185, 129, 0.3); }
         #snap-cursor.active { opacity: 1; animation: snapPulse 1s infinite alternate; }
         @keyframes snapPulse { from { transform: translate(-50%, -50%) scale(1); } to { transform: translate(-50%, -50%) scale(1.3); } }
         body.heatmap-mode g.lote-interactivo path { stroke: transparent !important; }
@@ -53,7 +53,9 @@
         .premium-compass-container { position: absolute; top: 32px; right: 32px; z-index: 9999; width: 50px; height: 50px; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); pointer-events: auto; cursor: pointer; opacity: 0; animation: slideInHeader 1s 4.5s forwards; transition: top 0.4s ease, opacity 0.3s ease; } .compass-indicator { position: absolute; top: -4px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; border-bottom: 8px solid #ffffff; filter: drop-shadow(0 -2px 4px rgba(255,255,255,0.8)); z-index: 2; pointer-events: none; } .compass-dial { width: 100%; height: 100%; position: relative; transition: none !important; pointer-events: none; } .compass-n { position: absolute; top: 4px; left: 50%; transform: translateX(-50%); font-size: 10px; font-weight: 700; color: rgb(var(--c-disp)); text-shadow: 0 0 5px rgba(var(--c-disp), 0.5); } .compass-s { position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%); font-size: 8px; font-weight: 500; color: rgba(255,255,255,0.5); } .compass-e { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); font-size: 8px; font-weight: 500; color: rgba(255,255,255,0.5); } .compass-w { position: absolute; left: 6px; top: 50%; transform: translateY(-50%); font-size: 8px; font-weight: 500; color: rgba(255,255,255,0.5); } .compass-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 4px; height: 4px; background: rgba(255,255,255,0.3); border-radius: 50%; z-index: 1;}
         .watermark { position: absolute; bottom: 6px; left: 50%; transform: translateX(-50%); z-index: 15; font-size: 6px; font-weight: 600; color: rgba(255, 255, 255, 0.3); letter-spacing: 1px; text-transform: uppercase; pointer-events: none; text-shadow: 0 1px 3px rgba(0,0,0,0.8); white-space: nowrap; } .watermark b { color: rgba(255,255,255,0.6); font-weight: 800; } .watermark .version { color: rgba(6, 182, 212, 0.6); font-weight: 800; padding-left: 2px; }
         .poi-trigger-btn { position: absolute; top: 105px; left: 52px; z-index: 9999; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(16px); border: 1px solid rgba(147, 197, 253, 0.3); border-radius: 50%; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #fff; box-shadow: 0 10px 25px rgba(0,0,0,0.3); transition: all 0.3s; pointer-events: auto; animation: slideInHeader 1s 4.6s forwards; opacity: 0; outline: none; } .poi-trigger-btn:hover { background: rgba(30, 58, 138, 0.85); border-color: #60a5fa; transform: translateY(-2px); box-shadow: 0 15px 35px rgba(37, 99, 235, 0.4); } .poi-icon { font-size: 20px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)); animation: floatPoi 3s ease-in-out infinite; margin-top: 2px;} @keyframes floatPoi { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
-        .poi-panel { position: absolute; top: 105px; left: 110px; width: 280px; background: rgba(10, 15, 25, 0.85); backdrop-filter: blur(32px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 16px; padding: 16px; z-index: 999999; box-shadow: 0 20px 50px rgba(0,0,0,0.6); opacity: 0; visibility: hidden; transform: translateX(-20px); transition: all 0.3s; pointer-events: auto; } body.has-banner .poi-panel { top: 125px; } .poi-panel.open { opacity: 1; visibility: visible; transform: translateX(0); } .poi-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); } .poi-header h3 { font-size: 11px; font-weight: 800; color: #fff; text-transform: uppercase; letter-spacing: 1px; margin: 0; } .poi-close { background: rgba(255,255,255,0.1); border: none; color: #fff; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; } .poi-close:hover { background: #ef4444; transform: scale(1.1); } .poi-list { display: flex; flex-direction: column; gap: 8px; } .poi-item { display: flex; align-items: center; gap: 12px; background: rgba(255,255,255,0.03); padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.05); cursor: pointer; transition: all 0.2s; } .poi-item:hover { background: rgba(59, 130, 246, 0.15); border-color: rgba(59, 130, 246, 0.4); transform: translateX(4px); } .poi-item-icon { font-size: 16px; } .poi-item-name { flex: 1; font-size: 11px; font-weight: 700; color: #e2e8f0; } .poi-item-arrow { font-size: 10px; color: #3b82f6; font-weight: 900; }
+        .poi-panel { position: absolute; top: 105px; left: 110px; width: 280px; background: rgba(10, 15, 25, 0.85); backdrop-filter: blur(32px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 16px; padding: 16px; z-index: 999999; box-shadow: 0 20px 50px rgba(0,0,0,0.6); opacity: 0; visibility: hidden; transform: translateX(-20px); transition: all 0.3s; pointer-events: auto; } body.has-banner .poi-panel { top: 125px; } .poi-panel.open { opacity: 1; visibility: visible; transform: translateX(0); }
+        .poi-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); } .poi-header h3 { font-size: 11px; font-weight: 800; color: #fff; text-transform: uppercase; letter-spacing: 1px; margin: 0; } .poi-close { background: rgba(255,255,255,0.1); border: none; color: #fff; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; } .poi-close:hover { background: #ef4444; transform: scale(1.1); }
+        .poi-list { display: flex; flex-direction: column; gap: 8px; } .poi-item { display: flex; align-items: center; gap: 12px; background: rgba(255,255,255,0.03); padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.05); cursor: pointer; transition: all 0.2s; } .poi-item:hover { background: rgba(59, 130, 246, 0.15); border-color: rgba(59, 130, 246, 0.4); transform: translateX(4px); } .poi-item-icon { font-size: 16px; } .poi-item-name { flex: 1; font-size: 11px; font-weight: 700; color: #e2e8f0; } .poi-item-arrow { font-size: 10px; color: #3b82f6; font-weight: 900; }
         .horizon-hud-wrapper { position: absolute; bottom: 0; left: 0; transform: translate(-50%, 0); display: flex; flex-direction: column; align-items: center; pointer-events: auto; cursor: pointer; animation: fadeInHUD 1.5s ease-out forwards; animation-delay: 5s; opacity: 0; z-index: 5; } @keyframes fadeInHUD { from { opacity: 0; transform: translate(-50%, 10px); } to { opacity: 1; transform: translate(-50%, 0); } } .horizon-hud-wrapper:hover { z-index: 999999; }
         .hud-glass-card { background: rgba(26, 56, 87, 0.65); backdrop-filter: blur(8px); border: 1px solid rgba(216, 228, 240, 0.2); border-radius: 8px; padding: 3px 10px; display: flex; flex-direction: column; align-items: center; gap: 2px; transition: all 0.3s; box-shadow: 0 4px 15px rgba(0,0,0,0.3); pointer-events: auto; width: max-content; white-space: nowrap; } .horizon-hud-wrapper:hover .hud-glass-card { transform: translateY(-5px); background: rgba(26, 56, 87, 0.9); border-color: rgba(145, 200, 255, 0.5); box-shadow: 0 10px 25px rgba(0,0,0,0.5), 0 0 15px rgba(145, 200, 255, 0.2); } .hud-label-title { color: #FFFFFF; font-size: 9px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; text-shadow: 0 2px 4px rgba(0,0,0,0.8); pointer-events: none; transition: color 0.3s; } .horizon-hud-wrapper:hover .hud-label-title { color: #91C8FF; } .hud-metrics { display: flex; align-items: center; gap: 6px; pointer-events: none; } .hud-metric-box { display: flex; align-items: baseline; gap: 2px; } .hud-val { color: #91C8FF; font-size: 9px; font-weight: 800; text-shadow: 0 1px 3px rgba(0,0,0,0.8); transition: color 0.3s; } .horizon-hud-wrapper:hover .hud-val { color: #FFFFFF; } .hud-unit { color: #FD9227; font-size: 6px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; } .hud-divider { width: 1px; height: 8px; background: rgba(216, 228, 240, 0.2); } .hud-line-down { width: 1px; height: 25px; background: linear-gradient(to bottom, rgba(216, 228, 240, 0.6), transparent); transition: all 0.3s; pointer-events: none; } .horizon-hud-wrapper:hover .hud-line-down { height: 30px; background: linear-gradient(to bottom, #91C8FF, transparent); width: 2px; } .hud-target-dot { width: 5px; height: 5px; background: #FD9227; border-radius: 50%; box-shadow: 0 0 8px #FD9227, 0 0 0 1.5px rgba(26,56,87,0.5); margin-top: -2px; transition: all 0.3s; pointer-events: none; } .horizon-hud-wrapper:hover .hud-target-dot { transform: scale(1.5); box-shadow: 0 0 12px #FD9227, 0 0 0 2px rgba(253,146,39,0.3); background: #FFFFFF; }
         .horizon-nav-card { position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%) scale(0.95); background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(24px); border: 1px solid rgba(255,255,255,0.2); border-radius: 16px; padding: 14px; width: max-content; min-width: 220px; visibility: hidden; opacity: 0; transition: all 0.2s; pointer-events: none; z-index: 999999; box-shadow: 0 15px 40px rgba(0,0,0,0.6); display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px;} .horizon-nav-card::after { content: ''; position: absolute; bottom: -12px; left: 0; width: 100%; height: 12px; pointer-events: auto;} body:not(.dev-mode-pins-active) .horizon-hud-wrapper:hover .horizon-nav-card { visibility: visible; opacity: 1; pointer-events: auto; transform: translateX(-50%) scale(1); } .hnc-title { color: #fff; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px;} .hnc-info { display: flex; justify-content: space-between; font-size: 10px; font-weight: 600; color: #94a3b8;} .hnc-info b { color: #fff;} .hnc-btns { display: flex; gap: 8px; margin-top: 4px; } .hnc-btn { flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 10px; border-radius: 10px; font-size: 10px; font-weight: 700; text-decoration: none; transition: all 0.2s; border: 1px solid transparent; cursor: pointer; pointer-events: auto;} .hnc-btn.waze { background: rgba(0, 194, 255, 0.15); color: #00c2ff; border-color: rgba(0, 194, 255, 0.3);} .hnc-btn.waze:hover { background: #00c2ff; color: #fff; box-shadow: 0 4px 15px rgba(0,194,255,0.4);} .hnc-btn.gmaps { background: rgba(50, 215, 75, 0.15); color: #32d74b; border-color: rgba(50, 215, 75, 0.3);} .hnc-btn.gmaps:hover { background: #32d74b; color: #fff; box-shadow: 0 4px 15px rgba(50,215,75,0.4);} .hnc-section-title { font-size: 8.5px; color: #94a3b8; margin-top: 8px; margin-bottom: -2px; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;}
@@ -173,6 +175,14 @@
         function isSvgRenderAllowed() { return (!isWebGLSupported) ? false : (isTouchDevice() ? viewerGpuReady && !!visor360 : true); }
         function shouldUpdateSVGThisFrame() { return true; }
 
+        function flashScreenSuccess() {
+            let flash = document.createElement('div');
+            flash.style.position = 'fixed'; flash.style.top = '0'; flash.style.left = '0'; flash.style.width = '100%'; flash.style.height = '100%';
+            flash.style.backgroundColor = 'rgba(16, 185, 129, 0.4)'; flash.style.zIndex = '999999999'; flash.style.pointerEvents = 'none'; flash.style.transition = 'opacity 0.5s ease-out';
+            document.body.appendChild(flash);
+            setTimeout(() => { flash.style.opacity = '0'; }, 50); setTimeout(() => { flash.remove(); }, 550);
+        }
+
         const SmartGpuProfile = {
             maxDPR: 1.25, maxTextureSize: 4096, _blobUrl: null, isHighEnd: false,
             init() { document.body.classList.add('is-touch-device'); const caps = this.probeWebGL(); const ram = navigator.deviceMemory || 4; if (ram > 6 && caps.maxTextureSize >= 8192) { this.isHighEnd = true; this.maxTextureSize = caps.maxTextureSize; } else { this.isHighEnd = false; this.maxTextureSize = Math.min(caps.maxTextureSize || 4096, 4096); } },
@@ -211,39 +221,32 @@
         async function fetchMasterData() { try { const response = await fetch('datos.json?v=' + new Date().getTime()); if(response.ok) { const data = await response.json(); ConfigProyecto = data.configProyecto || ConfigProyecto; OrigenDrone = data.origen || null; NorteOffset = data.norte || 0; BaseDatosLotes = data.lotes || []; PuntosHorizonte = data.horizontes || []; allDrawnLines = data.trazos || []; } else { loadFromLocal(); } } catch(e) { loadFromLocal(); } applyProjectConfig(); }
 
         let visor360, currentPinSizeIndex = 1, isIntroAnimating = true, isDevModeDrawActive = false, isDevModePinsActive = false, currentLineType = 'solida', currentLinePoints = [], currentPinTypeMap = 'disponible', currentTempLineId = 'temp_' + Date.now(), draggingVertex = null, pickedPin = null, snapCursor = null, ghostPin = null, snappedCoords = null, activePinArgs = null, isCreatingNewPin = false;
-        const DEFAULT_HFOV = 125, MAX_SCALE = 1.0, MIN_SCALE = 0.20, SNAP_DISTANCE = 5.0; 
-
-        function flashScreenSuccess() {
-            let flash = document.createElement('div');
-            flash.style.position = 'fixed'; flash.style.top = '0'; flash.style.left = '0'; flash.style.width = '100%'; flash.style.height = '100%';
-            flash.style.backgroundColor = 'rgba(16, 185, 129, 0.4)'; flash.style.zIndex = '999999999'; flash.style.pointerEvents = 'none'; flash.style.transition = 'opacity 0.5s ease-out';
-            document.body.appendChild(flash);
-            setTimeout(() => { flash.style.opacity = '0'; }, 50); setTimeout(() => { flash.remove(); }, 550);
-        }
+        const DEFAULT_HFOV = 125, MAX_SCALE = 1.0, MIN_SCALE = 0.20, SNAP_DISTANCE = 8.0; 
 
         function intersectSegments(p0, p1, p2, p3) {
             let s1_x = p1[0] - p0[0], s1_y = p1[1] - p0[1]; let s2_x = p3[0] - p2[0], s2_y = p3[1] - p2[1];
-            let denom = (-s2_x * s1_y + s1_x * s2_y); if (Math.abs(denom) < 0.000001) return null; 
-            let s = (-s1_y * (p0[0] - p2[0]) + s1_x * (p0[1] - p2[1])) / denom; let t = ( s2_x * (p0[1] - p2[1]) - s2_y * (p0[0] - p2[0])) / denom;
-            if (s >= -0.01 && s <= 1.01 && t >= -0.01 && t <= 1.01) return [p0[0] + (t * s1_x), p0[1] + (t * s1_y)]; return null;
+            let denom = -s2_x * s1_y + s1_x * s2_y; if (Math.abs(denom) < 0.000001) return null;
+            let s = (-s1_y * (p0[0] - p2[0]) + s1_x * (p0[1] - p2[1])) / denom;
+            let t = ( s2_x * (p0[1] - p2[1]) - s2_y * (p0[0] - p2[0])) / denom;
+            if (s >= 0 && s <= 1 && t >= 0 && t <= 1) return [p0[0] + (t * s1_x), p0[1] + (t * s1_y)];
+            return null;
         }
 
         function attemptSplit(lineStart, lineEnd) {
             let dx = lineEnd[0] - lineStart[0]; let dy = lineEnd[1] - lineStart[1];
-            let len = Math.sqrt(dx*dx + dy*dy); if (len < 0.001) return false;
+            let len = Math.sqrt(dx*dx + dy*dy); if (len < 0.0001) return false;
             let nx = dx / len; let ny = dy / len;
-            let extP0 = [lineStart[0] - nx * 10, lineStart[1] - ny * 10];
-            let extP1 = [lineEnd[0] + nx * 10, lineEnd[1] + ny * 10];
-            
+            let extP0 = [lineStart[0] - nx * 1000, lineStart[1] - ny * 1000];
+            let extP1 = [lineEnd[0] + nx * 1000, lineEnd[1] + ny * 1000];
             let newLines = []; let didSplit = false;
             
             for (let idx = 0; idx < allDrawnLines.length; idx++) {
                 let l = allDrawnLines[idx];
                 if (l.tipo === 'calle' || l.puntos.length < 3) { newLines.push(l); continue; }
-                
                 let pts = l.puntos; let intersections = [];
                 for (let i = 0; i < pts.length; i++) {
                     let p1 = pts[i]; let p2 = pts[(i + 1) % pts.length];
+                    if(Math.abs(p1[0]-p2[0]) < 0.0001 && Math.abs(p1[1]-p2[1]) < 0.0001) continue;
                     let ix = intersectSegments(extP0, extP1, p1, p2);
                     if (ix) {
                         let isDup = intersections.some(u => Math.abs(u.point[0]-ix[0]) < 0.0001 && Math.abs(u.point[1]-ix[1]) < 0.0001);
@@ -251,20 +254,14 @@
                     }
                 }
                 
-                if (intersections.length === 2) {
-                    intersections.sort((a,b) => a.edgeIndex - b.edgeIndex);
-                    let i1 = intersections[0]; let i2 = intersections[1];
-                    let polyA = []; for(let k=0; k<=i1.edgeIndex; k++) polyA.push(pts[k]); polyA.push(i1.point); polyA.push(i2.point); for(let k=i2.edgeIndex+1; k<pts.length; k++) polyA.push(pts[k]);
-                    let polyB = []; polyB.push(i1.point); for(let k=i1.edgeIndex+1; k<=i2.edgeIndex; k++) polyB.push(pts[k]); polyB.push(i2.point);
-                    newLines.push({ id: 'lote_' + Date.now() + '_A_' + idx, tipo: l.tipo, puntos: polyA });
-                    newLines.push({ id: 'lote_' + Date.now() + '_B_' + idx, tipo: l.tipo, puntos: polyB });
-                    didSplit = true;
-                } else if (intersections.length > 2) {
+                if (intersections.length >= 2) {
                     intersections.sort((a,b) => { let d1 = Math.pow(a.point[0]-extP0[0],2) + Math.pow(a.point[1]-extP0[1],2); let d2 = Math.pow(b.point[0]-extP0[0],2) + Math.pow(b.point[1]-extP0[1],2); return d1-d2; });
                     let i1 = intersections[0]; let i2 = intersections[intersections.length-1];
                     if (i1.edgeIndex > i2.edgeIndex) { let temp = i1; i1 = i2; i2 = temp; }
+                    
                     let polyA = []; for(let k=0; k<=i1.edgeIndex; k++) polyA.push(pts[k]); polyA.push(i1.point); polyA.push(i2.point); for(let k=i2.edgeIndex+1; k<pts.length; k++) polyA.push(pts[k]);
                     let polyB = []; polyB.push(i1.point); for(let k=i1.edgeIndex+1; k<=i2.edgeIndex; k++) polyB.push(pts[k]); polyB.push(i2.point);
+                    
                     newLines.push({ id: 'lote_' + Date.now() + '_A_' + idx, tipo: l.tipo, puntos: polyA });
                     newLines.push({ id: 'lote_' + Date.now() + '_B_' + idx, tipo: l.tipo, puntos: polyB });
                     didSplit = true;
@@ -349,8 +346,6 @@
                     let p1 = pts[i], p2 = pts[(i + 1) % pts.length];
                     if (!isClosed && i === pts.length - 1) break;
                     let c1 = getCam(p1[0], p1[1]), c2 = getCam(p2[0], p2[1]);
-                    if (draggingVertex && draggingVertex.lineId === lineId && draggingVertex.idx === i && window.lastMouseX !== undefined) { let mx = window.lastMouseX - DOMCache.viewport.left, my = window.lastMouseY - DOMCache.viewport.top; c1 = { x: (mx - cx) / f, y: (cy_screen - my) / f, z: 1 }; }
-                    if (draggingVertex && draggingVertex.lineId === lineId && draggingVertex.idx === ((i + 1) % pts.length) && window.lastMouseX !== undefined) { let mx = window.lastMouseX - DOMCache.viewport.left, my = window.lastMouseY - DOMCache.viewport.top; c2 = { x: (mx - cx) / f, y: (cy_screen - my) / f, z: 1 }; }
                     let in1 = c1.z > 0.0001, in2 = c2.z > 0.0001; if (!in1 && !in2) continue; 
                     let s1, s2;
                     if (in1) { s1 = { x: cx + (c1.x / c1.z) * f, y: cy_screen - (c1.y / c1.z) * f }; hasVisiblePoints = true; } else { let t = c1.z / (c1.z - c2.z), ix = c1.x + t * (c2.x - c1.x), iy = c1.y + t * (c2.y - c1.y); s1 = { x: cx + (ix / 0.0001) * f, y: cy_screen - (iy / 0.0001) * f }; }
@@ -371,7 +366,7 @@
             const startDrag = (e) => { e.preventDefault(); e.stopPropagation(); isPegmanDragging = true; document.body.classList.add('pegman-dragging'); let mock = getMockEvent(e); pegmanLastX = mock.clientX; pegmanLastY = mock.clientY; ghost.style.left = (pegmanLastX - 7) + 'px'; ghost.style.top = (pegmanLastY - 2) + 'px'; ghost.classList.add('active'); pegmanTilt = 0; pegmanTargetTilt = 0; cancelAnimationFrame(pegmanAnimFrame); animatePegmanPendulum(); };
             const doDrag = (e) => { if(!isPegmanDragging) return; e.preventDefault(); let mock = getMockEvent(e); if(mock.clientX) { let deltaX = mock.clientX - pegmanLastX; pegmanTargetTilt = deltaX * 1.5; if(pegmanTargetTilt > 45) pegmanTargetTilt = 45; if(pegmanTargetTilt < -45) pegmanTargetTilt = -45; pegmanLastX = mock.clientX; pegmanLastY = mock.clientY; } ghost.style.left = (pegmanLastX - 7) + 'px'; ghost.style.top = (pegmanLastY - 2) + 'px'; };
             const endDrag = (e) => { if(!isPegmanDragging) return; isPegmanDragging = false; document.body.classList.remove('pegman-dragging'); ghost.classList.remove('active'); cancelAnimationFrame(pegmanAnimFrame); if(!visor360) return; let mockEvent = { clientX: pegmanLastX, clientY: pegmanLastY }; let coords = visor360.mouseEventToCoords(mockEvent); if(coords && !isNaN(coords[0])) { let p = coords[0], y = coords[1]; let closestUrl = null; let minDist = 15; BaseDatosLotes.forEach(l => { if(l.videoUrl) { let d = Math.sqrt(Math.pow(l.pitch - p, 2) + Math.pow(l.yaw - y, 2)); if(d < minDist) { minDist = d; closestUrl = l.videoUrl; } } if(l.tipo === 'vista360' && l.url) { let d = Math.sqrt(Math.pow(l.pitch - p, 2) + Math.pow(l.yaw - y, 2)); if(d < minDist) { minDist = d; closestUrl = l.url; } } }); if(closestUrl) { openInAppViewer(null, closestUrl); } else { const fabContainer = document.getElementById('js-pegman'); fabContainer.classList.add('shake'); setTimeout(() => fabContainer.classList.remove('shake'), 400); } } };
-            pegmanBtn.addEventListener('mousedown', startDrag); pegmanBtn.addEventListener('touchstart', startDrag, {passive: false}); document.addEventListener('mousemove', doDrag); document.addEventListener('touchmove', doDrag, {passive: false}); document.addEventListener('mouseup', endDrag); document.addEventListener('touchend', endDrag);
+            pegmanBtn.addEventListener('mousedown', startDrag); pegmanBtn.addEventListener('touchstart', startDrag, {passive: false}); window.addEventListener('mousemove', doDrag); window.addEventListener('touchmove', doDrag, {passive: false}); window.addEventListener('mouseup', endDrag); window.addEventListener('touchend', endDrag);
         }
 
         function hookRendererOverlay(renderer) {
@@ -437,7 +432,25 @@
             const container = document.getElementById('panorama-container'); let startX, startY, startTime; let lastClickTime = 0;
             function handleStart(e) { let mock = getMockEvent(e); startX = mock.clientX; startY = mock.clientY; startTime = Date.now(); }
             function handleEnd(e) {
-                if (draggingVertex) { if(draggingVertex.el) draggingVertex.el.classList.remove('is-dragging'); draggingVertex = null; refreshAllHotspots(); saveToLocal(); return; }
+                if (draggingVertex) { 
+                    if(draggingVertex.el) draggingVertex.el.classList.remove('is-dragging'); 
+                    let mock = getMockEvent(e);
+                    let coords = visor360.mouseEventToCoords(mock);
+                    if(coords && !isNaN(coords[0])) {
+                        if (draggingVertex.lineId === currentTempLineId) { 
+                            currentLinePoints[draggingVertex.idx] = [coords[0], coords[1]]; 
+                        } else { 
+                            const linea = allDrawnLines.find((l) => l.id === draggingVertex.lineId); 
+                            if (linea) linea.puntos[draggingVertex.idx] = [coords[0], coords[1]]; 
+                        } 
+                    }
+                    draggingVertex = null; 
+                    window.lastMouseX = undefined;
+                    window.lastMouseY = undefined;
+                    refreshAllHotspots(); 
+                    saveToLocal(); 
+                    return; 
+                }
                 let mock = getMockEvent(e);
                 if (isDevModePinsActive && pickedPin) { const coords = visor360.mouseEventToCoords(mock); if (coords && !isNaN(coords[0])) { pickedPin.pitch = parseFloat(coords[0].toFixed(2)); pickedPin.yaw = parseFloat(coords[1].toFixed(2)); } pickedPin = null; document.getElementById('ghost-pin').classList.remove('active'); refreshAllHotspots(); saveToLocal(); return; }
                 const timeDiff = Date.now() - startTime; const moveDist = Math.sqrt( Math.pow(mock.clientX - startX, 2) + Math.pow(mock.clientY - startY, 2) );
@@ -451,7 +464,7 @@
                             currentLinePoints.push([p, y]);
                             if (currentLinePoints.length === 2) {
                                 let didSplit = attemptSplit(currentLinePoints[0], currentLinePoints[1]);
-                                if(!didSplit) { alert("⚠️ El corte falló. Asegúrate de cruzar el bloque completamente."); }
+                                if(!didSplit) { alert("⚠️ El corte falló.\nAsegúrate de que la línea trazada cruce completamente dos bordes de un bloque cerrado existente."); }
                                 currentLinePoints = []; currentTempLineId = 'temp_' + Date.now(); refreshAllHotspots(); saveToLocal();
                             } else {
                                 visor360.addHotSpot({ pitch: p, yaw: y, id: 'temp_base_pt_' + Date.now(), createTooltipFunc: renderHiddenVertex, createTooltipArgs: { lineId: currentTempLineId, type: currentLineType, isGuide: true, idx: currentLinePoints.length - 1, hsId: 'temp_base_pt_' + Date.now() }, }); syncSVGElements(); updateSVGPaths();
@@ -459,7 +472,7 @@
                         }
                         if (snappedCoords) { 
                             p = snappedCoords[0]; y = snappedCoords[1]; 
-                            if ( currentLinePoints.length > 2 && Math.abs(p - currentLinePoints[0][0]) < 0.001 && Math.abs(y - currentLinePoints[0][1]) < 0.001 ) { 
+                            if ( currentLinePoints.length >= 2 && Math.abs(p - currentLinePoints[0][0]) < 0.005 && Math.abs(y - currentLinePoints[0][1]) < 0.005 ) { 
                                 isClosingShape = true; 
                             } 
                         }
@@ -479,15 +492,17 @@
                 if (isDevModePinsActive && pickedPin) { if (e.cancelable) e.preventDefault(); const gPin = document.getElementById('ghost-pin'); gPin.classList.add('active'); gPin.style.left = mock.clientX + 'px'; gPin.style.top = mock.clientY + 'px'; return; }
                 if (!isDevModeDrawActive || !visor360 || currentLineType === 'eraser') { if (snapCursor) snapCursor.classList.remove('active'); return; }
                 if (isDevModeDrawActive) { window.lastMouseX = mock.clientX; window.lastMouseY = mock.clientY; updateSVGPaths(); }
+                
                 if (draggingVertex) { 
-                    if (e.cancelable) e.preventDefault(); e.stopPropagation(); const coords = visor360.mouseEventToCoords(mock); if (!coords || isNaN(coords[0])) return; 
-                    if (draggingVertex.lineId === currentTempLineId) { currentLinePoints[draggingVertex.idx] = [coords[0], coords[1]]; } else { const linea = allDrawnLines.find((l) => l.id === draggingVertex.lineId); if (linea) linea.puntos[draggingVertex.idx] = [coords[0], coords[1]]; } 
-                    if (draggingVertex.hsId) { const hsList = visor360.getConfig().hotSpots; if(hsList) { const hsItem = hsList.find(h => h.id === draggingVertex.hsId); if(hsItem) { hsItem.pitch = coords[0]; hsItem.yaw = coords[1]; } } }
-                    updateSVGPaths(); return; 
+                    if (e.cancelable) e.preventDefault(); e.stopPropagation(); 
+                    window.lastMouseX = mock.clientX; window.lastMouseY = mock.clientY;
+                    updateSVGPaths();
+                    return; 
                 }
+                
                 try { const coords = visor360.mouseEventToCoords(mock); let foundSnap = false; snappedCoords = null; const allPointsToCheck = [...currentLinePoints]; allDrawnLines.forEach((l) => allPointsToCheck.push(...l.puntos)); for (let pt of allPointsToCheck) { const dist = Math.sqrt( Math.pow(pt[0] - coords[0], 2) + Math.pow(pt[1] - coords[1], 2) ); if (dist < SNAP_DISTANCE) { foundSnap = true; snappedCoords = [...pt]; snapCursor.style.left = mock.clientX + 'px'; snapCursor.style.top = mock.clientY + 'px'; break; } } if (foundSnap) snapCursor.classList.add('active'); else snapCursor.classList.remove('active'); } catch (err) {}
             }
-            container.addEventListener('mousedown', handleStart); container.addEventListener('touchstart', handleStart, { passive: false }); container.addEventListener('mouseup', handleEnd); container.addEventListener('touchend', handleEnd); container.addEventListener('mousemove', handleMove); container.addEventListener('touchmove', handleMove, { passive: false });
+            container.addEventListener('mousedown', handleStart); container.addEventListener('touchstart', handleStart, { passive: false }); window.addEventListener('mouseup', handleEnd); window.addEventListener('touchend', handleEnd); window.addEventListener('mousemove', handleMove); window.addEventListener('touchmove', handleMove, { passive: false });
         }
 
         async function initPannellum() {
