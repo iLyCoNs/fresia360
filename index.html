@@ -12,7 +12,7 @@
     <script src="pannellum.js"></script>
 
     <style>
-        /* VARIABLES CSS DINÁMICAS */
+        /* VARIABLES CSS DINÁMICAS (Inyectadas por el Panel Admin y el Motor 3D) */
         :root {
             --c-disp: 16, 185, 129;    
             --o-disp: 0.15;
@@ -40,7 +40,9 @@
         #panorama-container:active { cursor: grabbing; }
         #loteo-svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
         
-        /* MOTOR SVG */
+        /* ==========================================================================
+           MOTOR SVG: ESTILOS DE GEOMETRÍA, LOTES Y CALLES
+           ========================================================================== */
         #loteo-svg path {
             vector-effect: non-scaling-stroke;
             stroke-linejoin: round;
@@ -52,20 +54,16 @@
             pointer-events: auto;
         }
         
-        /* HIT AREA INVISIBLE PARA MOVER LÍNEAS FINAS FÁCILMENTE */
-        .linea-hit-area { fill: none !important; stroke: transparent !important; stroke-width: 30px !important; pointer-events: stroke !important; filter: none !important; transition: none !important; }
-        body.dev-mode-move g.lote-interactivo path, body.dev-mode-move .linea-calle-asfalto { cursor: move !important; }
-        
-        g.lote-interactivo[data-status="disponible"] path:not(.linea-hit-area) { fill: rgba(var(--c-disp), var(--o-disp)); stroke: rgba(255, 255, 255, 0.8); stroke-width: var(--stroke-dyn); }
-        g.lote-interactivo[data-status="reservado"] path:not(.linea-hit-area) { fill: rgba(var(--c-res), var(--o-res)); stroke: rgba(255, 255, 255, 0.8); stroke-width: var(--stroke-dyn); }
-        g.lote-interactivo[data-status="vendido"] path:not(.linea-hit-area) { fill: rgba(var(--c-vend), var(--o-vend)); stroke: rgba(255, 255, 255, 0.4); stroke-width: var(--stroke-dyn); }
-        g.lote-interactivo[data-status="no_disponible"] path:not(.linea-hit-area) { fill: rgba(var(--c-nodisp), var(--o-nodisp)); stroke: rgba(255, 255, 255, 0.5); stroke-width: var(--stroke-dyn); }
+        g.lote-interactivo[data-status="disponible"] path { fill: rgba(var(--c-disp), var(--o-disp)); stroke: rgba(255, 255, 255, 0.8); stroke-width: var(--stroke-dyn); }
+        g.lote-interactivo[data-status="reservado"] path { fill: rgba(var(--c-res), var(--o-res)); stroke: rgba(255, 255, 255, 0.8); stroke-width: var(--stroke-dyn); }
+        g.lote-interactivo[data-status="vendido"] path { fill: rgba(var(--c-vend), var(--o-vend)); stroke: rgba(255, 255, 255, 0.4); stroke-width: var(--stroke-dyn); }
+        g.lote-interactivo[data-status="no_disponible"] path { fill: rgba(var(--c-nodisp), var(--o-nodisp)); stroke: rgba(255, 255, 255, 0.5); stroke-width: var(--stroke-dyn); }
 
         .linea-punteada { stroke-dasharray: 8 8; }
         .linea-neon { stroke: #06b6d4 !important; filter: drop-shadow(0 0 6px #06b6d4); }
 
-        g.lote-interactivo.hovered path:not(.linea-hit-area), 
-        g.lote-interactivo:hover path:not(.linea-hit-area) {
+        g.lote-interactivo.hovered path, 
+        g.lote-interactivo:hover path {
             fill: transparent !important;
             stroke: #ffffff !important;
             stroke-width: var(--stroke-dyn-hover) !important;
@@ -76,6 +74,7 @@
         .linea-calle-asfalto { fill: none; stroke: rgba(30, 35, 45, 0.85); stroke-width: calc(var(--stroke-dyn) * 2.2); pointer-events: auto; cursor: pointer; transition: stroke 0.3s; }
         .linea-calle-asfalto:hover { stroke: rgba(80, 85, 95, 0.9); }
 
+        /* VÉRTICES PREMIUM LUXURY */
         .vertex-marker { 
             width: 8px; height: 8px; background: #ffffff; border: 2px solid #1e293b; border-radius: 50%; transform: translate(-50%, -50%); cursor: grab; pointer-events: auto; box-shadow: 0 2px 5px rgba(0,0,0,0.6); transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), background 0.2s, border-color 0.2s, box-shadow 0.2s; z-index: 1000 !important; 
         }
@@ -88,12 +87,13 @@
         #snap-cursor.active { opacity: 1; animation: snapPulse 1s infinite alternate; }
         @keyframes snapPulse { from { transform: translate(-50%, -50%) scale(1); } to { transform: translate(-50%, -50%) scale(1.3); } }
         
-        body.heatmap-mode g.lote-interactivo path:not(.linea-hit-area) { stroke: transparent !important; }
-        body.heatmap-mode g.lote-interactivo[data-status="disponible"] path:not(.linea-hit-area) { fill: rgba(16, 185, 129, 0.8) !important; filter: drop-shadow(0 0 15px rgba(16,185,129,0.8)); }
-        body.heatmap-mode g.lote-interactivo[data-status="reservado"] path:not(.linea-hit-area) { fill: rgba(245, 158, 11, 0.8) !important; filter: drop-shadow(0 0 15px rgba(245,158,11,0.8)); }
-        body.heatmap-mode g.lote-interactivo[data-status="vendido"] path:not(.linea-hit-area) { fill: rgba(239, 68, 68, 0.8) !important; filter: drop-shadow(0 0 15px rgba(239,68,68,0.8)); }
-        body.heatmap-mode g.lote-interactivo[data-status="no_disponible"] path:not(.linea-hit-area) { fill: rgba(148, 163, 184, 0.8) !important; filter: drop-shadow(0 0 15px rgba(148,163,184,0.8)); }
+        body.heatmap-mode g.lote-interactivo path { stroke: transparent !important; }
+        body.heatmap-mode g.lote-interactivo[data-status="disponible"] path { fill: rgba(16, 185, 129, 0.8) !important; filter: drop-shadow(0 0 15px rgba(16,185,129,0.8)); }
+        body.heatmap-mode g.lote-interactivo[data-status="reservado"] path { fill: rgba(245, 158, 11, 0.8) !important; filter: drop-shadow(0 0 15px rgba(245,158,11,0.8)); }
+        body.heatmap-mode g.lote-interactivo[data-status="vendido"] path { fill: rgba(239, 68, 68, 0.8) !important; filter: drop-shadow(0 0 15px rgba(239,68,68,0.8)); }
+        body.heatmap-mode g.lote-interactivo[data-status="no_disponible"] path { fill: rgba(148, 163, 184, 0.8) !important; filter: drop-shadow(0 0 15px rgba(148,163,184,0.8)); }
         
+        /* BANNER PROMOCIONAL Y UI PRINCIPAL */
         .pnlm-compass { display: none !important; }
         .pnlm-load-button { background: #141923 !important; border-radius: 50% !important; }
         .pnlm-hotspot-base { z-index: 10 !important; transition: none !important; will-change: transform; }
@@ -118,6 +118,7 @@
         body.has-banner .premium-compass-container { top: 52px; }
         body.has-banner .poi-trigger-btn { top: 125px; }
 
+        /* SUN PATH SIMULATION HUD */
         #sun-hud { position: absolute; top: 90px; left: 50%; transform: translateX(-50%) translateY(-20px); background: rgba(245, 158, 11, 0.95); backdrop-filter: blur(10px); color: #fff; padding: 10px 24px; border-radius: 30px; font-size: 12px; font-weight: 800; letter-spacing: 1px; opacity: 0; pointer-events: none; transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1); z-index: 999999; box-shadow: 0 10px 30px rgba(245, 158, 11, 0.4); border: 1px solid rgba(255,255,255,0.3); }
         #sun-hud.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
@@ -139,6 +140,7 @@
         .watermark b { color: rgba(255,255,255,0.6); font-weight: 800; }
         .watermark .version { color: rgba(6, 182, 212, 0.6); font-weight: 800; padding-left: 2px; }
 
+        /* PUNTOS DE REFERENCIA (POI) */
         .poi-trigger-btn { position: absolute; top: 105px; left: 52px; z-index: 9999; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(16px); border: 1px solid rgba(147, 197, 253, 0.3); border-radius: 50%; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #fff; box-shadow: 0 10px 25px rgba(0,0,0,0.3); transition: all 0.3s; pointer-events: auto; animation: slideInHeader 1s cubic-bezier(0.16, 1, 0.3, 1) 4.6s forwards; opacity: 0; outline: none; }
         .poi-trigger-btn:hover { background: rgba(30, 58, 138, 0.85); border-color: #60a5fa; transform: translateY(-2px); box-shadow: 0 15px 35px rgba(37, 99, 235, 0.4); }
         .poi-icon { font-size: 20px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)); animation: floatPoi 3s ease-in-out infinite; margin-top: 2px;}
@@ -158,6 +160,7 @@
         .poi-item-name { flex: 1; font-size: 11px; font-weight: 700; color: #e2e8f0; }
         .poi-item-arrow { font-size: 10px; color: #3b82f6; font-weight: 900; }
         
+        /* HORIZONTES Y SMART CARDS */
         .horizon-hud-wrapper { position: absolute; bottom: 0; left: 0; transform: translate(-50%, 0); display: flex; flex-direction: column; align-items: center; pointer-events: auto; cursor: pointer; animation: fadeInHUD 1.5s ease-out forwards; animation-delay: 5s; opacity: 0; z-index: 5; }
         @keyframes fadeInHUD { from { opacity: 0; transform: translate(-50%, 10px); } to { opacity: 1; transform: translate(-50%, 0); } }
         .horizon-hud-wrapper:hover { z-index: 999999; }
@@ -190,6 +193,7 @@
         .hnc-btn.gmaps:hover { background: #32d74b; color: #fff; box-shadow: 0 4px 15px rgba(50,215,75,0.4);}
         .hnc-section-title { font-size: 8.5px; color: #94a3b8; margin-top: 8px; margin-bottom: -2px; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;}
 
+        /* GALERÍA MACOS */
         #mac-gallery-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); z-index: 999999999; display: flex; align-items: center; justify-content: center; opacity: 0; visibility: hidden; transition: all 0.3s ease; pointer-events: none;}
         #mac-gallery-modal.open { opacity: 1; visibility: visible; pointer-events: auto;}
         .mac-g-window { width: 90vw; height: 85vh; max-width: 1200px; background: rgba(15, 22, 36, 0.8); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 30px 60px rgba(0,0,0,0.8); transform: scale(0.95); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); pointer-events: auto; }
@@ -262,6 +266,7 @@
         .qa-btn:hover { background: rgba(255,255,255,0.2); transform: scale(1.1); }
         .qa-btn.qa-delete:hover { background: rgba(239, 68, 68, 0.9); color: #fff;}
         
+        /* CARD LOTES CON FAVORITO */
         .lote-card { position: absolute; bottom: 100%; margin-bottom: 12px; left: 50%; transform: translateX(-50%) scale(0.95); width: 280px; padding: 6px; background: rgba(250, 250, 252, 0.85); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border: 1px solid rgba(255, 255, 255, 0.6); border-radius: 24px; color: #1d1d1f; box-shadow: 0 25px 50px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.04); visibility: hidden; opacity: 0; transition: opacity 0.15s ease, transform 0.15s ease, visibility 0s linear 0.15s; pointer-events: none; z-index: 999999; transform-origin: bottom center; white-space: normal; }
         .lote-card::after { content: ''; position: absolute; bottom: -12px; left: 0; width: 100%; height: 12px; pointer-events: auto;}
         body:not(.dev-mode-pins-active) .smart-pin-wrapper:hover .lote-card, body:not(.dev-mode-pins-active) .lote-card:hover { visibility: visible; opacity: 1; pointer-events: auto; transform: translateX(-50%) scale(1); transition: opacity 0.2s ease, transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), visibility 0s linear 0s; }
@@ -494,6 +499,7 @@
             .inapp-content.is-yt { width: 100%; aspect-ratio: auto; height: 35vh; border-radius: 0; }
             .inapp-content.is-360 { width: 92%; height: 75vh; border-radius: 20px; }
             
+            /* POI MOBILE POSITIONS (DEBAJO DE LA BRÚJULA) */
             .poi-trigger-btn { top: 56px; right: 12px; left: auto !important; transform: none !important; width: 34px; height: 34px; justify-content: center; opacity: 1; z-index: 999999; padding: 0; }
             body.has-banner .poi-trigger-btn { top: 84px; }
             .poi-icon { font-size: 16px; margin: 0; }
@@ -501,6 +507,7 @@
             body.has-banner .poi-panel { top: 128px; }
             .poi-panel.open { transform: scale(1) !important; }
 
+            /* GALERÍA MACOS MOBILE */
             #mac-gallery-modal { padding: 12px; align-items: center; justify-content: center; }
             .mac-g-window { width: 100%; height: 80vh; max-height: 700px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.2); margin: auto; box-shadow: 0 20px 40px rgba(0,0,0,0.6); }
             .mac-g-header { height: 48px; padding: 0 16px; }
@@ -581,7 +588,7 @@
             <div class="lotes-list" id="js-lotes-list"></div>
         </div>
 
-        <div id="dev-toolbar-draw" class="dev-toolbar"><div class="macos-header"><div class="macos-dots"><i></i><i></i><i></i></div><div class="dev-toolbar-title">MODO ARQUITECTO (DIBUJO LIBRE)</div><div style="width: 42px;"></div></div><div class="dev-tools-row"><button class="dev-btn active" id="btn-draw-solid">Sólida</button><button class="dev-btn" id="btn-draw-dash">Punteada</button><button class="dev-btn" id="btn-draw-neon" style="color: #06b6d4;">Neón</button><button class="dev-btn" id="btn-draw-street" title="Dibuja la ruta, las calles se fusionarán al unirse">🛣️ Calle</button><button class="dev-btn" id="btn-draw-rect" title="Añade un cuadro que puedes estirar">🔲 Lote Auto</button><button class="dev-btn" id="btn-move-shape" style="color: #fbbf24;" title="Mover trazo completo">✋ Mover</button><button class="dev-btn" id="btn-eraser" style="color: #fca5a5;">🧹 Goma</button><div style="width: 1px; height: 20px; background: rgba(255,255,255,0.2); margin: 0 5px;"></div><button class="dev-btn action" id="btn-undo-point" title="Borrar último vértice trazado">Deshacer Punto</button><button class="dev-btn export" id="btn-finish-line" title="Sella la figura en el suelo">Terminar y Anclar ⚓</button><button class="dev-btn nuke" id="btn-nuke">🗑️ Limpiar Todo</button><button class="dev-btn export-ai" title="Exportar Matriz JSON al Portapapeles">🤖 COPIAR DATOS IA</button></div></div>
+        <div id="dev-toolbar-draw" class="dev-toolbar"><div class="macos-header"><div class="macos-dots"><i></i><i></i><i></i></div><div class="dev-toolbar-title">MODO ARQUITECTO (DIBUJO LIBRE)</div><div style="width: 42px;"></div></div><div class="dev-tools-row"><button class="dev-btn active" id="btn-draw-solid">Sólida</button><button class="dev-btn" id="btn-draw-dash">Punteada</button><button class="dev-btn" id="btn-draw-neon" style="color: #06b6d4;">Neón</button><button class="dev-btn" id="btn-draw-street" title="Dibuja la ruta, las calles se fusionarán al unirse">🛣️ Calle</button><button class="dev-btn" id="btn-draw-rect" title="Añade un cuadro que puedes estirar">🔲 Lote Auto</button><button class="dev-btn" id="btn-eraser" style="color: #fca5a5;">🧹 Goma</button><div style="width: 1px; height: 20px; background: rgba(255,255,255,0.2); margin: 0 5px;"></div><button class="dev-btn action" id="btn-undo-point" title="Borrar último vértice trazado">Deshacer Punto</button><button class="dev-btn export" id="btn-finish-line" title="Sella la figura en el suelo">Terminar y Anclar ⚓</button><button class="dev-btn nuke" id="btn-nuke">🗑️ Limpiar Todo</button><button class="dev-btn export-ai" title="Exportar Matriz JSON al Portapapeles">🤖 COPIAR DATOS IA</button></div></div>
 
         <div id="dev-toolbar-pins" class="dev-toolbar"><div class="macos-header"><div class="macos-dots"><i></i><i></i><i></i></div><div class="dev-toolbar-title">MODO PINES (MAPEO)</div><div style="width: 42px;"></div></div><div class="dev-tools-row"><button class="dev-btn active btn-pin-disp" data-pintype="disponible">Disp.</button><button class="dev-btn btn-pin-res" data-pintype="reservado">Res.</button><button class="dev-btn btn-pin-vend" data-pintype="vendido">Vend.</button><button class="dev-btn btn-pin-nodisp" data-pintype="no_disponible">No Disp.</button><div style="width: 1px; height: 20px; background: rgba(255,255,255,0.2); margin: 0 5px;"></div><button class="dev-btn btn-pin-360" data-pintype="vista360">Pin 360</button><button class="dev-btn btn-pin-hor" data-pintype="horizonte">Horizonte</button><button class="dev-btn" id="btn-set-drone" style="color: #f59e0b;" title="Establecer Coordenadas Base (Lat, Lng)">📍 Origen Drone</button><button class="dev-btn" id="btn-set-north" style="color: #34d399;" title="Fijar la vista actual como el Norte Magnético">🧭 Fijar Norte</button><div style="width: 1px; height: 20px; background: rgba(255,255,255,0.2); margin: 0 5px;"></div><button class="dev-btn action" id="btn-heatmap" title="Activa Telemetría Visual">🔥 Mapa Calor</button><button class="dev-btn" id="btn-edit-titles" style="color: #cbd5e1;" title="Editar Título y Subtítulo Central">📝 Títulos</button><button class="dev-btn nuke" id="btn-nuke-pins">🗑️ Limpiar Todo</button><button class="dev-btn export-ai" title="Exportar Matriz JSON al Portapapeles">🤖 COPIAR DATOS IA</button></div></div>
 
@@ -636,10 +643,6 @@
         let lastSvgView = { pitch: null, yaw: null, hfov: null };
         let svgFrameCounter = 0;
 
-        let draggingLineId = null;
-        let dragStartMouse = null;
-        let originalLinePoints = [];
-
         function isTouchDevice() {
             return (navigator.maxTouchPoints || 0) > 0 || ('ontouchstart' in window);
         }
@@ -653,6 +656,7 @@
                 document.body.classList.add('is-touch-device'); 
                 const caps = this.probeWebGL(); 
                 const ram = navigator.deviceMemory || 4; 
+                const cores = navigator.hardwareConcurrency || 4;
                 
                 if (ram > 6 && caps.maxTextureSize >= 8192) {
                     this.isHighEnd = true;
@@ -774,15 +778,10 @@
 
         async function fetchMasterData() { try { const response = await fetch('datos.json?v=' + new Date().getTime()); if(response.ok) { const data = await response.json(); ConfigProyecto = data.configProyecto || ConfigProyecto; OrigenDrone = data.origen || null; NorteOffset = data.norte || 0; BaseDatosLotes = data.lotes || []; PuntosHorizonte = data.horizontes || []; allDrawnLines = data.trazos || []; } else { loadFromLocal(); } } catch(e) { loadFromLocal(); } applyProjectConfig(); }
 
-        window.startLineDrag = function(e, lineId) {
-            e.stopPropagation(); e.preventDefault();
-            let mock = getMockEvent(e);
-            draggingLineId = lineId;
-            let lineData = allDrawnLines.find(l => l.id === lineId);
-            if (!lineData) return;
-            originalLinePoints = JSON.parse(JSON.stringify(lineData.puntos));
-            dragStartMouse = visor360.mouseEventToCoords(mock);
-        };
+        let visor360, currentPinSizeIndex = 1, isIntroAnimating = true, isDevModeDrawActive = false, isDevModePinsActive = false, currentLineType = 'solida', currentLinePoints = [], currentPinTypeMap = 'disponible', currentTempLineId = 'temp_' + Date.now(), draggingVertex = null, pickedPin = null, snapCursor = null, ghostPin = null, snappedCoords = null, activePinArgs = null, isCreatingNewPin = false;
+        const DEFAULT_HFOV = 125, MAX_SCALE = 1.0, MIN_SCALE = 0.20, SNAP_DISTANCE = 3.5; 
+
+        function getMockEvent(e) { let cx = e.clientX, cy = e.clientY; if(cx === undefined && e.changedTouches && e.changedTouches.length > 0) { cx = e.changedTouches[0].clientX; cy = e.changedTouches[0].clientY; } return { clientX: cx, clientY: cy }; }
 
         document.addEventListener("DOMContentLoaded", async () => {
             if (isTouchDevice()) { isWebGLSupported = true; viewerGpuReady = false; } else { isWebGLSupported = detectWebGL(); }
@@ -866,38 +865,11 @@
                 if (existingElements.length === 0) {
                     if (line.tipo === 'calle') {
                         const pBorde = document.createElementNS("http://www.w3.org/2000/svg", "path"); pBorde.setAttribute("class", "linea-calle-borde"); pBorde.dataset.lineId = line.id; lBordes.appendChild(pBorde);
-                        const pAsfalto = document.createElementNS("http://www.w3.org/2000/svg", "path"); pAsfalto.setAttribute("class", "linea-calle-asfalto"); pAsfalto.dataset.lineId = line.id; 
-                        pAsfalto.addEventListener('mousedown', (e) => { 
-                            if (currentLineType === 'eraser') { e.stopPropagation(); if (line.id === currentTempLineId) currentLinePoints = []; else allDrawnLines = allDrawnLines.filter(l => l.id !== line.id); refreshAllHotspots(); saveToLocal(); }
-                            else if (currentLineType === 'move') { window.startLineDrag(e, line.id); }
-                        }); 
-                        pAsfalto.addEventListener('touchstart', (e) => {
-                            if (currentLineType === 'move') { window.startLineDrag(e, line.id); }
-                        }, {passive: false});
-                        lAsfalto.appendChild(pAsfalto); DOMCache.paths[line.id] = { base: [pBorde, pAsfalto] };
+                        const pAsfalto = document.createElementNS("http://www.w3.org/2000/svg", "path"); pAsfalto.setAttribute("class", "linea-calle-asfalto"); pAsfalto.dataset.lineId = line.id; pAsfalto.addEventListener('mousedown', (e) => { if (currentLineType === 'eraser') { e.stopPropagation(); if (line.id === currentTempLineId) currentLinePoints = []; else allDrawnLines = allDrawnLines.filter(l => l.id !== line.id); refreshAllHotspots(); saveToLocal(); } }); lAsfalto.appendChild(pAsfalto); DOMCache.paths[line.id] = { base: [pBorde, pAsfalto] };
                     } else {
                         const g = document.createElementNS("http://www.w3.org/2000/svg", "g"); g.dataset.lineId = line.id; g.dataset.tipo = line.tipo; g.classList.add('lote-interactivo'); 
-                        
-                        const pHit = document.createElementNS("http://www.w3.org/2000/svg", "path"); 
-                        pHit.setAttribute("class", "linea-hit-area"); 
-                        g.appendChild(pHit);
-
-                        const pBase = document.createElementNS("http://www.w3.org/2000/svg", "path"); 
-                        if (line.tipo === 'neon') pBase.setAttribute("class", "linea-neon"); 
-                        else if (line.tipo === 'punteada') pBase.setAttribute("class", "linea-punteada"); 
-                        else pBase.setAttribute("class", "linea-solida"); 
-                        g.appendChild(pBase);
-                        
-                        g.addEventListener('mousedown', (e) => { 
-                            if (currentLineType === 'eraser') { e.stopPropagation(); if (line.id === currentTempLineId) currentLinePoints = []; else allDrawnLines = allDrawnLines.filter(l => l.id !== line.id); refreshAllHotspots(); saveToLocal(); }
-                            else if (currentLineType === 'move') { window.startLineDrag(e, line.id); }
-                        }); 
-                        g.addEventListener('touchstart', (e) => { 
-                            if (currentLineType === 'move') { window.startLineDrag(e, line.id); }
-                            else { g.classList.add('hovered'); }
-                        }, {passive: false}); 
-                        g.addEventListener('touchend', () => { setTimeout(() => g.classList.remove('hovered'), 1500); }, {passive: true}); 
-                        lLotes.appendChild(g); DOMCache.paths[line.id] = { gNode: g, base: [pHit, pBase] };
+                        const pBase = document.createElementNS("http://www.w3.org/2000/svg", "path"); if (line.tipo === 'neon') pBase.setAttribute("class", "linea-neon"); else if (line.tipo === 'punteada') pBase.setAttribute("class", "linea-punteada"); else pBase.setAttribute("class", "linea-solida"); g.appendChild(pBase);
+                        g.addEventListener('mousedown', (e) => { if (currentLineType === 'eraser') { e.stopPropagation(); if (line.id === currentTempLineId) currentLinePoints = []; else allDrawnLines = allDrawnLines.filter(l => l.id !== line.id); refreshAllHotspots(); saveToLocal(); } }); g.addEventListener('touchstart', () => { g.classList.add('hovered'); }, {passive: true}); g.addEventListener('touchend', () => { setTimeout(() => g.classList.remove('hovered'), 1500); }, {passive: true}); lLotes.appendChild(g); DOMCache.paths[line.id] = { gNode: g, base: [pBase] };
                     }
                 } else { if (line.tipo === 'calle') { DOMCache.paths[line.id] = { base: Array.from(svg.querySelectorAll(`path[data-line-id="${line.id}"]`)) }; } else { const gNode = svg.querySelector(`g[data-line-id="${line.id}"]`); if (gNode) { DOMCache.paths[line.id] = { gNode: gNode, base: Array.from(gNode.querySelectorAll('path')) }; } } }
             });
@@ -963,31 +935,44 @@
 
         function attachSmartViewerHandlers(panoramaBase) {
             if (!visor360) return;
+            
             const handleLoad = () => { 
                 isWebGLSupported = true; viewerGpuReady = true; smartInitAttempts = 0; 
+                
                 const renderer = visor360.getRenderer(); 
                 if(renderer) {
                     SmartGpuProfile.patchRenderer(renderer); 
                     const canvas = typeof renderer.getCanvas === 'function' ? renderer.getCanvas() : null; 
                     SmartGpuProfile.bindContextRecovery(canvas, () => retryPannellumSmart(panoramaBase, true) ); 
                 }
+
                 const pnlmUi = document.querySelector('.pnlm-ui'); 
                 const svg = document.getElementById('loteo-svg'); 
                 if (pnlmUi && svg && svg.parentNode !== pnlmUi) pnlmUi.insertBefore(svg, pnlmUi.firstChild); 
+                
                 if (!isIntroAnimating) { 
                     if(renderer) hookRendererOverlay(renderer); 
                     syncSVGElements(); 
                     if (svg) svg.style.opacity = '1'; 
                 } 
             };
+
             visor360.on('error', () => { 
                 isWebGLSupported = false; viewerGpuReady = false; 
                 const spText = document.getElementById('splash-loading-text'); 
                 if (spText) spText.innerText = 'REINTENTO CON MODO LITE GPU...'; 
                 setTimeout(() => retryPannellumSmart(panoramaBase, true), 600); 
             });
+            
             visor360.on('load', handleLoad);
-            if (visor360.isLoaded && visor360.isLoaded()) { handleLoad(); } else { setTimeout(() => { if (!viewerGpuReady && visor360.getRenderer()) handleLoad(); }, 300); }
+            
+            if (visor360.isLoaded && visor360.isLoaded()) {
+                handleLoad();
+            } else {
+                setTimeout(() => {
+                    if (!viewerGpuReady && visor360.getRenderer()) handleLoad();
+                }, 300);
+            }
         }
 
         async function retryPannellumSmart(panoramaBase, forceLite) {
@@ -1005,7 +990,9 @@
                     const pnlmUi = document.querySelector('.pnlm-ui'); 
                     const svg = document.getElementById('loteo-svg'); 
                     
-                    if (pnlmUi && svg && svg.parentNode !== pnlmUi && isWebGLSupported) { pnlmUi.insertBefore(svg, pnlmUi.firstChild); }
+                    if (pnlmUi && svg && svg.parentNode !== pnlmUi && isWebGLSupported) { 
+                        pnlmUi.insertBefore(svg, pnlmUi.firstChild); 
+                    }
                     
                     let fsInterval = setInterval(() => { let fsBtn = document.querySelector('.pnlm-fullscreen-toggle-button'); if (fsBtn) { clearInterval(fsInterval); let newBtn = fsBtn.cloneNode(true); fsBtn.parentNode.replaceChild(newBtn, fsBtn); newBtn.addEventListener('click', () => { let docEl = document.documentElement; if (!document.fullscreenElement) { if (docEl.requestFullscreen) docEl.requestFullscreen(); else if (docEl.webkitRequestFullscreen) docEl.webkitRequestFullscreen(); newBtn.classList.add('pnlm-fullscreen-toggle-button-active'); } else { if (document.exitFullscreen) document.exitFullscreen(); else if (document.webkitExitFullscreen) document.webkitExitFullscreen(); newBtn.classList.remove('pnlm-fullscreen-toggle-button-active'); } if (isTouchDevice() && visor360 && viewerGpuReady) { setTimeout(() => { const r = visor360.getRenderer(); if (r && r.resize) r.resize(); }, 300); } }); } }, 500);
                     if (pnlmContainer && uiEngine) { pnlmContainer.appendChild(uiEngine); uiEngine.style.zIndex = '999999'; }
@@ -1020,14 +1007,28 @@
                                 isIntroAnimating = false; 
                                 if (svg && isSvgRenderAllowed()) svg.style.opacity = '1'; 
                                 syncSVGElements(); 
-                                if (visor360 && visor360.getRenderer) { const renderer = visor360.getRenderer(); if(renderer) hookRendererOverlay(renderer); }
+                                if (visor360 && visor360.getRenderer) {
+                                    const renderer = visor360.getRenderer(); 
+                                    if(renderer) hookRendererOverlay(renderer);
+                                }
                             }, targetLoteId ? 0 : 3000);
                         }, 3000);
                     }, 1500);
                 }, 1000);
             };
 
-            if (isTouchDevice() && !viewerGpuReady) { let loops = 0; const waitGpu = setInterval(() => { loops++; if (viewerGpuReady || loops > 30) { clearInterval(waitGpu); viewerGpuReady = true; beginIntro(); } }, 100); return; }
+            if (isTouchDevice() && !viewerGpuReady) { 
+                let loops = 0;
+                const waitGpu = setInterval(() => { 
+                    loops++;
+                    if (viewerGpuReady || loops > 30) { 
+                        clearInterval(waitGpu); 
+                        viewerGpuReady = true; 
+                        beginIntro(); 
+                    } 
+                }, 100); 
+                return; 
+            }
             beginIntro();
         }
 
@@ -1035,8 +1036,13 @@
             const container = document.getElementById('panorama-container'); let startX, startY, startTime; let lastClickTime = 0;
             function handleStart(e) { let mock = getMockEvent(e); startX = mock.clientX; startY = mock.clientY; startTime = Date.now(); }
             function handleEnd(e) {
-                if (draggingVertex) { if(draggingVertex.el) draggingVertex.el.classList.remove('is-dragging'); draggingVertex = null; refreshAllHotspots(); saveToLocal(); return; }
-                if (draggingLineId) { draggingLineId = null; dragStartMouse = null; originalLinePoints = []; refreshAllHotspots(); saveToLocal(); return; }
+                if (draggingVertex) { 
+                    if(draggingVertex.el) draggingVertex.el.classList.remove('is-dragging');
+                    draggingVertex = null; 
+                    refreshAllHotspots(); 
+                    saveToLocal(); 
+                    return; 
+                }
                 let mock = getMockEvent(e);
                 if (isDevModePinsActive && pickedPin) { const coords = visor360.mouseEventToCoords(mock); if (coords && !isNaN(coords[0])) { pickedPin.pitch = parseFloat(coords[0].toFixed(2)); pickedPin.yaw = parseFloat(coords[1].toFixed(2)); } pickedPin = null; document.getElementById('ghost-pin').classList.remove('active'); refreshAllHotspots(); saveToLocal(); return; }
                 const timeDiff = Date.now() - startTime; const moveDist = Math.sqrt( Math.pow(mock.clientX - startX, 2) + Math.pow(mock.clientY - startY, 2) );
@@ -1044,62 +1050,52 @@
                     if (Date.now() - lastClickTime < 300 && isDevModeDrawActive) { document.getElementById('btn-finish-line')?.click(); lastClickTime = 0; return; }
                     lastClickTime = Date.now();
                     if (isDevModeDrawActive && currentLineType === 'eraser') { const coords = visor360.mouseEventToCoords(mock); if (!coords) return; let p = coords[0], y = coords[1]; let lineToDelete = null; let minDist = 3.5; allDrawnLines.forEach((line) => { line.puntos.forEach((pt) => { let dist = Math.sqrt(Math.pow(pt[0] - p, 2) + Math.pow(pt[1] - y, 2)); if (dist < minDist) { minDist = dist; lineToDelete = line.id; } }); }); if (lineToDelete) { allDrawnLines = allDrawnLines.filter((l) => l.id !== lineToDelete); refreshAllHotspots(); saveToLocal(); } return; }
-                    if (isDevModeDrawActive && currentLineType !== 'move') {
+                    if (isDevModeDrawActive) {
                         const coords = visor360.mouseEventToCoords(mock); if (!coords) return; let p = coords[0], y = coords[1]; let isClosingShape = false;
                         if (snappedCoords) { p = snappedCoords[0]; y = snappedCoords[1]; if ( currentLinePoints.length > 2 && p === currentLinePoints[0][0] && y === currentLinePoints[0][1] ) { isClosingShape = true; } }
                         currentLinePoints.push([p, y]);
                         if (isClosingShape) { document.getElementById('btn-finish-line')?.click(); } else { visor360.addHotSpot({ pitch: p, yaw: y, id: 'temp_base_pt_' + Date.now(), createTooltipFunc: renderHiddenVertex, createTooltipArgs: { lineId: currentTempLineId, type: currentLineType, isGuide: true, idx: currentLinePoints.length - 1, hsId: 'temp_base_pt_' + Date.now() }, }); syncSVGElements(); updateSVGPaths(); }
                     } else if (isDevModePinsActive && !pickedPin) {
                         if (e.target && e.target.closest('.qa-btn')) return; const coords = visor360.mouseEventToCoords(mock); if (!coords) return; const p = coords[0].toFixed(2), y = coords[1].toFixed(2); let baseArgs = { pitch: parseFloat(p), yaw: parseFloat(y) };
-                        if (currentPinTypeMap === 'horizonte') { const titulo = prompt('⛰️ PIN HORIZONTE\nTítulo (ej: Volcán Osorno):'); if (titulo) { baseArgs.titulo = titulo; baseArgs.tipo = 'horizonte'; if (OrigenDrone && OrigenDrone.lat) { let dest = prompt( `Ingresa Lat,Lng de ${titulo} para auto-calcular distancia, o deja vacío para manual:` ); if (dest && dest.includes(',')) { let parts = dest.split(','); let est = calcularRutaEstimada(OrigenDrone.lat, OrigenDrone.lng, parseFloat(parts[0]), parseFloat(parts[1])); baseArgs.distancia = est.km + ' KM'; baseArgs.tiempo = est.min + ' MIN'; } } openPinEditor(baseArgs, true); }
+                        if (currentPinTypeMap === 'horizonte') {
+                            const titulo = prompt('⛰️ PIN HORIZONTE\nTítulo (ej: Volcán Osorno):');
+                            if (titulo) { baseArgs.titulo = titulo; baseArgs.tipo = 'horizonte'; if (OrigenDrone && OrigenDrone.lat) { let dest = prompt( `Ingresa Lat,Lng de ${titulo} para auto-calcular distancia, o deja vacío para manual:` ); if (dest && dest.includes(',')) { let parts = dest.split(','); let est = calcularRutaEstimada(OrigenDrone.lat, OrigenDrone.lng, parseFloat(parts[0]), parseFloat(parts[1])); baseArgs.distancia = est.km + ' KM'; baseArgs.tiempo = est.min + ' MIN'; } } openPinEditor(baseArgs, true); }
                         } else if (currentPinTypeMap === 'vista360') { baseArgs.tipo = 'vista360'; openPinEditor(baseArgs, true); } else { baseArgs.tipo = 'lote'; baseArgs.status = currentPinTypeMap; openPinEditor(baseArgs, true); }
                     }
                 }
             }
             function handleMove(e) {
                 let mock = getMockEvent(e); if (mock.clientX === undefined) return;
-                
-                if (draggingLineId) {
-                    if (e.cancelable) e.preventDefault(); e.stopPropagation();
-                    let coords = visor360.mouseEventToCoords(mock);
-                    if (!coords || isNaN(coords[0])) return;
-                    let deltaPitch = coords[0] - dragStartMouse[0];
-                    let deltaYaw = coords[1] - dragStartMouse[1];
-                    
-                    let lineData = allDrawnLines.find(l => l.id === draggingLineId);
-                    if (lineData) {
-                        for (let i = 0; i < lineData.puntos.length; i++) {
-                            lineData.puntos[i][0] = originalLinePoints[i][0] + deltaPitch;
-                            lineData.puntos[i][1] = originalLinePoints[i][1] + deltaYaw;
-                        }
-                        if (DOMCache.markers[lineData.id]) {
-                            const hsList = visor360.getConfig().hotSpots;
-                            if(hsList) {
-                                for (let i = 0; i < lineData.puntos.length; i++) {
-                                    let hsId = "vert_base_" + lineData.id + "_" + i;
-                                    let hsItem = hsList.find(h => h.id === hsId);
-                                    if (hsItem) {
-                                        hsItem.pitch = lineData.puntos[i][0];
-                                        hsItem.yaw = lineData.puntos[i][1];
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    updateSVGPaths();
-                    return;
-                }
-
                 if (isDevModePinsActive && pickedPin) { if (e.cancelable) e.preventDefault(); const gPin = document.getElementById('ghost-pin'); gPin.classList.add('active'); gPin.style.left = mock.clientX + 'px'; gPin.style.top = mock.clientY + 'px'; return; }
                 if (!isDevModeDrawActive || !visor360 || currentLineType === 'eraser') { if (snapCursor) snapCursor.classList.remove('active'); return; }
                 if (isDevModeDrawActive) { window.lastMouseX = mock.clientX; window.lastMouseY = mock.clientY; updateSVGPaths(); }
                 
                 if (draggingVertex) { 
-                    if (e.cancelable) e.preventDefault(); e.stopPropagation(); 
-                    const coords = visor360.mouseEventToCoords(mock); if (!coords || isNaN(coords[0])) return; 
-                    if (draggingVertex.lineId === currentTempLineId) { currentLinePoints[draggingVertex.idx] = [coords[0], coords[1]]; } else { const linea = allDrawnLines.find((l) => l.id === draggingVertex.lineId); if (linea) linea.puntos[draggingVertex.idx] = [coords[0], coords[1]]; } 
-                    if (draggingVertex.hsId) { const hsList = visor360.getConfig().hotSpots; if(hsList) { const hsItem = hsList.find(h => h.id === draggingVertex.hsId); if(hsItem) { hsItem.pitch = coords[0]; hsItem.yaw = coords[1]; } } }
-                    updateSVGPaths(); return; 
+                    if (e.cancelable) e.preventDefault(); 
+                    e.stopPropagation(); 
+                    const coords = visor360.mouseEventToCoords(mock); 
+                    if (!coords || isNaN(coords[0])) return; 
+                    
+                    if (draggingVertex.lineId === currentTempLineId) { 
+                        currentLinePoints[draggingVertex.idx] = [coords[0], coords[1]]; 
+                    } else { 
+                        const linea = allDrawnLines.find((l) => l.id === draggingVertex.lineId); 
+                        if (linea) linea.puntos[draggingVertex.idx] = [coords[0], coords[1]]; 
+                    } 
+                    
+                    if (draggingVertex.hsId) {
+                        const hsList = visor360.getConfig().hotSpots;
+                        if(hsList) {
+                            const hsItem = hsList.find(h => h.id === draggingVertex.hsId);
+                            if(hsItem) {
+                                hsItem.pitch = coords[0];
+                                hsItem.yaw = coords[1];
+                            }
+                        }
+                    }
+
+                    updateSVGPaths(); 
+                    return; 
                 }
                 
                 try { const coords = visor360.mouseEventToCoords(mock); let foundSnap = false; snappedCoords = null; const allPointsToCheck = [...currentLinePoints]; allDrawnLines.forEach((l) => allPointsToCheck.push(...l.puntos)); for (let pt of allPointsToCheck) { const dist = Math.sqrt( Math.pow(pt[0] - coords[0], 2) + Math.pow(pt[1] - coords[1], 2) ); if (dist < SNAP_DISTANCE) { foundSnap = true; snappedCoords = [...pt]; snapCursor.style.left = mock.clientX + 'px'; snapCursor.style.top = mock.clientY + 'px'; break; } } if (foundSnap) snapCursor.classList.add('active'); else snapCursor.classList.remove('active'); } catch (err) {}
@@ -1186,22 +1182,9 @@
         function setupDevModes() {
             document.querySelectorAll('.dev-toolbar').forEach(tb => { tb.addEventListener('mousedown', e => e.stopPropagation()); tb.addEventListener('mouseup', e => e.stopPropagation()); tb.addEventListener('touchstart', e => e.stopPropagation(), {passive: true}); tb.addEventListener('touchend', e => e.stopPropagation()); });
             document.addEventListener('keydown', (e) => { if (e.ctrlKey && e.code === 'Space') { e.preventDefault(); if(isDevModePinsActive) togglePinsMode(false); toggleDrawMode(!isDevModeDrawActive); } if (e.ctrlKey && (e.code === 'KeyP' || e.key.toLowerCase() === 'p')) { e.preventDefault(); if(isDevModeDrawActive) toggleDrawMode(false); togglePinsMode(!isDevModePinsActive); } if (e.ctrlKey && (e.code === 'KeyZ' || e.key.toLowerCase() === 'z')) { e.preventDefault(); if (isDevModeDrawActive) { if (currentLinePoints.length > 0) document.getElementById('btn-undo-point')?.click(); else if (allDrawnLines.length > 0) document.getElementById('btn-delete-last-line')?.click(); } } });
-            
-            document.getElementById('btn-draw-solid')?.addEventListener('click', (e) => { setDrawMode('solida', e.target); }); 
-            document.getElementById('btn-draw-dash')?.addEventListener('click', (e) => { setDrawMode('punteada', e.target); }); 
-            document.getElementById('btn-draw-neon')?.addEventListener('click', (e) => { setDrawMode('neon', e.target); }); 
-            document.getElementById('btn-draw-street')?.addEventListener('click', (e) => { setDrawMode('calle', e.target); }); 
-            document.getElementById('btn-eraser')?.addEventListener('click', (e) => { setDrawMode('eraser', e.target); });
-            document.getElementById('btn-move-shape')?.addEventListener('click', (e) => { setDrawMode('move', e.target); });
-            
-            function setDrawMode(mode, targetBtn) { 
-                currentLineType = mode; 
-                document.querySelectorAll('#dev-toolbar-draw .dev-btn:not(.action):not(.export):not(.export-ai):not(.nuke)').forEach(b => b.classList.remove('active')); 
-                if(targetBtn) targetBtn.classList.add('active'); 
-                document.body.classList.toggle('dev-mode-move', mode === 'move');
-            }
-            
-            document.getElementById('btn-draw-rect')?.addEventListener('click', () => { if(!visor360) return; const p = visor360.getPitch(); const y = visor360.getYaw(); const pts = [ [p+1.5, y-1.5], [p+1.5, y+1.5], [p-1.5, y+1.5], [p-1.5, y-1.5], [p+1.5, y-1.5] ]; let tipoTrazo = currentLineType === 'eraser' || currentLineType === 'move' ? 'solida' : currentLineType; allDrawnLines.push({ id: 'rect_' + Date.now(), tipo: tipoTrazo, puntos: pts }); refreshAllHotspots(); saveToLocal(); });
+            document.getElementById('btn-draw-solid')?.addEventListener('click', (e) => { setDrawMode('solida', e.target); }); document.getElementById('btn-draw-dash')?.addEventListener('click', (e) => { setDrawMode('punteada', e.target); }); document.getElementById('btn-draw-neon')?.addEventListener('click', (e) => { setDrawMode('neon', e.target); }); document.getElementById('btn-draw-street')?.addEventListener('click', (e) => { setDrawMode('calle', e.target); }); document.getElementById('btn-eraser')?.addEventListener('click', (e) => { setDrawMode('eraser', e.target); });
+            function setDrawMode(mode, targetBtn) { currentLineType = mode; document.querySelectorAll('#dev-toolbar-draw .dev-btn:not(.action):not(.export):not(.export-ai):not(.nuke)').forEach(b => b.classList.remove('active')); if(targetBtn) targetBtn.classList.add('active'); }
+            document.getElementById('btn-draw-rect')?.addEventListener('click', () => { if(!visor360) return; const p = visor360.getPitch(); const y = visor360.getYaw(); const pts = [ [p+1.5, y-1.5], [p+1.5, y+1.5], [p-1.5, y+1.5], [p-1.5, y-1.5], [p+1.5, y-1.5] ]; let tipoTrazo = currentLineType === 'eraser' ? 'solida' : currentLineType; allDrawnLines.push({ id: 'rect_' + Date.now(), tipo: tipoTrazo, puntos: pts }); refreshAllHotspots(); saveToLocal(); });
             document.getElementById('btn-undo-point')?.addEventListener('click', () => { if (currentLinePoints.length > 0) { currentLinePoints.pop(); refreshAllHotspots(); } });
             document.getElementById('btn-finish-line')?.addEventListener('click', () => { if (currentLinePoints.length > 1) { allDrawnLines.push({ id: currentTempLineId, tipo: currentLineType, puntos: [...currentLinePoints] }); currentLinePoints = []; currentTempLineId = 'temp_' + Date.now(); refreshAllHotspots(); saveToLocal(); } });
             const btnDeleteLastLine = document.createElement('button'); btnDeleteLastLine.id = 'btn-delete-last-line'; btnDeleteLastLine.style.display = 'none'; document.body.appendChild(btnDeleteLastLine);
@@ -1234,7 +1217,7 @@
                 hotSpotDiv.classList.add('drawing-node'); 
             } 
             
-            if (args.isGuide && currentLineType !== 'eraser' && currentLineType !== 'move') { 
+            if (args.isGuide && currentLineType !== 'eraser') { 
                 const startDragGuide = (e) => { 
                     e.stopPropagation(); 
                     e.preventDefault(); 
@@ -1305,6 +1288,7 @@
             let galeriaBtn = '';
             if (args.galeria && args.galeria.length > 0) { galeriaBtn = `<button onclick="window.abrirGaleriaLote('${args.id}', event)" class="btn-action-new full" style="background: rgba(10, 132, 255, 0.1); color: #0A84FF; border-color: rgba(10, 132, 255, 0.2);" title="Ver Fotos"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg> Ver Fotos (${args.galeria.length})</button>`; }
 
+            // COMPARTIR LOTE BTN
             let shareBtn = `<button onclick="window.compartirLote('${args.numero}', '${args.titulo}', event)" class="btn-action-new share" title="Compartir Lote"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg> Compartir</button>`;
 
             if (args.status === 'disponible') { 
@@ -1321,6 +1305,7 @@
             actionGrid += `</div>`;
             const statusText = (args.status || 'disponible').replace('_', ' ');
 
+            // FAVORITES BTN
             let favIcon = isFav ? '❤️' : '🤍';
             let favClass = isFav ? 'card-fav-btn active' : 'card-fav-btn';
             let favHtml = `<button onclick="window.toggleFavorite('${args.id}', event, this)" class="${favClass}" title="Añadir a Favoritos">${favIcon}</button>`;
@@ -1388,6 +1373,7 @@
 
             lista.forEach(lote => { 
                 if(lote.tipo !== 'lote') return; 
+                // Aplicar filtrado si estamos en pestaña Favoritos
                 if (filtroStatus === 'favoritos' && !favs.includes(lote.id)) return;
 
                 const isFav = favs.includes(lote.id);
@@ -1405,7 +1391,7 @@
                 btn.addEventListener("click", (e) => { 
                     document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active")); 
                     e.target.classList.add("active"); 
-                    refreshAllHotspots(); 
+                    refreshAllHotspots(); // Re-renderiza pines e inyecta la lista
                     const status = e.target.getAttribute("data-status"); 
                     
                     let sumP = 0, sumY = 0, c = 0; 
@@ -1421,11 +1407,21 @@
             });
         }
 
+        // ==========================================================
+        // MOTOR DE RUTAS CATEGÓRICAS (ENTORNO Y SERVICIOS) - DEEP LINKS
+        // ==========================================================
         window.abrirRutaServicio = function(categoria, event) {
             if(event) event.stopPropagation();
-            if(!OrigenDrone || !OrigenDrone.lat) { alert("⚠️ Ubicación del proyecto no definida.\nEl administrador debe fijar el 'Origen Drone' en el Panel de Control para buscar servicios exactos."); return; }
+            if(!OrigenDrone || !OrigenDrone.lat) {
+                alert("⚠️ Ubicación del proyecto no definida.\nEl administrador debe fijar el 'Origen Drone' en el Panel de Control para buscar servicios exactos.");
+                return;
+            }
+            
+            // Usamos un Deep Link directo de Google Maps (Search) que funciona
+            // tanto en la App móvil como en Escritorio. Es 100% infalible y rápido.
             const url = `https://www.google.com/maps/search/${encodeURIComponent(categoria)}/@${OrigenDrone.lat},${OrigenDrone.lng},14z`;
             window.open(url, '_blank');
+            
             document.getElementById('js-poi-panel')?.classList.remove('open');
         }
 
@@ -1443,12 +1439,22 @@
                 });
             }
 
-            if(btnClosePoi) { btnClosePoi.addEventListener('click', (e) => { e.stopPropagation(); panelPoi.classList.remove('open'); }); }
+            if(btnClosePoi) {
+                btnClosePoi.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    panelPoi.classList.remove('open');
+                });
+            }
+
             document.getElementById('panorama-container').addEventListener('mousedown', () => { panelPoi?.classList.remove('open'); });
             document.getElementById('panorama-container').addEventListener('touchstart', () => { panelPoi?.classList.remove('open'); }, {passive: true});
         });
 
+        // ==========================================================
+        // MOTOR DE GALERÍA MACOS
+        // ==========================================================
         let galeriaActiva = []; let galeriaIndiceActual = 0;
+
         window.abrirGaleriaLote = function(loteId, event) {
             if(event) event.stopPropagation();
             const lote = BaseDatosLotes.find(l => l.id === loteId); if(!lote || !lote.galeria || lote.galeria.length === 0) return;
@@ -1460,28 +1466,50 @@
         function renderizarThumbs() { const container = document.getElementById('mac-g-thumbs-container'); container.innerHTML = ''; galeriaActiva.forEach((url, index) => { const img = document.createElement('img'); img.src = url; img.className = `mac-g-thumb ${index === 0 ? 'active' : ''}`; img.onclick = () => cargarFotoPrincipal(index); container.appendChild(img); }); }
         function cargarFotoPrincipal(index) { galeriaIndiceActual = index; const mainImg = document.getElementById('img-gallery-main'); mainImg.classList.remove('zoomed'); mainImg.src = galeriaActiva[index]; document.querySelectorAll('.mac-g-thumb').forEach((thumb, i) => { thumb.classList.toggle('active', i === index); }); }
 
+        // ==========================================================
+        // SISTEMA DE COMPARTIR Y FAVORITOS (NUEVAS FUNCIONALIDADES UX)
+        // ==========================================================
         window.compartirLote = function(numero, titulo, event) {
             if(event) event.stopPropagation();
             const url = window.location.origin + window.location.pathname + '?lote=' + numero;
             if (navigator.share) {
-                navigator.share({ title: titulo || 'Mira este lote', text: 'He estado revisando este Masterplan y me interesó este terreno. Míralo aquí:', url: url }).catch(()=>{});
-            } else { navigator.clipboard.writeText(url).then(() => { alert('✅ Enlace directo copiado al portapapeles.\nPuedes pegarlo en WhatsApp o correo.'); }); }
+                navigator.share({
+                    title: titulo || 'Mira este lote',
+                    text: 'He estado revisando este Masterplan y me interesó este terreno. Míralo aquí:',
+                    url: url
+                }).catch(()=>{});
+            } else {
+                navigator.clipboard.writeText(url).then(() => {
+                    alert('✅ Enlace directo copiado al portapapeles.\nPuedes pegarlo en WhatsApp o correo.');
+                });
+            }
         }
 
         window.toggleFavorite = function(loteId, event, btnEl) {
             if(event) event.stopPropagation();
             let favs = JSON.parse(localStorage.getItem('mp360_favs') || '[]');
             if(favs.includes(loteId)) {
-                favs = favs.filter(id => id !== loteId); btnEl.classList.remove('active'); btnEl.innerHTML = '🤍';
+                favs = favs.filter(id => id !== loteId);
+                btnEl.classList.remove('active');
+                btnEl.innerHTML = '🤍';
             } else {
-                favs.push(loteId); btnEl.classList.add('active'); btnEl.innerHTML = '❤️';
+                favs.push(loteId);
+                btnEl.classList.add('active');
+                btnEl.innerHTML = '❤️';
             }
             localStorage.setItem('mp360_favs', JSON.stringify(favs));
+            
             const activeFilter = document.querySelector('.filter-btn.active');
-            if(activeFilter && activeFilter.getAttribute('data-status') === 'favoritos') { document.querySelector('.filter-btn[data-status="favoritos"]').click(); } 
-            else { renderSidebarList(BaseDatosLotes); }
+            if(activeFilter && activeFilter.getAttribute('data-status') === 'favoritos') {
+                document.querySelector('.filter-btn[data-status="favoritos"]').click();
+            } else {
+                renderSidebarList(BaseDatosLotes); // Refresca lista para mostrar corazones
+            }
         }
 
+        // ==========================================================
+        // MOTOR DE SIMULACIÓN SOLAR (ASOLAMIENTO)
+        // ==========================================================
         function setupSunEngine() {
             const btn = document.getElementById('js-sun-btn');
             const hud = document.getElementById('sun-hud');
@@ -1489,6 +1517,9 @@
 
             btn.addEventListener('click', () => {
                 if(!visor360) return;
+                
+                // En el hemisferio sur (Chile), el sol está hacia el Norte.
+                // Amanece por el Este (+90° del Norte) y se pone por el Oeste (-90° del Norte).
                 let este = NorteOffset + 90;
                 let norteMediodia = NorteOffset;
                 let oeste = NorteOffset - 90;
@@ -1497,19 +1528,26 @@
                 document.getElementById('js-map-panel')?.classList.remove('open');
                 document.getElementById('js-poi-panel')?.classList.remove('open');
 
+                // Fase 1: Amanecer
                 hud.innerText = "☀️ AMANECER (ESTE)";
                 hud.classList.add('show');
                 visor360.lookAt(5, este, 110, 2000);
                 
+                // Fase 2: Mediodía
                 setTimeout(() => {
                     hud.innerText = "☀️ MEDIODÍA SOLAR (NORTE)";
-                    visor360.lookAt(45, norteMediodia, 110, 3500);
+                    visor360.lookAt(45, norteMediodia, 110, 3500); // Pitch alto para simular sol arriba
                     
+                    // Fase 3: Atardecer
                     setTimeout(() => {
                         hud.innerText = "☀️ ATARDECER (OESTE)";
                         visor360.lookAt(5, oeste, 110, 3500);
 
-                        setTimeout(() => { hud.classList.remove('show'); }, 3500);
+                        // Ocultar HUD al terminar
+                        setTimeout(() => {
+                            hud.classList.remove('show');
+                        }, 3500);
+
                     }, 4000);
                 }, 2500);
             });
