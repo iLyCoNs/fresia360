@@ -60,6 +60,17 @@
       "id": "nuevo_1782608047991",
       "numero": "00",
       "coordenadasDestino": ""
+    },
+    {
+      "pitch": -0.93,
+      "yaw": 153.33,
+      "titulo": "Costa de Chile",
+      "tipo": "horizonte",
+      "distancia": "71.5",
+      "tiempo": "50",
+      "id": "nuevo_1782608247131",
+      "numero": "00",
+      "coordenadasDestino": ""
     }
   ],
   "trazos": [],
