@@ -16,6 +16,50 @@
       "id": "nuevo_1782607581831",
       "numero": "00",
       "coordenadasDestino": ""
+    },
+    {
+      "pitch": 1.29,
+      "yaw": -7.24,
+      "titulo": "Volcán Calbuco",
+      "tipo": "horizonte",
+      "distancia": "83.2",
+      "tiempo": "59",
+      "id": "nuevo_1782607757155",
+      "numero": "00",
+      "coordenadasDestino": ""
+    },
+    {
+      "pitch": -1.42,
+      "yaw": 1.19,
+      "titulo": "Parque Eólico Aurora",
+      "tipo": "horizonte",
+      "distancia": "16.6",
+      "tiempo": "18",
+      "id": "nuevo_1782607830658",
+      "numero": "00",
+      "coordenadasDestino": ""
+    },
+    {
+      "pitch": 0.39,
+      "yaw": 34.96,
+      "titulo": "Puerto Montt",
+      "tipo": "horizonte",
+      "distancia": "57.6",
+      "tiempo": "41",
+      "id": "nuevo_1782607970987",
+      "numero": "00",
+      "coordenadasDestino": ""
+    },
+    {
+      "pitch": 0.24,
+      "yaw": -107.84,
+      "titulo": "Osorno",
+      "tipo": "horizonte",
+      "distancia": "102.2",
+      "tiempo": "72",
+      "id": "nuevo_1782608047991",
+      "numero": "00",
+      "coordenadasDestino": ""
     }
   ],
   "trazos": [],
