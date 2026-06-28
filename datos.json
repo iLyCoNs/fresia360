@@ -1,146 +1,41 @@
 {
   "origen": {
-    "lat": -41.45532430504251,
-    "lng": -72.99368961907643
+    "lat": -41.22583035619617,
+    "lng": -73.3173470901525
   },
-  "norte": 143.9458220948353,
-  "lotes": [
-    {
-      "pitch": -89.04,
-      "yaw": 29.77,
-      "tipo": "lote",
-      "status": "disponible",
-      "titulo": "Lote 01",
-      "superficie": "5.000 m²",
-      "precio": "UF 12.500",
-      "imagen": "https://raw.githubusercontent.com/iLyCoNs/fresia360/main/assets/lotes/lote_nuevo_1780972932652_1782274527096.jpg",
-      "id": "nuevo_1780972932652",
-      "numero": "01",
-      "terreno": "Plano"
-    }
-  ],
+  "norte": -112.61619796926988,
+  "lotes": [],
   "horizontes": [
     {
-      "pitch": 2.18,
-      "yaw": -142.03,
-      "titulo": "VOLCÁN CALBUCO",
+      "pitch": 1.69,
+      "yaw": -23.35,
+      "titulo": "Volcán Osorno",
       "tipo": "horizonte",
-      "distancia": "34.8",
-      "tiempo": "26",
-      "id": "nuevo_1780973060877",
-      "numero": "00"
-    },
-    {
-      "pitch": 1.82,
-      "yaw": -161.62,
-      "titulo": "VOLCÁN OSORNO",
-      "tipo": "horizonte",
-      "distancia": "56.8",
-      "tiempo": "43",
-      "id": "nuevo_1780973082311",
-      "numero": "00"
-    },
-    {
-      "pitch": -1.89,
-      "yaw": -74.03,
-      "titulo": "ISLA TENGLO",
-      "tipo": "horizonte",
-      "distancia": "4.9",
-      "tiempo": "4",
-      "id": "nuevo_1780973129910",
-      "numero": "00"
-    },
-    {
-      "pitch": -18.94,
-      "yaw": 20.41,
-      "titulo": "ACCESO RUTA TEPUAL",
-      "tipo": "horizonte",
-      "distancia": "0.4",
-      "tiempo": "0",
-      "id": "nuevo_1780973184593",
-      "numero": "00"
-    },
-    {
-      "pitch": -0.26,
-      "yaw": 69.77,
-      "titulo": "AEROPUERTO TEPUAL",
-      "tipo": "horizonte",
-      "distancia": "9.1",
-      "tiempo": "7",
-      "id": "nuevo_1780973241046",
-      "numero": "00"
-    },
-    {
-      "pitch": -4.99,
-      "yaw": -75.3,
-      "titulo": "RUTA 5 SUR",
-      "tipo": "horizonte",
-      "distancia": "1.6",
-      "tiempo": "1",
-      "id": "nuevo_1780973307425",
-      "numero": "05"
-    },
-    {
-      "pitch": -2.52,
-      "yaw": -95.35,
-      "titulo": "PLAZA DE ARMAS ",
-      "tipo": "horizonte",
-      "distancia": "4.9",
-      "tiempo": "4",
-      "id": "nuevo_1780973338419",
-      "numero": "00"
-    },
-    {
-      "pitch": -0.39,
-      "yaw": 177.48,
-      "titulo": "PUERTO VARAS",
-      "tipo": "horizonte",
-      "distancia": "15.3",
-      "tiempo": "11",
-      "id": "nuevo_1780973408614",
-      "numero": "00"
-    },
-    {
-      "pitch": 0.06,
-      "yaw": 3.75,
-      "titulo": "CHILOÉ",
-      "tipo": "horizonte",
-      "distancia": "60.6",
-      "tiempo": "45",
-      "id": "nuevo_1780973639040",
-      "numero": "00"
+      "distancia": "78.8",
+      "tiempo": "56",
+      "id": "nuevo_1782607581831",
+      "numero": "00",
+      "coordenadasDestino": ""
     }
   ],
-  "trazos": [
-    {
-      "id": "temp_1780972286250",
-      "tipo": "solida",
-      "puntos": [
-        [
-          -68.89943495213089,
-          27.959428939249825
-        ],
-        [
-          -69.8483211501151,
-          -23.09420077885204
-        ],
-        [
-          -71.52682318770289,
-          -154.0533470643679
-        ],
-        [
-          -71.10170330466495,
-          150.760407699035
-        ],
-        [
-          -68.89943495213089,
-          27.959428939249825
-        ]
-      ]
-    }
-  ],
+  "trazos": [],
   "configProyecto": {
     "titulo": "PROYECTO FRESIA",
-    "subtitulo": "TERRENOS DE 5.000 M²"
+    "subtitulo": "TERRENOS DE 5.000 M²",
+    "colorDisp": "#10b981",
+    "colorRes": "#f59e0b",
+    "colorVend": "#ef4444",
+    "colorNoDisp": "#94a3b8",
+    "opacidadDisp": 15,
+    "opacidadRes": 15,
+    "opacidadVend": 25,
+    "opacidadNoDisp": 25,
+    "valorUF": 0,
+    "whatsapp": "",
+    "colorPrincipal": "#10b981",
+    "logoUrl": "",
+    "bannerActivo": false,
+    "bannerTipo": "descuento",
+    "bannerTexto": ""
   }
 }
