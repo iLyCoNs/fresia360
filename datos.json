@@ -6,8 +6,8 @@
   "norte": -112.61619796926988,
   "lotes": [
     {
-      "pitch": -58.02,
-      "yaw": -179.3,
+      "pitch": -58.62,
+      "yaw": -178.5,
       "tipo": "lote",
       "status": "disponible",
       "titulo": "Lote 01 (7-A)",
@@ -19,8 +19,8 @@
       "terreno": "Plano"
     },
     {
-      "pitch": -64.04,
-      "yaw": -178.41,
+      "pitch": -64.68,
+      "yaw": -177.25,
       "tipo": "lote",
       "status": "disponible",
       "titulo": "Lote 02 (7-B)",
@@ -32,8 +32,8 @@
       "terreno": "Plano"
     },
     {
-      "pitch": -71.04,
-      "yaw": -176.64,
+      "pitch": -71.5,
+      "yaw": -175.12,
       "tipo": "lote",
       "status": "disponible",
       "titulo": "Lote 03 (7-C)",
@@ -45,8 +45,8 @@
       "terreno": "Plano"
     },
     {
-      "pitch": -79.02,
-      "yaw": -173.28,
+      "pitch": -78.9,
+      "yaw": -169.95,
       "tipo": "lote",
       "status": "disponible",
       "titulo": "Lote 04 (7-D)",
@@ -58,8 +58,8 @@
       "terreno": "Plano"
     },
     {
-      "pitch": -86.67,
-      "yaw": -148.16,
+      "pitch": -86.24,
+      "yaw": -142.47,
       "tipo": "lote",
       "status": "disponible",
       "titulo": "Lote 05 (7-E)",
@@ -71,8 +71,8 @@
       "terreno": "Plano"
     },
     {
-      "pitch": -85.11,
-      "yaw": -28.72,
+      "pitch": -84.24,
+      "yaw": -27.1,
       "tipo": "lote",
       "status": "disponible",
       "titulo": "Lote 06 (7-F)",
@@ -84,8 +84,8 @@
       "terreno": "Plano"
     },
     {
-      "pitch": -77.73,
-      "yaw": -12.74,
+      "pitch": -76.59,
+      "yaw": -12.56,
       "tipo": "lote",
       "status": "disponible",
       "titulo": "Lote 07 (7-G)",
@@ -97,8 +97,8 @@
       "terreno": "Plano"
     },
     {
-      "pitch": -70.25,
-      "yaw": -8.82,
+      "pitch": -69.14,
+      "yaw": -8.73,
       "tipo": "lote",
       "status": "disponible",
       "titulo": "Lote 08 (7-H)",
@@ -110,8 +110,8 @@
       "terreno": "Plano"
     },
     {
-      "pitch": -63.27,
-      "yaw": -6.83,
+      "pitch": -62.29,
+      "yaw": -6.97,
       "tipo": "lote",
       "status": "disponible",
       "titulo": "Lote 09 (7-I)",
@@ -123,8 +123,8 @@
       "terreno": "Plano"
     },
     {
-      "pitch": -56.65,
-      "yaw": -5.63,
+      "pitch": -56.53,
+      "yaw": -5.79,
       "tipo": "lote",
       "status": "disponible",
       "titulo": "Lote 10 (7-J)",
