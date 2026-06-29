@@ -166,6 +166,11 @@
         .dock-item.active::after { opacity: 1; }
         .dock-item span { display: none; }
 
+        .vista-switch-bar { position: absolute; top: 12px; left: 12px; z-index: 20; display: flex; gap: 8px; padding: 4px; border-radius: 14px; background: rgba(0,0,0,0.55); border: 1px solid var(--glass-border); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
+        .vista-switch-btn { border: 1px solid transparent; background: transparent; color: var(--text-muted); padding: 8px 14px; border-radius: 10px; font-size: 11px; font-weight: 700; cursor: pointer; transition: all 0.2s; letter-spacing: 0.2px; }
+        .vista-switch-btn:hover { color: var(--text-main); background: rgba(255,255,255,0.06); }
+        .vista-switch-btn.active { color: #fff; background: linear-gradient(135deg, rgba(10,132,255,0.85), rgba(94,92,230,0.85)); border-color: rgba(255,255,255,0.18); box-shadow: 0 4px 14px rgba(10,132,255,0.35); }
+
         .tab-section { display: none; animation: fadeIn 0.4s ease; height: 100%; }
         .tab-section.active { display: block; }
 
@@ -489,6 +494,10 @@
             <!-- TAB: MAPEO ESPACIAL (360 EDITOR) -->
             <div id="tab-mapeo" class="tab-section" style="height: 100%; padding: 0;">
                 <div style="width: 100%; height: 100%; position: relative; border-radius: 16px; overflow: hidden; border: 1px solid var(--glass-border);">
+                    <div id="mapeo-vista-switch" class="vista-switch-bar">
+                        <button type="button" id="btn-vista-aereo" class="vista-switch-btn active" onclick="cambiarVistaEditor('aereo')">🚁 Vista Aérea</button>
+                        <button type="button" id="btn-vista-suelo" class="vista-switch-btn" onclick="cambiarVistaEditor('suelo')">🌿 Vista Suelo</button>
+                    </div>
                     <div id="mapeo-loader" style="position:absolute; top:0; left:0; width:100%; height:100%; background:var(--glass-bg); display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:10;">
                         <svg class="spinner" width="30" height="30" fill="none" stroke="var(--mac-blue)" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" stroke-linecap="round" stroke-linejoin="round"/></svg>
                         <p style="margin-top: 15px; font-weight: 600;">Inicializando Motor Gráfico 3D...</p>
@@ -580,8 +589,11 @@
     <script>
         // CONFIGURACIÓN CENTRAL
         const FILENAME = "datos.json";
-        let shaActual = ""; 
-        let masterData = {}; 
+        const FILENAME_SUELO = "datos-suelo.json";
+        let shaActual = "";
+        let shaSueloActual = "";
+        let masterData = {};
+        let editorVistaActual = 'aereo';
 
         // MOTOR DE FONDOS DE PANTALLA
         const wallpapers = {
@@ -842,6 +854,13 @@
 
                     if(!masterData.lotes) masterData.lotes = [];
                     if(!masterData.horizontes) masterData.horizontes = [];
+                    if(!masterData.trazos) masterData.trazos = [];
+                    if(!masterData.lotesSuelo) masterData.lotesSuelo = [];
+                    if(!masterData.horizontesSuelo) masterData.horizontesSuelo = [];
+                    if(!masterData.trazosSuelo) masterData.trazosSuelo = [];
+                    if(masterData.norteSuelo === undefined) masterData.norteSuelo = 0;
+
+                    await cargarShaSuelo(user, repo, token);
 
                     safeSetStorage("masterplan_user", user);
                     safeSetStorage("masterplan_repo", repo);
@@ -867,6 +886,82 @@
                 btn.innerText = "Iniciar Sesión";
                 btn.style.pointerEvents = "auto";
                 btn.style.opacity = "1";
+            }
+        }
+
+        async function cargarShaSuelo(user, repo, token) {
+            const url = `https://api.github.com/repos/${user}/${repo}/contents/${FILENAME_SUELO}`;
+            try {
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github.v3+json' }
+                });
+                if (response.ok) {
+                    const jsonRes = await response.json();
+                    shaSueloActual = jsonRes.sha;
+                    const sueloData = JSON.parse(decodeURIComponent(escape(atob(jsonRes.content))));
+                    masterData.lotesSuelo = sueloData.lotes || sueloData.lotesSuelo || [];
+                    masterData.horizontesSuelo = sueloData.horizontes || sueloData.horizontesSuelo || [];
+                    masterData.trazosSuelo = sueloData.trazos || sueloData.trazosSuelo || [];
+                    masterData.norteSuelo = sueloData.norte ?? sueloData.norteSuelo ?? 0;
+                } else {
+                    shaSueloActual = "";
+                }
+            } catch (e) {
+                shaSueloActual = "";
+            }
+        }
+
+        async function subirDatosSuelo(payload) {
+            const user = safeGetStorage("masterplan_user");
+            const repo = safeGetStorage("masterplan_repo");
+            const token = safeGetStorage("masterplan_token");
+            if (!user || !repo || !token) {
+                mostrarToast("Conecta GitHub en Ajustes antes de subir", false);
+                return false;
+            }
+
+            const sueloData = {
+                vista: 'suelo',
+                configProyecto: payload.configProyecto || masterData.configProyecto || {},
+                origen: payload.origen || masterData.origen || null,
+                norte: payload.norte ?? masterData.norteSuelo ?? 0,
+                lotes: payload.lotes || [],
+                horizontes: payload.horizontes || [],
+                trazos: payload.trazos || []
+            };
+
+            const jsonString = JSON.stringify(sueloData, null, 2);
+            const contentEncoded = btoa(unescape(encodeURIComponent(jsonString)));
+            const url = `https://api.github.com/repos/${user}/${repo}/contents/${FILENAME_SUELO}`;
+            const ghPayload = {
+                message: "🌿 Actualización Vista Suelo 360° (Panel Admin)",
+                content: contentEncoded
+            };
+            if (shaSueloActual) ghPayload.sha = shaSueloActual;
+
+            try {
+                const response = await fetch(url, {
+                    method: 'PUT',
+                    headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
+                    body: JSON.stringify(ghPayload)
+                });
+                if (response.ok) {
+                    const result = await response.json();
+                    shaSueloActual = result.content.sha;
+                    masterData.norteSuelo = sueloData.norte;
+                    masterData.lotesSuelo = sueloData.lotes;
+                    masterData.horizontesSuelo = sueloData.horizontes;
+                    masterData.trazosSuelo = sueloData.trazos;
+                    mostrarToast("Vista suelo guardada en datos-suelo.json", true);
+                    return true;
+                }
+                const err = await response.json();
+                alert("⛔ Error al subir vista suelo: " + (err.message || response.status));
+                return false;
+            } catch (error) {
+                alert("⚠️ Error de conexión al subir vista suelo.");
+                return false;
             }
         }
 
@@ -1253,7 +1348,16 @@
                 }
             });
 
-            const jsonString = JSON.stringify(masterData, null, 2);
+            const datosAereos = {
+                origen: masterData.origen,
+                norte: masterData.norte,
+                lotes: masterData.lotes,
+                horizontes: masterData.horizontes,
+                trazos: masterData.trazos,
+                configProyecto: masterData.configProyecto
+            };
+
+            const jsonString = JSON.stringify(datosAereos, null, 2);
             const contentEncoded = btoa(unescape(encodeURIComponent(jsonString)));
 
             const user = safeGetStorage("masterplan_user");
@@ -1317,17 +1421,37 @@
             location.reload();
         }
 
+        function getEditorIframeSrc(vista) {
+            const file = vista === 'suelo' ? 'suelo.html' : 'index.html';
+            return `${file}?admin=true&v=${Date.now()}`;
+        }
+
+        function cambiarVistaEditor(vista) {
+            if (editorVistaActual === vista) return;
+            editorVistaActual = vista;
+            document.getElementById('btn-vista-aereo')?.classList.toggle('active', vista === 'aereo');
+            document.getElementById('btn-vista-suelo')?.classList.toggle('active', vista === 'suelo');
+            const iframe = document.getElementById('iframe-editor-360');
+            const loader = document.getElementById('mapeo-loader');
+            if (loader) loader.style.display = 'flex';
+            if (iframe) {
+                iframe.src = getEditorIframeSrc(vista);
+                iframe.onload = () => { setTimeout(() => { if (loader) loader.style.display = 'none'; }, 900); };
+            }
+        }
+
         function abrirEditorEspacial(dockItem) {
             switchTab('tab-mapeo', dockItem);
             
             const iframe = document.getElementById('iframe-editor-360');
             const loader = document.getElementById('mapeo-loader');
             
-            if(!iframe.src || iframe.src === window.location.href) {
-                iframe.src = `index.html?admin=true&v=${Date.now()}`;
+            if(!iframe.src || iframe.src === window.location.href || !iframe.src.includes('.html')) {
+                if (loader) loader.style.display = 'flex';
+                iframe.src = getEditorIframeSrc(editorVistaActual);
                 
                 iframe.onload = () => {
-                    setTimeout(() => { loader.style.display = 'none'; }, 1000);
+                    setTimeout(() => { if (loader) loader.style.display = 'none'; }, 1000);
                 };
             }
         }
@@ -1337,17 +1461,25 @@
                 console.log("¡Datos espaciales recibidos del motor 3D!");
                 
                 const newData = event.data.payload;
-                
-                masterData.origen = newData.origen;
-                masterData.norte = newData.norte;
-                masterData.lotes = newData.lotes;
-                masterData.horizontes = newData.horizontes;
-                masterData.trazos = newData.trazos;
+                const isSuelo = newData.vista === 'suelo';
 
-                renderUI();
-
-                mostrarToast("Geometría recibida. Subiendo a la bóveda...", true);
-                guardarCambios(); 
+                if (isSuelo) {
+                    masterData.norteSuelo = newData.norte ?? 0;
+                    masterData.lotesSuelo = newData.lotes || [];
+                    masterData.horizontesSuelo = newData.horizontes || [];
+                    masterData.trazosSuelo = newData.trazos || [];
+                    mostrarToast("Vista suelo recibida. Subiendo a la nube...", true);
+                    subirDatosSuelo(newData);
+                } else {
+                    masterData.origen = newData.origen;
+                    masterData.norte = newData.norte;
+                    masterData.lotes = newData.lotes;
+                    masterData.horizontes = newData.horizontes;
+                    masterData.trazos = newData.trazos;
+                    renderUI();
+                    mostrarToast("Geometría aérea recibida. Subiendo a la bóveda...", true);
+                    guardarCambios();
+                }
             }
         });
 
