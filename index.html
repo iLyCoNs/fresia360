@@ -795,7 +795,7 @@
         }
 
         function exportarDatosParaIA(event) {
-            const dataToSave = { configProyecto: ConfigProyecto, origen: OrigenDrone, norte: NorteOffset, lotes: BaseDatosLotes, horizontes: PuntosHorizonte, trazos: allDrawnLines };
+            const dataToSave = { vista: 'aereo', configProyecto: ConfigProyecto, origen: OrigenDrone, norte: NorteOffset, lotes: BaseDatosLotes, horizontes: PuntosHorizonte, trazos: allDrawnLines };
             const urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('admin') === 'true') { window.parent.postMessage({ type: "SAVE_MASTERPLAN_DATA", payload: dataToSave }, "*"); if(event && event.target) { const btn = event.target; const originalText = btn.innerText; btn.innerText = "✅ ENVIADO AL PANEL"; btn.style.background = "#10b981"; setTimeout(() => { btn.innerText = originalText; btn.style.background = ""; }, 2000); } return; }
             const blockIA = JSON.stringify(dataToSave, null, 2); navigator.clipboard.writeText(blockIA).then(() => { alert("✅ MATRIZ JSON COPIADA AL PORTAPAPELES.\n\nPega este código dentro del archivo 'datos.json' en tu repositorio de GitHub para guardar los cambios permanentemente."); }).catch(err => { alert("Tu navegador bloqueó el portapapeles. F12 para copiar manualmente."); console.log(blockIA); });
