@@ -720,22 +720,36 @@
             }
             function lerp2(a, b, t) { return [a[0]+(b[0]-a[0])*t, a[1]+(b[1]-a[1])*t]; }
 
-            // Project every vertex; keep only visible points
-            const allSc = allDrawnLines.flatMap(l => l.puntos.map(pt => toSc(pt))).filter(v => v);
-            if (allSc.length < 4) { alert("⚠️ Posiciona el panorama para que todos los lotes sean visibles e intenta de nuevo."); return; }
+            // Step 1: find true corner vertices (appear in exactly 1 polygon;
+            // interior divider vertices are shared between 2 adjacent lots)
+            const keyMap = {};
+            allDrawnLines.forEach(l => l.puntos.forEach(pt => {
+                const k = `${pt[0].toFixed(2)},${pt[1].toFixed(2)}`;
+                if (!keyMap[k]) keyMap[k] = { pt, n: 0 };
+                keyMap[k].n++;
+            }));
+            const cornerPts = Object.values(keyMap).filter(v => v.n === 1).map(v => v.pt);
+            // Fallback: if occurrence-count gives ≠4, use all unique pitch/yaw vertices
+            const candidatePts = cornerPts.length === 4 ? cornerPts
+                : [...new Map(allDrawnLines.flatMap(l => l.puntos.map(pt =>
+                    [`${pt[0].toFixed(2)},${pt[1].toFixed(2)}`, pt]))).values()];
 
-            // Bounding box of all projected vertices
-            const xs = allSc.map(v=>v[0]), ys = allSc.map(v=>v[1]);
-            const mnX=Math.min(...xs), mxX=Math.max(...xs), mnY=Math.min(...ys), mxY=Math.max(...ys);
+            // Step 2: project candidates to screen
+            const cSc = candidatePts.map(pt => toSc(pt)).filter(v => v);
+            if (cSc.length < 4) { alert("⚠️ Posiciona la vista para ver toda la grilla."); return; }
 
-            // 4 corner pillars = vertex NEAREST to each corner of the bounding box
-            // (robust: no top/bottom classification needed)
-            function nearest(tx, ty) {
-                return allSc.reduce((m,v) => Math.hypot(v[0]-tx,v[1]-ty) < Math.hypot(m[0]-tx,m[1]-ty) ? v : m, allSc[0]);
-            }
-            const TL=nearest(mnX,mnY), TR=nearest(mxX,mnY), BR=nearest(mxX,mxY), BL=nearest(mnX,mxY);
+            // Step 3: identify the 4 corners of the parallelogram using screen X+Y / X-Y.
+            // This is geometrically correct for ANY convex quadrilateral (including diagonal grids):
+            //   TL = min(X+Y)  →  upper-left direction
+            //   TR = max(X-Y)  →  upper-right direction
+            //   BR = max(X+Y)  →  lower-right direction
+            //   BL = min(X-Y)  →  lower-left direction
+            const TL = cSc.reduce((m,v) => (v[0]+v[1]) < (m[0]+m[1]) ? v : m);
+            const TR = cSc.reduce((m,v) => (v[0]-v[1]) > (m[0]-m[1]) ? v : m);
+            const BR = cSc.reduce((m,v) => (v[0]+v[1]) > (m[0]+m[1]) ? v : m);
+            const BL = cSc.reduce((m,v) => (v[0]-v[1]) < (m[0]-m[1]) ? v : m);
 
-            // Re-create N evenly-spaced lots within those 4 pillars
+            // Step 4: re-create N evenly-spaced lots on straight edges TL→TR and BL→BR
             const newLines = [], baseId = 'str_'+Date.now();
             for (let i=0; i<N; i++) {
                 const t0=i/N, t1=(i+1)/N;
@@ -744,7 +758,7 @@
                 if (tl&&tr&&br&&bl) newLines.push({id:baseId+'_'+i, tipo:'solida', puntos:[tl,tr,br,bl]});
             }
             if (newLines.length===N) { allDrawnLines=newLines; refreshAllHotspots(); saveToLocal(); flashScreenSuccess(); }
-            else { alert("⚠️ Enderezado incompleto. Asegúrate de ver toda la grilla en pantalla e intenta de nuevo."); }
+            else { alert("⚠️ Enderezado incompleto. Asegúrate de ver toda la grilla en pantalla."); }
         }
 
         function exportarDatosParaIA(event) {
