@@ -739,17 +739,80 @@
         function distribuirPinesEnRuta() {
             const pins = BaseDatosLotes.filter(l => l.tipo === 'lote');
             const path = [...currentLinePoints];
-            if (!pins.length || path.length < 2) return;
-            pins.sort((a, b) => a.yaw - b.yaw); // preserve relative L→R order
+            if (!pins.length || path.length < 2 || !visor360) return;
+
+            const container = document.getElementById('panorama-container');
+            if (!container) return;
+            const W = container.clientWidth, H = container.clientHeight;
+            const camP = visor360.getPitch() * Math.PI / 180;
+            const camYw = visor360.getYaw() * Math.PI / 180;
+            const hfov = visor360.getHfov();
+            const scp = Math.sin(camP), ccp = Math.cos(camP);
+            const fc = 0.5 * W / Math.tan(hfov * Math.PI / 360);
+            const cxW = W / 2, cyH = H / 2;
+
+            function toSc(py) {
+                const p = py[0] * Math.PI / 180, y = py[1] * Math.PI / 180;
+                const sp = Math.sin(p), cp2 = Math.cos(p);
+                let yd = y - camYw;
+                while (yd > Math.PI) yd -= 2 * Math.PI;
+                while (yd < -Math.PI) yd += 2 * Math.PI;
+                const sy = Math.sin(yd), cy2 = Math.cos(yd);
+                const z = sp * scp + cp2 * cy2 * ccp;
+                return z > 0.0001 ? [cxW + (cp2 * sy / z) * fc, cyH - ((sp * ccp - cp2 * cy2 * scp) / z) * fc] : null;
+            }
+            function toPY(sx, sy) {
+                const r = visor360.mouseEventToCoords({ clientX: DOMCache.viewport.left + sx, clientY: DOMCache.viewport.top + sy });
+                return r ? [parseFloat(r[0].toFixed(2)), parseFloat(r[1].toFixed(2))] : null;
+            }
+            function distAlongPolyline(pt, screenPath, dists) {
+                let bestAlong = 0, bestDist = Infinity;
+                for (let i = 0; i < screenPath.length - 1; i++) {
+                    const ax = screenPath[i][0], ay = screenPath[i][1];
+                    const bx = screenPath[i + 1][0], by = screenPath[i + 1][1];
+                    const dx = bx - ax, dy = by - ay;
+                    const len2 = dx * dx + dy * dy;
+                    let t = len2 > 0 ? ((pt[0] - ax) * dx + (pt[1] - ay) * dy) / len2 : 0;
+                    t = Math.max(0, Math.min(1, t));
+                    const dist = Math.hypot(pt[0] - (ax + t * dx), pt[1] - (ay + t * dy));
+                    const along = dists[i] + t * (dists[i + 1] - dists[i]);
+                    if (dist < bestDist) { bestDist = dist; bestAlong = along; }
+                }
+                return bestAlong;
+            }
+
+            const screenPath = path.map(pt => toSc(pt)).filter(Boolean);
+            if (screenPath.length < 2) return;
+
             const dists = [0];
-            for (let i=1; i<path.length; i++) { const dp=path[i][0]-path[i-1][0], dy=path[i][1]-path[i-1][1]; dists.push(dists[i-1]+Math.sqrt(dp*dp+dy*dy)); }
-            const total = dists[dists.length-1]; const M = pins.length;
+            for (let i = 1; i < screenPath.length; i++) {
+                const dx = screenPath[i][0] - screenPath[i - 1][0];
+                const dy = screenPath[i][1] - screenPath[i - 1][1];
+                dists.push(dists[i - 1] + Math.sqrt(dx * dx + dy * dy));
+            }
+            const total = dists[dists.length - 1];
+            if (total < 1) return;
+
+            pins.sort((a, b) => {
+                const sa = toSc([a.pitch, a.yaw]);
+                const sb = toSc([b.pitch, b.yaw]);
+                if (!sa || !sb) return a.yaw - b.yaw;
+                return distAlongPolyline(sa, screenPath, dists) - distAlongPolyline(sb, screenPath, dists);
+            });
+
+            const M = pins.length;
             pins.forEach((pin, i) => {
-                const t = M===1?0:i/(M-1), d = t*total;
-                let seg = 0; for(let j=1;j<dists.length;j++){if(dists[j]>=d){seg=j-1;break;}} if(seg>=path.length-1) seg=path.length-2;
-                const segLen=dists[seg+1]-dists[seg], segT=segLen>0?(d-dists[seg])/segLen:0;
-                pin.pitch=parseFloat((path[seg][0]+segT*(path[seg+1][0]-path[seg][0])).toFixed(2));
-                pin.yaw  =parseFloat((path[seg][1]+segT*(path[seg+1][1]-path[seg][1])).toFixed(2));
+                const t = M === 1 ? 0 : i / (M - 1);
+                const d = t * total;
+                let seg = 0;
+                for (let j = 1; j < dists.length; j++) { if (dists[j] >= d) { seg = j - 1; break; } }
+                if (seg >= screenPath.length - 1) seg = screenPath.length - 2;
+                const segLen = dists[seg + 1] - dists[seg];
+                const segT = segLen > 0 ? (d - dists[seg]) / segLen : 0;
+                const sx = screenPath[seg][0] + segT * (screenPath[seg + 1][0] - screenPath[seg][0]);
+                const sy = screenPath[seg][1] + segT * (screenPath[seg + 1][1] - screenPath[seg][1]);
+                const py = toPY(sx, sy);
+                if (py) { pin.pitch = py[0]; pin.yaw = py[1]; }
             });
         }
 
