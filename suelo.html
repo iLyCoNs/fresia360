@@ -22,7 +22,9 @@
         #panorama-container canvas { background: transparent !important; }
         #holographic-ui-engine { background: transparent !important; pointer-events: none; }
         #holographic-ui-engine > * { pointer-events: auto; }
-        #loteo-svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; opacity: 0; transition: opacity 0.4s ease; }
+        #loteo-svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; opacity: 0; transition: opacity 0.12s ease; }
+        body.pins-visible .smart-pin-wrapper, body.pins-visible .route-pin-wrapper, body.pins-visible .horizon-hud-wrapper { opacity: 1 !important; animation: none !important; }
+        body.intro-flight-active .pin-scaler { will-change: auto; }
         #loteo-svg path { vector-effect: non-scaling-stroke; stroke-linejoin: round; stroke-linecap: round; }
         .lote-interactivo path { transition: fill 0.3s ease, stroke 0.3s ease, stroke-width 0.3s ease, filter 0.3s ease; cursor: pointer; pointer-events: auto; }
         g.lote-interactivo[data-status="disponible"] path { fill: rgba(var(--c-disp), var(--o-disp)); stroke: rgba(255, 255, 255, 0.8); stroke-width: var(--stroke-dyn); }
@@ -68,7 +70,7 @@
         .watermark { position: absolute; bottom: 6px; left: 50%; transform: translateX(-50%); z-index: 15; font-size: 6px; font-weight: 600; color: rgba(255, 255, 255, 0.3); letter-spacing: 1px; text-transform: uppercase; pointer-events: none; text-shadow: 0 1px 3px rgba(0,0,0,0.8); white-space: nowrap; } .watermark b { color: rgba(255,255,255,0.6); font-weight: 800; } .watermark .version { color: rgba(6, 182, 212, 0.6); font-weight: 800; padding-left: 2px; }
         .poi-trigger-btn { position: absolute; top: 90px; right: 32px; left: auto; z-index: 9999; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(16px); border: 1px solid rgba(147, 197, 253, 0.3); border-radius: 50%; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #fff; box-shadow: 0 10px 25px rgba(0,0,0,0.3); transition: all 0.3s; pointer-events: auto; animation: slideInHeader 1s 4.6s forwards; opacity: 0; outline: none; } .poi-trigger-btn:hover { background: rgba(30, 58, 138, 0.85); border-color: #60a5fa; transform: translateY(-2px); box-shadow: 0 15px 35px rgba(37, 99, 235, 0.4); } .poi-icon { font-size: 20px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)); animation: floatPoi 3s ease-in-out infinite; margin-top: 2px;} @keyframes floatPoi { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
         .poi-panel { position: absolute; top: 90px; right: 84px; left: auto; width: 280px; background: rgba(10, 15, 25, 0.85); backdrop-filter: blur(32px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 16px; padding: 16px; z-index: 999999; box-shadow: 0 20px 50px rgba(0,0,0,0.6); opacity: 0; visibility: hidden; transform: translateX(20px); transition: all 0.3s; pointer-events: auto; } body.has-banner .poi-panel { top: 110px; } .poi-panel.open { opacity: 1; visibility: visible; transform: translateX(0); }
-        .route-pin-wrapper { position: absolute; top: 0; left: 0; transform: translate(-50%, -100%); display: flex; flex-direction: column; align-items: center; z-index: 10; opacity: 0; animation: fadeInPins 1s ease forwards; animation-delay: 5s; pointer-events: auto; cursor: pointer; }
+        .route-pin-wrapper { position: absolute; top: 0; left: 0; transform: translate(-50%, -100%); display: flex; flex-direction: column; align-items: center; z-index: 10; opacity: 0; animation: fadeInPins 0.6s ease forwards; animation-delay: 0.6s; pointer-events: auto; cursor: pointer; }
         .route-pin-wrapper:hover { z-index: 999999; }
         .route-pin-scaler { display: flex; flex-direction: column; align-items: center; transform-origin: bottom center; pointer-events: none; }
         .route-pin-card { background: rgba(14, 20, 32, 0.88); -webkit-backdrop-filter: blur(20px) saturate(180%); backdrop-filter: blur(20px) saturate(180%); border-radius: 8px; padding: 2px 12px 2px 8px; display: flex; flex-direction: row; align-items: center; gap: 8px; box-shadow: 0 4px 18px rgba(0,0,0,0.5), inset 0 0.5px 0 rgba(255,255,255,0.14), 0 0 0 1px rgba(253,146,39,0.22); pointer-events: auto; width: max-content; min-width: 100px; max-width: min(340px, 72vw); border: 1px solid rgba(253,146,39,0.35); border-left: 2px solid #FD9227; transition: transform 0.2s cubic-bezier(.4,0,.2,1), box-shadow 0.2s; line-height: 1.05; }
@@ -89,13 +91,13 @@
         .btn-pin-ruta::before { content:'🛣️'; display:inline-block; font-size:10px; }
         .poi-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); } .poi-header h3 { font-size: 11px; font-weight: 800; color: #fff; text-transform: uppercase; letter-spacing: 1px; margin: 0; } .poi-close { background: rgba(255,255,255,0.1); border: none; color: #fff; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; } .poi-close:hover { background: #ef4444; transform: scale(1.1); }
         .poi-list { display: flex; flex-direction: column; gap: 8px; } .poi-item { display: flex; align-items: center; gap: 12px; background: rgba(255,255,255,0.03); padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.05); cursor: pointer; transition: all 0.2s; } .poi-item:hover { background: rgba(59, 130, 246, 0.15); border-color: rgba(59, 130, 246, 0.4); transform: translateX(4px); } .poi-item-icon { font-size: 16px; } .poi-item-name { flex: 1; font-size: 11px; font-weight: 700; color: #e2e8f0; } .poi-item-arrow { font-size: 10px; color: #3b82f6; font-weight: 900; }
-        .horizon-hud-wrapper { position: absolute; bottom: 0; left: 0; transform: translate(-50%, 0); display: flex; flex-direction: column; align-items: center; pointer-events: auto; cursor: pointer; animation: fadeInHUD 1.5s ease-out forwards; animation-delay: 5s; opacity: 0; z-index: 5; } @keyframes fadeInHUD { from { opacity: 0; transform: translate(-50%, 10px); } to { opacity: 1; transform: translate(-50%, 0); } } .horizon-hud-wrapper:hover { z-index: 999999; }
+        .horizon-hud-wrapper { position: absolute; bottom: 0; left: 0; transform: translate(-50%, 0); display: flex; flex-direction: column; align-items: center; pointer-events: auto; cursor: pointer; animation: fadeInHUD 0.8s ease-out forwards; animation-delay: 0.6s; opacity: 0; z-index: 5; } @keyframes fadeInHUD { from { opacity: 0; transform: translate(-50%, 10px); } to { opacity: 1; transform: translate(-50%, 0); } } .horizon-hud-wrapper:hover { z-index: 999999; }
         .hud-glass-card { background: rgba(26, 56, 87, 0.65); backdrop-filter: blur(8px); border: 1px solid rgba(216, 228, 240, 0.2); border-radius: 8px; padding: 3px 10px; display: flex; flex-direction: column; align-items: center; gap: 2px; transition: all 0.3s; box-shadow: 0 4px 15px rgba(0,0,0,0.3); pointer-events: auto; width: max-content; white-space: nowrap; } .horizon-hud-wrapper:hover .hud-glass-card { transform: translateY(-5px); background: rgba(26, 56, 87, 0.9); border-color: rgba(145, 200, 255, 0.5); box-shadow: 0 10px 25px rgba(0,0,0,0.5), 0 0 15px rgba(145, 200, 255, 0.2); } .hud-label-title { color: #FFFFFF; font-size: 9px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; text-shadow: 0 2px 4px rgba(0,0,0,0.8); pointer-events: none; transition: color 0.3s; } .horizon-hud-wrapper:hover .hud-label-title { color: #91C8FF; } .hud-metrics { display: flex; align-items: center; gap: 6px; pointer-events: none; } .hud-metric-box { display: flex; align-items: baseline; gap: 2px; } .hud-val { color: #91C8FF; font-size: 9px; font-weight: 800; text-shadow: 0 1px 3px rgba(0,0,0,0.8); transition: color 0.3s; } .horizon-hud-wrapper:hover .hud-val { color: #FFFFFF; } .hud-unit { color: #FD9227; font-size: 6px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; } .hud-divider { width: 1px; height: 8px; background: rgba(216, 228, 240, 0.2); } .hud-line-down { width: 1px; height: 25px; background: linear-gradient(to bottom, rgba(216, 228, 240, 0.6), transparent); transition: all 0.3s; pointer-events: none; } .horizon-hud-wrapper:hover .hud-line-down { height: 30px; background: linear-gradient(to bottom, #91C8FF, transparent); width: 2px; } .hud-target-dot { width: 5px; height: 5px; background: #FD9227; border-radius: 50%; box-shadow: 0 0 8px #FD9227, 0 0 0 1.5px rgba(26,56,87,0.5); margin-top: -2px; transition: all 0.3s; pointer-events: none; } .horizon-hud-wrapper:hover .hud-target-dot { transform: scale(1.5); box-shadow: 0 0 12px #FD9227, 0 0 0 2px rgba(253,146,39,0.3); background: #FFFFFF; }
         .horizon-nav-card { position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%) scale(0.95); background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(24px); border: 1px solid rgba(255,255,255,0.2); border-radius: 16px; padding: 14px; width: max-content; min-width: 220px; visibility: hidden; opacity: 0; transition: all 0.2s; pointer-events: none; z-index: 999999; box-shadow: 0 15px 40px rgba(0,0,0,0.6); display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px;} .horizon-nav-card::after { content: ''; position: absolute; bottom: -12px; left: 0; width: 100%; height: 12px; pointer-events: auto;} body:not(.dev-mode-pins-active) .horizon-hud-wrapper:hover .horizon-nav-card, body:not(.dev-mode-pins-active) .horizon-hud-wrapper.pin-card-active .horizon-nav-card { visibility: visible; opacity: 1; pointer-events: auto; transform: translateX(-50%) scale(1); } body:not(.dev-mode-pins-active) .horizon-hud-wrapper.pin-card-active, body:not(.dev-mode-pins-active) .horizon-hud-wrapper:hover { z-index: 999999; } .hnc-title { color: #fff; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px;} .hnc-info { display: flex; justify-content: space-between; font-size: 10px; font-weight: 600; color: #94a3b8;} .hnc-info b { color: #fff;} .hnc-btns { display: flex; gap: 8px; margin-top: 4px; } .hnc-btn { flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 10px; border-radius: 10px; font-size: 10px; font-weight: 700; text-decoration: none; transition: all 0.2s; border: 1px solid transparent; cursor: pointer; pointer-events: auto;} .hnc-btn.waze { background: rgba(0, 194, 255, 0.15); color: #00c2ff; border-color: rgba(0, 194, 255, 0.3);} .hnc-btn.waze:hover { background: #00c2ff; color: #fff; box-shadow: 0 4px 15px rgba(0,194,255,0.4);} .hnc-btn.gmaps { background: rgba(50, 215, 75, 0.15); color: #32d74b; border-color: rgba(50, 215, 75, 0.3);} .hnc-btn.gmaps:hover { background: #32d74b; color: #fff; box-shadow: 0 4px 15px rgba(50,215,75,0.4);} .hnc-section-title { font-size: 8.5px; color: #94a3b8; margin-top: 8px; margin-bottom: -2px; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;}
         #mac-gallery-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(20px); z-index: 999999999; display: flex; align-items: center; justify-content: center; opacity: 0; visibility: hidden; transition: all 0.3s ease; pointer-events: none;} #mac-gallery-modal.open { opacity: 1; visibility: visible; pointer-events: auto;} .mac-g-window { width: 90vw; height: 85vh; max-width: 1200px; background: rgba(15, 22, 36, 0.8); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 30px 60px rgba(0,0,0,0.8); transform: scale(0.95); transition: transform 0.3s; pointer-events: auto; } #mac-gallery-modal.open .mac-g-window { transform: scale(1); } .mac-g-header { height: 44px; display: flex; justify-content: space-between; align-items: center; padding: 0 16px; background: rgba(0,0,0,0.5); border-bottom: 1px solid rgba(255,255,255,0.1); } .mac-g-traffic { display: flex; gap: 8px; } .mac-g-traffic span { width: 12px; height: 12px; border-radius: 50%; display: inline-block; cursor: pointer; transition: transform 0.2s; } .mac-g-traffic span:hover { transform: scale(1.2); } .mac-g-close { background-color: #FF453A; } .mac-g-min { background-color: #FFD60A; } .mac-g-max { background-color: #32D74B; } .mac-g-title { font-size: 13px; font-weight: 700; color: #fff; letter-spacing: 0.5px; position: absolute; left: 50%; transform: translateX(-50%); } .mac-g-body { flex: 1; position: relative; display: flex; justify-content: center; align-items: center; overflow: hidden; } .mac-g-main-img { max-width: 100%; max-height: 100%; object-fit: contain; cursor: zoom-in; transition: transform 0.3s ease; user-select: none;} .mac-g-main-img.zoomed { transform: scale(2); cursor: zoom-out; } .mac-g-nav { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); backdrop-filter: blur(8px); color: white; width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; z-index: 10; box-shadow: 0 4px 15px rgba(0,0,0,0.3);} .mac-g-nav:hover { background: rgba(255,255,255,0.25); transform: translateY(-50%) scale(1.1); } .mac-g-prev { left: 20px; } .mac-g-next { right: 20px; } .mac-g-footer { height: 80px; background: rgba(0,0,0,0.6); border-top: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; gap: 12px; padding: 0 16px; overflow-x: auto; scrollbar-width: none; } .mac-g-footer::-webkit-scrollbar { display: none; } .mac-g-thumb { width: 54px; height: 54px; border-radius: 8px; object-fit: cover; cursor: pointer; border: 2px solid transparent; opacity: 0.5; transition: all 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.5);} .mac-g-thumb:hover { opacity: 0.8; transform: translateY(-2px); } .mac-g-thumb.active { border-color: #3b82f6; opacity: 1; transform: scale(1.05); }
         #pegman-ghost { position: fixed; pointer-events: none; z-index: 99999999; opacity: 0; transform-origin: 50% 5%; transition: opacity 0.15s; margin-left: -7px; margin-top: -2px; } #pegman-ghost img { width: 14px; height: auto; filter: drop-shadow(0 15px 15px rgba(0,0,0,0.6)); pointer-events: none; } #pegman-ghost.active { opacity: 1; } @keyframes shakeError { 0%, 100% { transform: rotate(0deg); } 25% { transform: rotate(-15deg); } 75% { transform: rotate(15deg); } } .shake { animation: shakeError 0.4s ease-in-out; }
         #ghost-pin { position: fixed; pointer-events: none; z-index: 99999999; opacity: 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; width: 40px; height: 80px; transform: translate(-50%, -100%); transition: opacity 0.1s; margin-top: 6px; } #ghost-pin.active { opacity: 1; } .ghost-wrapper { margin-bottom: 25px; animation: ghostFloat 0.6s infinite alternate cubic-bezier(0.4, 0, 0.2, 1); } .ghost-pin-body { width: 32px; height: 32px; background: rgba(6, 182, 212, 0.2); border-radius: 50% 50% 50% 0; transform: rotate(-45deg); border: 2px dashed #22d3ee; box-shadow: 0 0 20px rgba(6, 182, 212, 0.8); display: flex; align-items: center; justify-content: center; } .ghost-pin-body::after { content: ''; width: 12px; height: 12px; background: rgba(255,255,255,0.8); border-radius: 50%; box-shadow: 0 0 10px #fff; } .ghost-pin-laser { position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); width: 2px; height: 35px; background: linear-gradient(to top, rgba(34, 211, 238, 0.8), transparent); } .ghost-pin-target { position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%); width: 8px; height: 8px; background: #fff; border: 2px solid #06b6d4; border-radius: 50%; box-shadow: 0 0 15px #06b6d4, 0 0 0 4px rgba(6, 182, 212, 0.3); } @keyframes ghostFloat { from { transform: translateY(0); } to { transform: translateY(-8px); } }
-        .smart-pin-wrapper { position: absolute; top: 0; left: 0; transform: translate(-50%, -50%); z-index: 10; opacity: 0; animation: fadeInPins 1s ease forwards; animation-delay: 5s; pointer-events: none; } @keyframes fadeInPins { to { opacity: 1; } } .pin-scaler { transition: none !important; transform-origin: center center; pointer-events: none; display: flex; align-items: center; justify-content: center;} .pin-teardrop-container { position: relative; filter: drop-shadow(0 6px 10px rgba(0,0,0,0.5)); transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); pointer-events: auto; cursor: pointer; } .smart-pin-wrapper:hover { z-index: 999999; } .smart-pin-wrapper:hover .pin-teardrop-container { transform: scale(1.15) translateY(-5px); } .pin-teardrop-body { width: 32px; height: 32px; background: #1a1a1a; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); border: 2px solid #1a1a1a; display: flex; align-items: center; justify-content: center; transition: all 0.3s; } .pin-teardrop-core { width: 16px; height: 16px; background: #1a1a1a; border-radius: 50%; transform: rotate(45deg); display: flex; align-items: center; justify-content: center; color: #ffffff; font-weight: 800; font-size: 8px; letter-spacing: -0.5px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.8); border: 1px solid rgba(255,255,255,0.2); } .pin-status-badge { position: absolute; top: -2px; right: -4px; width: 10px; height: 10px; border-radius: 50%; border: 2px solid #1a1a1a; z-index: 2; }
+        .smart-pin-wrapper { position: absolute; top: 0; left: 0; transform: translate(-50%, -50%); z-index: 10; opacity: 0; animation: fadeInPins 0.6s ease forwards; animation-delay: 0.6s; pointer-events: auto; } body.dev-mode-pins-active .smart-pin-wrapper { pointer-events: auto; } @keyframes fadeInPins { to { opacity: 1; } } .pin-scaler { transition: none !important; transform-origin: center center; pointer-events: none; display: flex; align-items: center; justify-content: center;} .pin-teardrop-container { position: relative; filter: drop-shadow(0 6px 10px rgba(0,0,0,0.5)); transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); pointer-events: auto; cursor: pointer; touch-action: manipulation; } .smart-pin-wrapper:hover { z-index: 999999; } .smart-pin-wrapper:hover .pin-teardrop-container { transform: scale(1.15) translateY(-5px); } .pin-teardrop-body { width: 32px; height: 32px; background: #1a1a1a; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); border: 2px solid #1a1a1a; display: flex; align-items: center; justify-content: center; transition: all 0.3s; } .pin-teardrop-core { width: 16px; height: 16px; background: #1a1a1a; border-radius: 50%; transform: rotate(45deg); display: flex; align-items: center; justify-content: center; color: #ffffff; font-weight: 800; font-size: 8px; letter-spacing: -0.5px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.8); border: 1px solid rgba(255,255,255,0.2); } .pin-status-badge { position: absolute; top: -2px; right: -4px; width: 10px; height: 10px; border-radius: 50%; border: 2px solid #1a1a1a; z-index: 2; }
         .smart-pin-wrapper[data-status="disponible"] .pin-teardrop-body { background: rgb(var(--c-disp)); animation: pinPulseDisp 2s infinite alternate; } .pin-status-badge.disponible { background: rgb(var(--c-disp)); box-shadow: 0 0 6px rgb(var(--c-disp)); } @keyframes pinPulseDisp { from { box-shadow: inset 0 0 0 1.5px rgba(255,255,255,0.9), 0 0 10px rgba(var(--c-disp), 0.4); } to { box-shadow: inset 0 0 0 1.5px rgba(255,255,255,1), 0 0 25px rgba(var(--c-disp), 0.9); transform: rotate(-45deg) scale(1.05); } } .smart-pin-wrapper[data-status="reservado"] .pin-teardrop-body { background: rgb(var(--c-res)); animation: pinPulseRes 2s infinite alternate; } .pin-status-badge.reservado { background: rgb(var(--c-res)); box-shadow: 0 0 6px rgb(var(--c-res)); } @keyframes pinPulseRes { from { box-shadow: inset 0 0 0 1.5px rgba(255,255,255,0.9), 0 0 10px rgba(var(--c-res), 0.4); } to { box-shadow: inset 0 0 0 1.5px rgba(255,255,255,1), 0 0 25px rgba(var(--c-res), 0.9); transform: rotate(-45deg) scale(1.05); } } .smart-pin-wrapper[data-status="vendido"] .pin-teardrop-body { background: rgb(var(--c-vend)); box-shadow: inset 0 0 0 1.5px rgba(255,255,255,0.4); opacity: 0.85; filter: grayscale(0.2); } .pin-status-badge.vendido { background: rgb(var(--c-vend)); box-shadow: none; border-color: rgba(255,255,255,0.3); } .smart-pin-wrapper[data-status="no_disponible"] .pin-teardrop-body { background: rgb(var(--c-nodisp)); box-shadow: inset 0 0 0 1.5px rgba(255,255,255,0.5); opacity: 0.9; } .pin-status-badge.no_disponible { background: rgb(var(--c-nodisp)); box-shadow: none; border-color: rgba(255,255,255,0.3); }
         body.pegman-dragging .smart-pin-wrapper.has-360 .pin-teardrop-body { animation: pegmanTargetPulse 1s infinite alternate !important; } body.pegman-dragging .smart-pin-wrapper:not(.has-360) { opacity: 0.3; filter: grayscale(1); } body.pegman-dragging .pin-360 { animation: pegmanTargetPulse360 1s infinite alternate; z-index: 99999; } @keyframes pegmanTargetPulse { from { box-shadow: 0 0 10px #06b6d4, inset 0 0 0 1.5px rgba(255,255,255,0.9); background: linear-gradient(135deg, #06b6d4, #0284c7); transform: rotate(-45deg) scale(1.1); } to { box-shadow: 0 0 30px #06b6d4, inset 0 0 0 2.5px rgba(255,255,255,1); background: linear-gradient(135deg, #0ea5e9, #0369a1); transform: rotate(-45deg) scale(1.3); } } @keyframes pegmanTargetPulse360 { from { box-shadow: 0 0 10px #06b6d4; border-color: #06b6d4; transform: scale(1.1); } to { box-shadow: 0 0 35px #06b6d4; background: #0066cc; color: #fff; border-color: #fff; transform: scale(1.3); } }
         .pin-quick-actions { position: absolute; bottom: calc(100% + 15px); left: 50%; transform: translateX(-50%); display: flex; gap: 6px; background: rgba(15, 22, 36, 0.9); backdrop-filter: blur(12px); padding: 6px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.2); opacity: 0; visibility: hidden; transition: all 0.2s; pointer-events: none; z-index: 9999999; box-shadow: 0 10px 20px rgba(0,0,0,0.5); width: max-content; } .pin-quick-actions::after { content: ''; position: absolute; bottom: -15px; left: 0; width: 100%; height: 15px; } body.dev-mode-pins-active .smart-pin-wrapper:hover .pin-quick-actions, body.dev-mode-pins-active .route-pin-wrapper:hover .pin-quick-actions, body.dev-mode-pins-active .horizon-hud-wrapper:hover .pin-quick-actions { opacity: 1; visibility: visible; pointer-events: auto; bottom: calc(100% + 20px); } .qa-btn { background: rgba(255,255,255,0.05); border: 1px solid transparent; color: #fff; cursor: pointer; padding: 6px; border-radius: 8px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; pointer-events: auto; } .qa-btn:hover { background: rgba(255,255,255,0.2); transform: scale(1.1); } .qa-btn.qa-delete:hover { background: rgba(239, 68, 68, 0.9); color: #fff;}
@@ -229,7 +231,23 @@
         function isSvgRenderAllowed() { if (!isWebGLSupported || !visor360) return false; if (isTouchDevice()) return viewerGpuReady || (visor360.isLoaded && visor360.isLoaded()); return true; }
         const PerfProfile = { isEmbedded: window.self !== window.top, overlayFrame: 0, cameraAnimUntil: 0, init() { if (this.isEmbedded && isTouchDevice()) document.body.classList.add('is-embedded-mobile'); if (this.isEmbedded) document.body.classList.add('is-embedded'); }, isMobileView() { return isTouchDevice() || DOMCache.viewport.w <= 768; }, isCameraBusy() { return Date.now() < this.cameraAnimUntil; }, markCameraAnim(ms) { this.cameraAnimUntil = Date.now() + (ms || 0) + 80; }, lookAtDuration(defaultMs) { if (this.isEmbedded && this.isMobileView()) return Math.min(defaultMs, 850); if (this.isMobileView()) return Math.min(defaultMs, 1100); return defaultMs; }, overlaySkipFrames() { if (this.isEmbedded && this.isMobileView()) return 2; if (this.isMobileView()) return 1; return 0; } };
         function mpLookAt(pitch, yaw, hfov, duration) { if (!visor360) return; const d = PerfProfile.lookAtDuration(duration || 0); if (d > 0) PerfProfile.markCameraAnim(d); visor360.lookAt(pitch, yaw, hfov, d); }
-        function shouldUpdateSVGThisFrame() { if (!allDrawnLines.length && !currentLinePoints.length) return false; if (PerfProfile.isCameraBusy() && PerfProfile.isEmbedded) return false; const skip = PerfProfile.overlaySkipFrames(); if (skip > 0) { PerfProfile.overlayFrame++; return (PerfProfile.overlayFrame % (skip + 1)) === 0; } return true; }
+        function shouldUpdateSVGThisFrame() {
+            if (!allDrawnLines.length && !currentLinePoints.length) return false;
+            if (document.body.classList.contains('intro-flight-active')) {
+                PerfProfile.overlayFrame++;
+                return (PerfProfile.overlayFrame % 2) === 0;
+            }
+            if (PerfProfile.isCameraBusy() && PerfProfile.isEmbedded) return false;
+            const skip = PerfProfile.overlaySkipFrames();
+            if (skip > 0) { PerfProfile.overlayFrame++; return (PerfProfile.overlayFrame % (skip + 1)) === 0; }
+            return true;
+        }
+        function revealLoteoSVG() {
+            syncSVGElements();
+            const svg = document.getElementById('loteo-svg');
+            if (svg && isSvgRenderAllowed()) svg.style.opacity = '1';
+            updateSVGPaths();
+        }
 
         function flashScreenSuccess() {
             let flash = document.createElement('div');
@@ -305,6 +323,7 @@
         function shouldSkipIntroFlight() { const p = new URLSearchParams(window.location.search); if (isSceneEmbedded || PerfProfile.isEmbedded || p.get('nointro') === '1') return true; return false; }
         function runCinematicDroneIntro(onComplete) {
             if (!visor360) { if (onComplete) onComplete(); return; }
+            document.body.classList.add('intro-flight-active');
             const target = getDefaultProjectView();
             const urlParams = new URLSearchParams(window.location.search);
             const targetLoteId = urlParams.get('lote');
@@ -318,18 +337,19 @@
             visor360.setPitch(horizonPitch, 0);
             visor360.setYaw(endYaw - 42, 0);
             visor360.setHfov(132, 0);
-            setTimeout(() => mpLookAt(horizonPitch + 1, endYaw - 14, 128, 3400), 500);
-            setTimeout(() => mpLookAt(glidePitch, endYaw + 6, 118, 3000), 4100);
-            setTimeout(() => mpLookAt(approachPitch, endYaw - 3, 112, 3200), 7300);
-            setTimeout(() => mpLookAt(endPitch, endYaw, endHfov, 3000), 10700);
-            setTimeout(() => { if (onComplete) onComplete(); }, 13900);
+            revealLoteoSVG();
+            setTimeout(() => mpLookAt(horizonPitch + 1, endYaw - 14, 128, 1700), 250);
+            setTimeout(() => mpLookAt(glidePitch, endYaw + 6, 118, 1500), 2050);
+            setTimeout(() => { mpLookAt(approachPitch, endYaw - 3, 112, 1600); revealLoteoSVG(); }, 3650);
+            setTimeout(() => mpLookAt(endPitch, endYaw, endHfov, 1500), 5350);
+            setTimeout(() => { document.body.classList.remove('intro-flight-active'); if (onComplete) onComplete(); }, 6950);
         }
         function finishIntroBootstrap() {
             isIntroAnimating = false;
+            document.body.classList.add('pins-visible');
+            document.body.classList.remove('intro-flight-active');
             mountPanoramaUI();
-            const svg = document.getElementById('loteo-svg');
-            syncSVGElements();
-            if (svg && isSvgRenderAllowed()) svg.style.opacity = '1';
+            revealLoteoSVG();
             if (visor360) {
                 const v = getDefaultProjectView();
                 visor360.lookAt(v.pitch, v.yaw, v.hfov, 0);
@@ -501,17 +521,20 @@
                 renderer.render = function () {
                     originalRender.apply(this, arguments);
                     PerfProfile.overlayFrame++;
+                    const introLight = document.body.classList.contains('intro-flight-active');
                     if (isSvgRenderAllowed() && shouldUpdateSVGThisFrame()) updateSVGPaths();
-                    const compassDial = document.getElementById('js-compass'); if (compassDial) { compassDial.style.transform = `rotate(${-(visor360.getYaw() - NorteOffset)}deg)`; }
-                    const busyLight = PerfProfile.isCameraBusy() && (PerfProfile.isEmbedded || PerfProfile.isMobileView());
-                    if (!busyLight || (PerfProfile.overlayFrame % 2 === 0)) {
+                    if (!introLight) {
+                        const compassDial = document.getElementById('js-compass'); if (compassDial) { compassDial.style.transform = `rotate(${-(visor360.getYaw() - NorteOffset)}deg)`; }
+                    }
+                    const busyLight = !introLight && PerfProfile.isCameraBusy() && (PerfProfile.isEmbedded || PerfProfile.isMobileView());
+                    if (!introLight && (!busyLight || (PerfProfile.overlayFrame % 2 === 0))) {
                         const isMobile = DOMCache.viewport.w <= 768; const currentHfov = visor360.getHfov();
                         let newScale = (isMobile ? 0.30 : 0.45) * (DEFAULT_HFOV / currentHfov); newScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, newScale));
                         const isCompact = DOMCache.viewport.w <= 768 || PerfProfile.isEmbedded;
                         document.querySelectorAll('.pin-scaler').forEach((s) => { const routeBoost = (isCompact && s.classList.contains('route-pin-scaler')) ? 0.90 : 1; s.style.transform = `scale(${(newScale * routeBoost).toFixed(3)})`; });
                         const cardScale = parseFloat(Math.max(0.60, Math.min(1.0, (DEFAULT_HFOV / currentHfov) * (isMobile ? 0.70 : 0.82))).toFixed(3)); document.documentElement.style.setProperty('--card-scale', cardScale);
                     }
-                    if (!busyLight || (PerfProfile.overlayFrame % 3 === 0)) {
+                    if (!introLight && (!busyLight || (PerfProfile.overlayFrame % 3 === 0))) {
                         let zoomFactor = DEFAULT_HFOV / visor360.getHfov(); let baseStroke = DOMCache.viewport.w <= 768 ? 1.2 : 2.0; let dynStroke = baseStroke * zoomFactor;
                         if (DOMCache.viewport.w <= 768) { dynStroke = Math.max(0.8, Math.min(dynStroke, 3.0)); } else { dynStroke = Math.max(1.5, Math.min(dynStroke, 4.5)); }
                         document.documentElement.style.setProperty('--stroke-dyn', dynStroke + 'px'); document.documentElement.style.setProperty('--stroke-dyn-hover', (dynStroke + 1.2) + 'px');
@@ -529,11 +552,10 @@
                 const svg = document.getElementById('loteo-svg');
                 if (renderer) { SmartGpuProfile.patchRenderer(renderer); const canvas = typeof renderer.getCanvas === 'function' ? renderer.getCanvas() : null; SmartGpuProfile.bindContextRecovery(canvas, () => retryPannellumSmart(panoramaBase, true)); hookRendererOverlay(renderer); }
                 if (isIntroAnimating) {
+                    revealLoteoSVG();
                     if (shouldSkipIntroFlight()) finishIntroBootstrap();
                 } else {
-                    syncSVGElements();
-                    if (svg && isSvgRenderAllowed()) svg.style.opacity = '1';
-                    updateSVGPaths();
+                    revealLoteoSVG();
                 }
                 setTimeout(() => { try { renderer?.resize?.(); visor360?.resize?.(); updateSVGPaths(); } catch (e) {} }, 120);
             };
@@ -561,6 +583,7 @@
                     const target = getDefaultProjectView();
                     if (shouldSkipIntroFlight()) { mpLookAt(target.pitch, target.yaw, target.hfov, 0); finishIntroBootstrap(); return; }
                     isIntroAnimating = true;
+                    document.body.classList.add('pins-visible');
                     runCinematicDroneIntro(finishIntroBootstrap);
                 };
                 setTimeout(startWhenReady, shouldSkipIntroFlight() ? 50 : 700);
@@ -568,24 +591,72 @@
             setTimeout(beginIntro, shouldSkipIntroFlight() ? 100 : 1000);
         }
 
-        function closeAllPinCards() { document.querySelectorAll('.pin-card-active').forEach((el) => el.classList.remove('pin-card-active')); }
-        function preparePinHotspot(hotSpotDiv) { hotSpotDiv.style.overflow = 'visible'; }
-        function bindPinCardToggle(wrapper, triggerEl) {
+        function closeAllPinCards() {
+            document.querySelectorAll('.pin-card-active').forEach((el) => {
+                el.classList.remove('pin-card-active');
+                el.style.zIndex = '';
+                el.querySelectorAll('.lote-card, .portal-card, .horizon-nav-card').forEach((cardEl) => {
+                    cardEl.style.visibility = '';
+                    cardEl.style.opacity = '';
+                    cardEl.style.pointerEvents = '';
+                    cardEl.style.transform = '';
+                });
+            });
+        }
+        function setPinCardOpen(wrapper, open) {
+            if (!wrapper) return;
+            const card = wrapper.querySelector('.lote-card, .portal-card, .horizon-nav-card');
+            if (!card) return;
+            if (open) {
+                wrapper.classList.add('pin-card-active');
+                wrapper.style.zIndex = '999999';
+                card.style.visibility = 'visible';
+                card.style.opacity = '1';
+                card.style.pointerEvents = 'auto';
+                if (card.classList.contains('lote-card')) {
+                    const scale = getComputedStyle(document.documentElement).getPropertyValue('--card-scale').trim() || '1';
+                    card.style.transform = `translateX(-50%) scale(${scale})`;
+                } else {
+                    card.style.transform = 'translateX(-50%) scale(1)';
+                }
+            } else {
+                wrapper.classList.remove('pin-card-active');
+                wrapper.style.zIndex = '';
+                card.style.visibility = '';
+                card.style.opacity = '';
+                card.style.pointerEvents = '';
+                card.style.transform = '';
+            }
+        }
+        function togglePinCard(wrapper) {
+            if (!wrapper || document.body.classList.contains('dev-mode-pins-active')) return;
+            const wasActive = wrapper.classList.contains('pin-card-active');
+            closeAllPinCards();
+            if (!wasActive) setPinCardOpen(wrapper, true);
+        }
+        function preparePinHotspot(hotSpotDiv) {
+            hotSpotDiv.style.overflow = 'visible';
+            hotSpotDiv.style.pointerEvents = 'auto';
+        }
+        function bindPinCardToggle(wrapper, triggerEl, hotSpotDiv) {
             if (!wrapper || !triggerEl) return;
-            let touchMoved = false;
-            triggerEl.addEventListener('touchstart', () => { touchMoved = false; }, { passive: true });
-            triggerEl.addEventListener('touchmove', () => { touchMoved = true; }, { passive: true });
-            const toggleCard = (e) => {
-                if (document.body.classList.contains('dev-mode-pins-active')) return;
+            let touchMoved = false, suppressClick = false, toggleLock = false;
+            const onToggle = (e) => {
+                if (toggleLock || document.body.classList.contains('dev-mode-pins-active')) return;
                 if (touchMoved) return;
+                toggleLock = true;
+                setTimeout(() => { toggleLock = false; }, 380);
                 e.preventDefault();
                 e.stopPropagation();
-                const wasActive = wrapper.classList.contains('pin-card-active');
-                closeAllPinCards();
-                if (!wasActive) wrapper.classList.add('pin-card-active');
+                if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
+                togglePinCard(wrapper);
             };
-            triggerEl.addEventListener('click', toggleCard);
-            triggerEl.addEventListener('touchend', toggleCard, { passive: false });
+            triggerEl.addEventListener('touchstart', (e) => { touchMoved = false; e.stopPropagation(); }, { passive: false, capture: true });
+            triggerEl.addEventListener('touchmove', () => { touchMoved = true; }, { passive: true });
+            triggerEl.addEventListener('touchend', (e) => { suppressClick = true; onToggle(e); setTimeout(() => { suppressClick = false; }, 400); }, { passive: false, capture: true });
+            triggerEl.addEventListener('mousedown', (e) => { e.stopPropagation(); }, { capture: true });
+            triggerEl.addEventListener('click', (e) => { if (suppressClick) { e.preventDefault(); return; } onToggle(e); }, { capture: true });
+            if (hotSpotDiv) hotSpotDiv.style.pointerEvents = 'auto';
             wrapper.querySelectorAll('.lote-card, .portal-card, .horizon-nav-card').forEach((cardEl) => {
                 cardEl.addEventListener('mousedown', (e) => e.stopPropagation());
                 cardEl.addEventListener('touchstart', (e) => e.stopPropagation(), { passive: true });
@@ -596,7 +667,6 @@
             const container = document.getElementById('panorama-container'); let startX, startY, startTime; let lastClickTime = 0;
             function handleStart(e) {
                 let mock = getMockEvent(e); startX = mock.clientX; startY = mock.clientY; startTime = Date.now();
-                if (!e.target.closest('.pin-teardrop-container, .pin-360, .hud-glass-card, .lote-card, .portal-card, .horizon-nav-card')) closeAllPinCards();
             }
             function handleEnd(e) {
                 if (draggingVertex) { 
@@ -1130,7 +1200,7 @@
 
             card.innerHTML = `<div class="card-img-box">${favHtml}<img src="${args.imagen}" alt="Lote" draggable="false"><div class="card-status-pill ${args.status || 'disponible'}">${statusText}</div></div><div class="card-content"><div class="card-title">${args.titulo || 'Lote Sin Nombre'}</div><div class="card-price" style="${precioCLP_HTML ? 'margin-bottom:2px;' : ''}">${args.precio || 'UF 0'}</div>${precioCLP_HTML}<div class="card-specs"><div class="spec-item"><span>Superficie</span><b>${args.superficie || '0 m²'}</b></div><div class="spec-item"><span>Terreno</span><b>${args.terreno || 'Plano'}</b></div></div>${actionGrid}</div>`;
                 
-            scaler.appendChild(pinContainer); wrapper.appendChild(scaler); wrapper.appendChild(card); addQuickActions(wrapper, args); hotSpotDiv.appendChild(wrapper); bindPinEvents(pinContainer, args, hotSpotDiv); bindPinCardToggle(wrapper, pinContainer);
+            scaler.appendChild(pinContainer); wrapper.appendChild(scaler); wrapper.appendChild(card); addQuickActions(wrapper, args); hotSpotDiv.appendChild(wrapper); bindPinEvents(pinContainer, args, hotSpotDiv); bindPinCardToggle(wrapper, pinContainer, hotSpotDiv);
         }
 
         function generarPin360(hotSpotDiv, args) {
@@ -1141,7 +1211,7 @@
             const pin = document.createElement('div'); pin.classList.add('pin-360'); pin.innerHTML = `<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg> <span style="font-size:12px; margin-left:4px; font-weight:800;">360°</span>`;
             const card = document.createElement('div'); card.classList.add('portal-card');
             card.innerHTML = `<div class="portal-img-container"><img src="https://images.unsplash.com/photo-1542224566-6e85f2e6772f?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" alt="Vista 360" draggable="false"></div><div class="portal-overlay"><div class="portal-title">${args.titulo || 'VISTA 360'}</div><button onclick="openInAppViewer(event, '${args.url}')" class="portal-btn"><svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg> Explorar Entorno</button></div>`;
-            scaler.appendChild(pin); wrapper.appendChild(scaler); wrapper.appendChild(card); addQuickActions(wrapper, args); hotSpotDiv.appendChild(wrapper); bindPinEvents(pin, args, hotSpotDiv); bindPinCardToggle(wrapper, pin);
+            scaler.appendChild(pin); wrapper.appendChild(scaler); wrapper.appendChild(card); addQuickActions(wrapper, args); hotSpotDiv.appendChild(wrapper); bindPinEvents(pin, args, hotSpotDiv); bindPinCardToggle(wrapper, pin, hotSpotDiv);
         }
 
         function generarMarcadorHorizonte(hotSpotDiv, args) {
@@ -1156,7 +1226,7 @@
             let linkGmapsTerreno = linkGmapsActual; if(OrigenDrone && OrigenDrone.lat) { linkGmapsTerreno = `https://www.google.com/maps/dir/?api=1&origin=${OrigenDrone.lat},${OrigenDrone.lng}&destination=${destinoQuery}&travelmode=driving`; }
 
             wrapper.innerHTML = `<div class="horizon-nav-card"><div class="hnc-title"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg> Viaje a ${args.titulo || 'Destino'}</div><div class="hnc-info"><span>Ruta: <b>${args.distancia || '0 KM'}</b></span><span>Aprox: <b>${args.tiempo || '0 MIN'}</b></span></div><div class="hnc-section-title">🚗 Simular desde el Proyecto:</div><div class="hnc-btns"><a href="${linkGmapsTerreno}" target="_blank" class="hnc-btn gmaps" draggable="false">Ver en G. Maps</a></div><div class="hnc-section-title">📍 Ir desde mi GPS Actual:</div><div class="hnc-btns"><a href="${linkWazeActual}" target="_blank" class="hnc-btn waze" draggable="false">Waze</a><a href="${linkGmapsActual}" target="_blank" class="hnc-btn gmaps" draggable="false">G. Maps</a></div></div><div class="hud-glass-card"><span class="hud-label-title">${args.titulo || 'MARCADOR'}</span><div class="hud-metrics"><div class="hud-metric-box"><span class="hud-val">${dVal}</span><span class="hud-unit">${dUnit}</span></div><div class="hud-divider"></div><div class="hud-metric-box"><span class="hud-val">${tVal}</span><span class="hud-unit">${tUnit}</span></div></div></div><div class="hud-line-down"></div><div class="hud-target-dot"></div>`;
-            hotSpotDiv.appendChild(wrapper); addQuickActions(wrapper, args); const hudTrigger = wrapper.querySelector('.hud-glass-card'); bindPinEvents(hudTrigger, args, hotSpotDiv); bindPinCardToggle(wrapper, hudTrigger);
+            hotSpotDiv.appendChild(wrapper); addQuickActions(wrapper, args); const hudTrigger = wrapper.querySelector('.hud-glass-card'); bindPinEvents(hudTrigger, args, hotSpotDiv); bindPinCardToggle(wrapper, hudTrigger, hotSpotDiv);
         }
 
         function generarMarcadorRuta(hotSpotDiv, args) {
