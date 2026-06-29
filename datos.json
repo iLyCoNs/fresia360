@@ -134,6 +134,15 @@
       "id": "nuevo_1782706140803",
       "numero": "10",
       "terreno": "Plano"
+    },
+    {
+      "pitch": -42,
+      "yaw": 12,
+      "tipo": "vista360",
+      "titulo": "Vista Nivel Suelo",
+      "url": "suelo.html",
+      "id": "portal_suelo_01",
+      "numero": "360"
     }
   ],
   "horizontes": [
@@ -478,6 +487,12 @@
     "logoUrl": "",
     "bannerActivo": false,
     "bannerTipo": "descuento",
-    "bannerTexto": ""
+    "bannerTexto": "",
+    "escena": "principal",
+    "panorama": "loteo360.jpg",
+    "escenas": {
+      "principal": { "html": "index.html", "panorama": "loteo360.jpg", "datos": "datos.json" },
+      "suelo": { "html": "suelo.html", "panorama": "suelo360.jpg", "datos": "datos-suelo.json" }
+    }
   }
 }

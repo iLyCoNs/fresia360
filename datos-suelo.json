@@ -1,0 +1,32 @@
+{
+  "origen": {
+    "lat": -41.22583035619617,
+    "lng": -73.3173470901525
+  },
+  "norte": -112.61619796926988,
+  "lotes": [],
+  "horizontes": [],
+  "trazos": [],
+  "configProyecto": {
+    "titulo": "PARCELAS LOS TRES MAITENES",
+    "subtitulo": "VISTA A NIVEL DE SUELO",
+    "colorDisp": "#10b981",
+    "colorRes": "#f59e0b",
+    "colorVend": "#ef4444",
+    "colorNoDisp": "#94a3b8",
+    "opacidadDisp": 15,
+    "opacidadRes": 15,
+    "opacidadVend": 25,
+    "opacidadNoDisp": 25,
+    "valorUF": 0,
+    "whatsapp": "",
+    "colorPrincipal": "#10b981",
+    "logoUrl": "",
+    "bannerActivo": false,
+    "bannerTipo": "descuento",
+    "bannerTexto": "",
+    "escena": "suelo",
+    "panorama": "suelo360.jpg",
+    "parentHtml": "index.html"
+  }
+}
