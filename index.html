@@ -37,9 +37,15 @@
         .vertex-marker.drawing-node { background: #F59E0B; border-color: #ffffff; }
         .vertex-marker.origin-vertex { background: #f59e0b !important; border-color: #fff !important; width: 18px !important; height: 18px !important; box-shadow: 0 0 0 5px rgba(245,158,11,0.25), 0 0 20px rgba(245,158,11,0.9) !important; animation: closePulse 0.75s ease-in-out infinite alternate; }
         @keyframes closePulse { from { transform: translate(-50%,-50%) scale(1); } to { transform: translate(-50%,-50%) scale(1.55); box-shadow: 0 0 0 8px rgba(245,158,11,0.15), 0 0 28px rgba(245,158,11,1) !important; } }
+        .grid-corner-marker { background: #f59e0b !important; border-color: #fff !important; border-radius: 3px !important; width: 14px !important; height: 14px !important; box-shadow: 0 2px 8px rgba(245,158,11,0.7) !important; }
+        .grid-corner-marker:hover { background: #fff !important; border-color: #f59e0b !important; box-shadow: 0 0 14px rgba(245,158,11,1) !important; }
+        .grid-corner-marker.is-dragging { background: #10b981 !important; border-color: #fff !important; transform: translate(-50%,-50%) scale(1.5); }
+        path.lote-grid { fill: rgba(16,185,129,0.12); stroke: rgba(255,255,255,0.85); stroke-width: var(--stroke-dyn); vector-effect: non-scaling-stroke; stroke-linejoin: round; stroke-linecap: round; transition: fill 0.3s, stroke 0.3s; pointer-events: auto; cursor: pointer; }
+        path.lote-grid:hover { fill: transparent !important; stroke: #ffffff !important; stroke-width: var(--stroke-dyn-hover) !important; filter: drop-shadow(0 0 8px rgba(255,255,255,0.9)); }
         #snap-cursor.is-closing { border-color: #f59e0b !important; background: rgba(245,158,11,0.25) !important; width: 32px !important; height: 32px !important; box-shadow: 0 0 0 5px rgba(245,158,11,0.15), 0 0 20px rgba(245,158,11,0.7); }
         #snap-cursor { position: fixed; width: 20px; height: 20px; border: 2px solid #10b981; border-radius: 50%; transform: translate(-50%, -50%); pointer-events: none; z-index: 9999999; opacity: 0; transition: opacity 0.1s; background: rgba(16, 185, 129, 0.3); }
         #snap-cursor.active { opacity: 1; animation: snapPulse 1s infinite alternate; }
+        #snap-cursor.is-connecting { border-color: #f59e0b !important; background: rgba(245, 158, 11, 0.3) !important; box-shadow: 0 0 12px rgba(245, 158, 11, 0.7); }
         @keyframes snapPulse { from { transform: translate(-50%, -50%) scale(1); } to { transform: translate(-50%, -50%) scale(1.3); } }
         body.heatmap-mode g.lote-interactivo path { stroke: transparent !important; }
         body.heatmap-mode g.lote-interactivo[data-status="disponible"] path { fill: rgba(16, 185, 129, 0.8) !important; filter: drop-shadow(0 0 15px rgba(16,185,129,0.8)); }
@@ -148,7 +154,7 @@
             <div class="filter-group"><button class="filter-btn active" data-status="todos">Todos</button><button class="filter-btn" data-status="favoritos">❤️ Favs</button><button class="filter-btn" data-status="disponible">Disp.</button><button class="filter-btn" data-status="reservado">Reser.</button><button class="filter-btn" data-status="vendido">Vend.</button><button class="filter-btn" data-status="no_disponible">No Disp.</button></div>
             <div class="lotes-list" id="js-lotes-list"></div>
         </div>
-        <div id="dev-toolbar-draw" class="dev-toolbar"><div class="macos-header"><div class="macos-dots"><i></i><i></i><i></i></div><div class="dev-toolbar-title">MODO ARQUITECTO (DIBUJO LIBRE)</div><div style="width: 42px;"></div></div><div class="dev-tools-row"><button class="dev-btn active" id="btn-draw-solid">Sólida</button><button class="dev-btn" id="btn-draw-dash">Punteada</button><button class="dev-btn" id="btn-draw-neon" style="color: #06b6d4;">Neón</button><button class="dev-btn" id="btn-draw-street" title="Dibuja la ruta, las calles se fusionarán al unirse">🛣️ Calle</button><button class="dev-btn" id="btn-draw-rect" title="Añade un polígono base que puedes deformar">🔲 Cuadro Base</button><button class="dev-btn" id="btn-draw-cut" style="color: #f59e0b;" title="Apunta hacia donde quieres cortar">✂️ Subdividir</button><button class="dev-btn" id="btn-eraser" style="color: #fca5a5;">🧹 Goma</button><div style="width: 1px; height: 20px; background: rgba(255,255,255,0.2); margin: 0 5px;"></div><button class="dev-btn action" id="btn-undo-point" title="Borrar último vértice trazado">Deshacer Punto</button><button class="dev-btn export" id="btn-finish-line" title="Sella la figura en el suelo">Terminar y Anclar ⚓</button><button class="dev-btn nuke" id="btn-nuke">🗑️ Limpiar Todo</button><button class="dev-btn export-ai" title="Exportar Matriz JSON al Portapapeles">🤖 COPIAR DATOS IA</button></div></div>
+        <div id="dev-toolbar-draw" class="dev-toolbar"><div class="macos-header"><div class="macos-dots"><i></i><i></i><i></i></div><div class="dev-toolbar-title">MODO ARQUITECTO (DIBUJO LIBRE)</div><div style="width: 42px;"></div></div><div class="dev-tools-row"><button class="dev-btn active" id="btn-draw-solid">Sólida</button><button class="dev-btn" id="btn-draw-dash">Punteada</button><button class="dev-btn" id="btn-draw-neon" style="color: #06b6d4;">Neón</button><button class="dev-btn" id="btn-draw-street" title="Dibuja la ruta, las calles se fusionarán al unirse">🛣️ Calle</button><button class="dev-btn" id="btn-draw-rect" title="Añade un polígono base que puedes deformar">🔲 Cuadro Base</button><button class="dev-btn" id="btn-draw-grid" style="color:#10b981;" title="Grid Lotes: 2 clics → diagonal del rectángulo → elige cuántos lotes. Arrastra las 4 esquinas naranjas para deformar toda la grilla.">📐 Grid Lotes</button><button class="dev-btn" id="btn-draw-cut" style="color: #f59e0b;" title="Apunta hacia donde quieres cortar">✂️ Subdividir</button><button class="dev-btn" id="btn-eraser" style="color: #fca5a5;">🧹 Goma</button><div style="width: 1px; height: 20px; background: rgba(255,255,255,0.2); margin: 0 5px;"></div><button class="dev-btn action" id="btn-undo-point" title="Borrar último vértice trazado">Deshacer Punto</button><button class="dev-btn export" id="btn-finish-line" title="Sella la figura en el suelo">Terminar y Anclar ⚓</button><button class="dev-btn nuke" id="btn-nuke">🗑️ Limpiar Todo</button><button class="dev-btn export-ai" title="Exportar Matriz JSON al Portapapeles">🤖 COPIAR DATOS IA</button></div></div>
         <div id="dev-toolbar-pins" class="dev-toolbar"><div class="macos-header"><div class="macos-dots"><i></i><i></i><i></i></div><div class="dev-toolbar-title">MODO PINES (MAPEO)</div><div style="width: 42px;"></div></div><div class="dev-tools-row"><button class="dev-btn active btn-pin-disp" data-pintype="disponible">Disp.</button><button class="dev-btn btn-pin-res" data-pintype="reservado">Res.</button><button class="dev-btn btn-pin-vend" data-pintype="vendido">Vend.</button><button class="dev-btn btn-pin-nodisp" data-pintype="no_disponible">No Disp.</button><div style="width: 1px; height: 20px; background: rgba(255,255,255,0.2); margin: 0 5px;"></div><button class="dev-btn btn-pin-360" data-pintype="vista360">Pin 360</button><button class="dev-btn btn-pin-hor" data-pintype="horizonte">Horizonte</button><button class="dev-btn" id="btn-set-drone" style="color: #f59e0b;" title="Establecer Coordenadas Base (Lat, Lng)">📍 Origen Drone</button><button class="dev-btn" id="btn-set-north" style="color: #34d399;" title="Fijar la vista actual como el Norte Magnético">🧭 Fijar Norte</button><div style="width: 1px; height: 20px; background: rgba(255,255,255,0.2); margin: 0 5px;"></div><button class="dev-btn action" id="btn-heatmap" title="Activa Telemetría Visual">🔥 Mapa Calor</button><button class="dev-btn" id="btn-edit-titles" style="color: #cbd5e1;" title="Editar Título y Subtítulo Central">📝 Títulos</button><button class="dev-btn nuke" id="btn-nuke-pins">🗑️ Limpiar Todo</button><button class="dev-btn export-ai" title="Exportar Matriz JSON al Portapapeles">🤖 COPIAR DATOS IA</button></div></div>
         <div class="premium-dock" id="js-dock">
             <div class="dock-legend"><div class="legend-item"><div class="legend-dot dot-disp"></div><span class="legend-text">Disponible</span></div><div class="legend-item"><div class="legend-dot dot-res"></div><span class="legend-text">Reservado</span></div><div class="legend-item"><div class="legend-dot dot-vend"></div><span class="legend-text">Vendido</span></div><div class="legend-item"><div class="legend-dot dot-nodisp"></div><span class="legend-text">No Disp.</span></div></div>
@@ -172,6 +178,7 @@
     <script>
         let ConfigProyecto = { titulo: "PROYECTO INMOBILIARIO", subtitulo: "Masterplan Interactivo 360°" };
         let OrigenDrone = null, NorteOffset = 0, BaseDatosLotes = [], PuntosHorizonte = [], allDrawnLines = [], UF_Online = 0;
+        let gridCornerA = null;
         const DOMCache = { paths: {}, markers: {}, viewport: { w: window.innerWidth, h: window.innerHeight, left: 0, top: 0 } }; 
         let isHeatmapActive = false, isWebGLSupported = true, viewerGpuReady = true, smartInitAttempts = 0, panoramaEventsBound = false, pannellumIntroBootstrapped = false, svgFrameCounter = 0;
         function isTouchDevice() { return (navigator.maxTouchPoints || 0) > 0 || ('ontouchstart' in window); }
@@ -236,7 +243,7 @@
         async function fetchValorUFOnline() { try { const response = await fetch('https://mindicador.cl/api/uf', { cache: 'no-store' }); if (response.ok) { const data = await response.json(); if(data && data.serie && data.serie.length > 0) { UF_Online = data.serie[0].valor; return; } } } catch (error) {} }
         async function fetchMasterData() { try { const response = await fetch('datos.json?v=' + new Date().getTime()); if(response.ok) { const data = await response.json(); ConfigProyecto = data.configProyecto || ConfigProyecto; OrigenDrone = data.origen || null; NorteOffset = data.norte || 0; BaseDatosLotes = data.lotes || []; PuntosHorizonte = data.horizontes || []; allDrawnLines = data.trazos || []; } else { loadFromLocal(); } } catch(e) { loadFromLocal(); } applyProjectConfig(); }
 
-        let visor360, currentPinSizeIndex = 1, isIntroAnimating = true, isDevModeDrawActive = false, isDevModePinsActive = false, currentLineType = 'solida', currentLinePoints = [], currentPinTypeMap = 'disponible', currentTempLineId = 'temp_' + Date.now(), draggingVertex = null, pickedPin = null, snapCursor = null, ghostPin = null, snappedCoords = null, activePinArgs = null, isCreatingNewPin = false, isSnapToClose = false;
+        let visor360, currentPinSizeIndex = 1, isIntroAnimating = true, isDevModeDrawActive = false, isDevModePinsActive = false, currentLineType = 'solida', currentLinePoints = [], currentPinTypeMap = 'disponible', currentTempLineId = 'temp_' + Date.now(), draggingVertex = null, pickedPin = null, snapCursor = null, ghostPin = null, snappedCoords = null, activePinArgs = null, isCreatingNewPin = false, isSnapToClose = false, isSnapToExisting = false;
         const DEFAULT_HFOV = 125, MAX_SCALE = 1.0, MIN_SCALE = 0.20, SNAP_DISTANCE = 8.0; 
 
         function intersectSegments(p0, p1, p2, p3) {
@@ -458,12 +465,23 @@
                     let mock = getMockEvent(e);
                     let coords = visor360.mouseEventToCoords(mock);
                     if(coords && !isNaN(coords[0])) {
+                        const np = [parseFloat(coords[0].toFixed(3)), parseFloat(coords[1].toFixed(3))];
                         if (draggingVertex.lineId === currentTempLineId) { 
-                            currentLinePoints[draggingVertex.idx] = [coords[0], coords[1]]; 
+                            currentLinePoints[draggingVertex.idx] = np; 
                         } else { 
                             const linea = allDrawnLines.find((l) => l.id === draggingVertex.lineId); 
-                            if (linea) linea.puntos[draggingVertex.idx] = [coords[0], coords[1]]; 
-                        } 
+                            if (linea) linea.puntos[draggingVertex.idx] = np;
+                        }
+                        // Sync co-located vertices in adjacent lots (shared dividing lines)
+                        if (draggingVertex.origPY) {
+                            const [op, oy] = draggingVertex.origPY;
+                            allDrawnLines.forEach(line => {
+                                if (line.id === draggingVertex.lineId) return;
+                                line.puntos.forEach((pt, idx) => {
+                                    if (Math.abs(pt[0]-op) < 0.08 && Math.abs(pt[1]-oy) < 0.08) line.puntos[idx] = np;
+                                });
+                            });
+                        }
                     }
                     draggingVertex = null; 
                     window.lastMouseX = undefined;
@@ -479,6 +497,29 @@
                     if (Date.now() - lastClickTime < 300 && isDevModeDrawActive) { document.getElementById('btn-finish-line')?.click(); lastClickTime = 0; return; }
                     lastClickTime = Date.now();
                     if (isDevModeDrawActive && currentLineType === 'eraser') { const coords = visor360.mouseEventToCoords(mock); if (!coords) return; let p = coords[0], y = coords[1]; let lineToDelete = null; let minDist = 3.5; allDrawnLines.forEach((line) => { line.puntos.forEach((pt) => { let dist = Math.sqrt(Math.pow(pt[0] - p, 2) + Math.pow(pt[1] - y, 2)); if (dist < minDist) { minDist = dist; lineToDelete = line.id; } }); }); if (lineToDelete) { allDrawnLines = allDrawnLines.filter((l) => l.id !== lineToDelete); refreshAllHotspots(); saveToLocal(); } return; }
+                    if (isDevModeDrawActive && currentLineType === 'grid') {
+                        if (!gridCornerA) {
+                            const coords = visor360.mouseEventToCoords(mock); if (!coords) return;
+                            gridCornerA = { sx: mock.clientX, sy: mock.clientY, pitch: parseFloat(coords[0].toFixed(3)), yaw: parseFloat(coords[1].toFixed(3)) };
+                            const _hid = 'grid_preview_a';
+                            visor360.addHotSpot({ id: _hid, pitch: gridCornerA.pitch, yaw: gridCornerA.yaw, createTooltipFunc: (div) => { div.classList.add('vertex-marker','grid-corner-marker','drawing-node'); div.id = _hid; }, createTooltipArgs: {} });
+                        } else {
+                            const bx = mock.clientX, by = mock.clientY;
+                            const x1 = Math.min(gridCornerA.sx, bx), x2 = Math.max(gridCornerA.sx, bx);
+                            const y1 = Math.min(gridCornerA.sy, by), y2 = Math.max(gridCornerA.sy, by);
+                            function sToPY(sx, sy) { const r = visor360.mouseEventToCoords({ clientX: sx, clientY: sy }); return r ? [parseFloat(r[0].toFixed(3)), parseFloat(r[1].toFixed(3))] : null; }
+                            try { visor360.removeHotSpot('grid_preview_a'); } catch(e){}
+                            const divStr = prompt('¿Cuántos lotes quieres crear? (1–20)', '4');
+                            const N = Math.max(1, Math.min(20, parseInt(divStr) || 4));
+                            const topPts = [], botPts = [];
+                            for (let i = 0; i <= N; i++) { const sx = x1+(x2-x1)*i/N; const tp = sToPY(sx,y1), bp = sToPY(sx,y2); if(!tp||!bp){gridCornerA=null;return;} topPts.push(tp); botPts.push(bp); }
+                            const baseId = 'glot_' + Date.now();
+                            for (let i = 0; i < N; i++) { allDrawnLines.push({ id: baseId+'_'+i, tipo: 'solida', puntos: [topPts[i], topPts[i+1], botPts[i+1], botPts[i]] }); }
+                            gridCornerA = null;
+                            refreshAllHotspots(); saveToLocal();
+                        }
+                        return;
+                    }
                     if (isDevModeDrawActive) {
                         const coords = visor360.mouseEventToCoords(mock); if (!coords) return; let p = coords[0], y = coords[1]; let isClosingShape = false;
                         if (currentLineType === 'cortar') {
@@ -492,9 +533,10 @@
                             } return;
                         }
                         if (snappedCoords) { p = snappedCoords[0]; y = snappedCoords[1]; }
-                        if (currentLinePoints.length >= 3) { let dOrg = Math.sqrt(Math.pow(p-currentLinePoints[0][0],2)+Math.pow(y-currentLinePoints[0][1],2)); if (dOrg < SNAP_DISTANCE) isClosingShape = true; }
-                        if (!isClosingShape && snappedCoords && currentLinePoints.length >= 2 && Math.abs(p-currentLinePoints[0][0]) < 0.01 && Math.abs(y-currentLinePoints[0][1]) < 0.01) isClosingShape = true;
-                        if (isClosingShape) { document.getElementById('btn-finish-line')?.click(); } else { currentLinePoints.push([p, y]); let _hid = 'temp_base_pt_'+Date.now(); visor360.addHotSpot({ pitch: p, yaw: y, id: _hid, createTooltipFunc: renderHiddenVertex, createTooltipArgs: { lineId: currentTempLineId, type: currentLineType, isGuide: true, idx: currentLinePoints.length-1, hsId: _hid }, }); syncSVGElements(); updateSVGPaths(); }
+                        const _snapCloseR = SNAP_DISTANCE * (isTouchDevice() ? 2.5 : 1.5);
+                        if (currentLinePoints.length >= 3) { let dOrg = Math.sqrt(Math.pow(p-currentLinePoints[0][0],2)+Math.pow(y-currentLinePoints[0][1],2)); if (dOrg < _snapCloseR) isClosingShape = true; }
+                        if (!isClosingShape && snappedCoords && currentLinePoints.length >= 2 && Math.abs(p-currentLinePoints[0][0]) < 0.05 && Math.abs(y-currentLinePoints[0][1]) < 0.05) isClosingShape = true;
+                        if (isClosingShape) { document.getElementById('btn-finish-line')?.click(); } else { currentLinePoints.push([p, y]); if (isSnapToExisting && currentLinePoints.length >= 3) { document.getElementById('btn-finish-line')?.click(); } else { let _hid = 'temp_base_pt_'+Date.now(); visor360.addHotSpot({ pitch: p, yaw: y, id: _hid, createTooltipFunc: renderHiddenVertex, createTooltipArgs: { lineId: currentTempLineId, type: currentLineType, isGuide: true, idx: currentLinePoints.length-1, hsId: _hid }, }); syncSVGElements(); updateSVGPaths(); } }
                     } else if (isDevModePinsActive && !pickedPin) {
                         if (e.target && e.target.closest('.qa-btn')) return; const coords = visor360.mouseEventToCoords(mock); if (!coords) return; const p = coords[0].toFixed(2), y = coords[1].toFixed(2); let baseArgs = { pitch: parseFloat(p), yaw: parseFloat(y) };
                         if (currentPinTypeMap === 'horizonte') {
@@ -517,7 +559,38 @@
                     return; 
                 }
                 
-                try { const coords = visor360.mouseEventToCoords(mock); let foundSnap = false; snappedCoords = null; isSnapToClose = false; if (currentLinePoints.length >= 3 && currentLineType !== 'cortar' && currentLineType !== 'eraser') { let dP0 = Math.sqrt(Math.pow(coords[0]-currentLinePoints[0][0],2)+Math.pow(coords[1]-currentLinePoints[0][1],2)); if (dP0 < SNAP_DISTANCE) { foundSnap = true; snappedCoords = [...currentLinePoints[0]]; isSnapToClose = true; } } if (!foundSnap) { const allPts = [...currentLinePoints]; allDrawnLines.forEach((l) => allPts.push(...l.puntos)); for (let pt of allPts) { const d = Math.sqrt(Math.pow(pt[0]-coords[0],2)+Math.pow(pt[1]-coords[1],2)); if (d < SNAP_DISTANCE) { foundSnap = true; snappedCoords = [...pt]; break; } } } if (foundSnap) { snapCursor.style.left = mock.clientX+'px'; snapCursor.style.top = mock.clientY+'px'; snapCursor.classList.add('active'); snapCursor.classList.toggle('is-closing', isSnapToClose); } else { snapCursor.classList.remove('active'); snapCursor.classList.remove('is-closing'); } } catch (err) {}
+                try {
+                    const coords = visor360.mouseEventToCoords(mock);
+                    let foundSnap = false; snappedCoords = null; isSnapToClose = false; isSnapToExisting = false;
+                    const touch = isTouchDevice();
+                    const SNAP_CLOSE  = SNAP_DISTANCE * (touch ? 2.5 : 1.5);
+                    const SNAP_EXIST  = SNAP_DISTANCE * (touch ? 5.0 : 3.0);
+                    // 1. Snap to own polygon origin (green – close shape)
+                    if (currentLinePoints.length >= 3 && currentLineType !== 'cortar' && currentLineType !== 'eraser') {
+                        const dP0 = Math.sqrt(Math.pow(coords[0]-currentLinePoints[0][0],2)+Math.pow(coords[1]-currentLinePoints[0][1],2));
+                        if (dP0 < SNAP_CLOSE) { foundSnap = true; snappedCoords = [...currentLinePoints[0]]; isSnapToClose = true; }
+                    }
+                    // 2. Snap to nearest sealed polygon vertex (amber – connect to existing lot)
+                    if (!foundSnap) {
+                        let minD = Infinity, nearPt = null;
+                        allDrawnLines.forEach(l => l.puntos.forEach(pt => {
+                            const d = Math.sqrt(Math.pow(pt[0]-coords[0],2)+Math.pow(pt[1]-coords[1],2));
+                            if (d < SNAP_EXIST && d < minD) { minD = d; nearPt = pt; }
+                        }));
+                        if (nearPt) { foundSnap = true; snappedCoords = [...nearPt]; isSnapToExisting = true; }
+                    }
+                    // 3. Snap to own current line points
+                    if (!foundSnap) {
+                        let minD = Infinity, nearPt = null;
+                        currentLinePoints.forEach(pt => {
+                            const d = Math.sqrt(Math.pow(pt[0]-coords[0],2)+Math.pow(pt[1]-coords[1],2));
+                            if (d < SNAP_DISTANCE && d < minD) { minD = d; nearPt = pt; }
+                        });
+                        if (nearPt) { foundSnap = true; snappedCoords = [...nearPt]; }
+                    }
+                    if (foundSnap) { snapCursor.style.left = mock.clientX+'px'; snapCursor.style.top = mock.clientY+'px'; snapCursor.classList.add('active'); snapCursor.classList.toggle('is-closing', isSnapToClose); snapCursor.classList.toggle('is-connecting', isSnapToExisting); }
+                    else { snapCursor.classList.remove('active'); snapCursor.classList.remove('is-closing'); snapCursor.classList.remove('is-connecting'); }
+                } catch (err) {}
             }
             container.addEventListener('mousedown', handleStart); container.addEventListener('touchstart', handleStart, { passive: false }); window.addEventListener('mouseup', handleEnd); window.addEventListener('touchend', handleEnd); window.addEventListener('mousemove', handleMove); window.addEventListener('touchmove', handleMove, { passive: false });
         }
@@ -591,7 +664,7 @@
             document.getElementById('pin-editor-modal').classList.add('open');
         }
 
-        function toggleDrawMode(forceActive) { isDevModeDrawActive = forceActive; document.getElementById('dev-toolbar-draw')?.classList.toggle('show', isDevModeDrawActive); document.body.classList.toggle('dev-mode-active', isDevModeDrawActive); refreshAllHotspots(); }
+        function toggleDrawMode(forceActive) { isDevModeDrawActive = forceActive; if (!forceActive) { gridCornerA = null; } document.getElementById('dev-toolbar-draw')?.classList.toggle('show', isDevModeDrawActive); document.body.classList.toggle('dev-mode-active', isDevModeDrawActive); refreshAllHotspots(); }
         function togglePinsMode(forceActive) { isDevModePinsActive = forceActive; document.getElementById('dev-toolbar-pins')?.classList.toggle('show', isDevModePinsActive); document.body.classList.toggle('dev-mode-pins-active', isDevModePinsActive); refreshAllHotspots(); }
 
         function setupDevModes() {
@@ -602,6 +675,7 @@
             document.getElementById('btn-draw-dash')?.addEventListener('click', (e) => { setDrawMode('punteada', e.target); }); 
             document.getElementById('btn-draw-neon')?.addEventListener('click', (e) => { setDrawMode('neon', e.target); }); 
             document.getElementById('btn-draw-street')?.addEventListener('click', (e) => { setDrawMode('calle', e.target); }); 
+            document.getElementById('btn-draw-grid')?.addEventListener('click', (e) => { gridCornerA = null; setDrawMode('grid', e.target); });
             document.getElementById('btn-draw-cut')?.addEventListener('click', (e) => { setDrawMode('cortar', e.target); });
             document.getElementById('btn-eraser')?.addEventListener('click', (e) => { setDrawMode('eraser', e.target); });
             
@@ -621,7 +695,7 @@
             document.getElementById('btn-heatmap')?.addEventListener('click', function() { isHeatmapActive = !isHeatmapActive; this.classList.toggle('active', isHeatmapActive); document.body.classList.toggle('heatmap-mode', isHeatmapActive); updateSVGPaths(); });
         }
         
-        function limpiarProyecto() { if(!confirm("⚠️ ¡ADVERTENCIA NUCLEAR! Vas a borrar TODOS los lotes, calles y pines.\n\n¿Estás seguro?")) return; BaseDatosLotes = []; PuntosHorizonte = []; allDrawnLines = []; currentLinePoints = []; refreshAllHotspots(); localStorage.removeItem('masterplan360_autosave'); }
+        function limpiarProyecto() { if(!confirm("⚠️ ¡ADVERTENCIA NUCLEAR! Vas a borrar TODOS los lotes, calles y pines.\n\n¿Estás seguro?")) return; BaseDatosLotes = []; PuntosHorizonte = []; allDrawnLines = []; currentLinePoints = []; gridCornerA = null; refreshAllHotspots(); localStorage.removeItem('masterplan360_autosave'); }
 
         function exportarDatosParaIA(event) {
             const dataToSave = { configProyecto: ConfigProyecto, origen: OrigenDrone, norte: NorteOffset, lotes: BaseDatosLotes, horizontes: PuntosHorizonte, trazos: allDrawnLines };
@@ -636,7 +710,13 @@
             if (args.lineId === currentTempLineId) { hotSpotDiv.classList.add('drawing-node'); }
             if (args.lineId === currentTempLineId && args.idx === 0 && currentLinePoints.length >= 3 && currentLineType !== 'cortar' && currentLineType !== 'eraser') { hotSpotDiv.classList.add('origin-vertex'); }
             if (args.isGuide && currentLineType !== 'eraser' && currentLineType !== 'cortar') { 
-                const startDragGuide = (e) => { e.stopPropagation(); e.preventDefault(); hotSpotDiv.classList.add('is-dragging'); draggingVertex = { lineId: args.lineId, idx: args.idx, el: hotSpotDiv, hsId: args.hsId }; }; 
+                const startDragGuide = (e) => {
+                    e.stopPropagation(); e.preventDefault(); hotSpotDiv.classList.add('is-dragging');
+                    let origPY = null;
+                    if (args.lineId === currentTempLineId) { if (currentLinePoints[args.idx]) origPY = [...currentLinePoints[args.idx]]; }
+                    else { const l = allDrawnLines.find(x => x.id === args.lineId); if (l && l.puntos[args.idx]) origPY = [...l.puntos[args.idx]]; }
+                    draggingVertex = { lineId: args.lineId, idx: args.idx, el: hotSpotDiv, hsId: args.hsId, origPY };
+                }; 
                 hotSpotDiv.addEventListener('mousedown', startDragGuide); hotSpotDiv.addEventListener('touchstart', startDragGuide, {passive: false}); 
             } 
         }
