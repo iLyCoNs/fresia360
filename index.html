@@ -172,7 +172,7 @@
             <div class="lotes-list" id="js-lotes-list"></div>
         </div>
         <div id="dev-toolbar-draw" class="dev-toolbar"><div class="macos-header"><div class="macos-dots"><i></i><i></i><i></i></div><div class="dev-toolbar-title">MODO ARQUITECTO (DIBUJO LIBRE)</div><div style="width: 42px;"></div></div><div class="dev-tools-row"><button class="dev-btn active" id="btn-draw-solid">Sólida</button><button class="dev-btn" id="btn-draw-dash">Punteada</button><button class="dev-btn" id="btn-draw-neon" style="color: #06b6d4;">Neón</button><button class="dev-btn" id="btn-draw-street" title="Dibuja la ruta, las calles se fusionarán al unirse">🛣️ Calle</button><button class="dev-btn" id="btn-draw-rect" title="Añade un polígono base que puedes deformar">🔲 Cuadro Base</button><button class="dev-btn" id="btn-draw-grid" style="color:#10b981;" title="Grid Lotes: 2 clics → diagonal del rectángulo → elige cuántos lotes. Arrastra las 4 esquinas naranjas para deformar toda la grilla.">📐 Grid Lotes</button><button class="dev-btn" id="btn-draw-cut" style="color: #f59e0b;" title="Apunta hacia donde quieres cortar">✂️ Subdividir</button><button class="dev-btn" id="btn-eraser" style="color: #fca5a5;">🧹 Goma</button><div style="width: 1px; height: 20px; background: rgba(255,255,255,0.2); margin: 0 5px;"></div><button class="dev-btn action" id="btn-undo-point" title="Borrar último vértice trazado">Deshacer Punto</button><button class="dev-btn export" id="btn-finish-line" title="Sella la figura en el suelo">Terminar y Anclar ⚓</button><button class="dev-btn" id="btn-straighten" style="color:#06b6d4;border-color:rgba(6,182,212,0.4);" title="Endereza todos los lotes: promedia los bordes superior/inferior y espacia los divisores equitativamente → grilla rectangular perfecta">📏 Enderezar</button><button class="dev-btn nuke" id="btn-nuke">🗑️ Limpiar Todo</button><button class="dev-btn export-ai" title="Exportar Matriz JSON al Portapapeles">🤖 COPIAR DATOS IA</button></div></div>
-        <div id="dev-toolbar-pins" class="dev-toolbar"><div class="macos-header"><div class="macos-dots"><i></i><i></i><i></i></div><div class="dev-toolbar-title">MODO PINES (MAPEO)</div><div style="width: 42px;"></div></div><div class="dev-tools-row"><button class="dev-btn active btn-pin-disp" data-pintype="disponible">Disp.</button><button class="dev-btn btn-pin-res" data-pintype="reservado">Res.</button><button class="dev-btn btn-pin-vend" data-pintype="vendido">Vend.</button><button class="dev-btn btn-pin-nodisp" data-pintype="no_disponible">No Disp.</button><div style="width: 1px; height: 20px; background: rgba(255,255,255,0.2); margin: 0 5px;"></div><div class="dev-toolbar-sep"></div><button class="dev-btn btn-pin-360" data-pintype="vista360">Pin 360</button><button class="dev-btn btn-pin-hor" data-pintype="horizonte">Horizonte</button><button class="dev-btn btn-pin-ruta" data-pintype="ruta" style="color:#f59e0b;">Ruta</button><div class="dev-toolbar-sep"></div><button class="dev-btn" id="btn-align-line" style="color:#a78bfa;" title="Alinear todos los pines en línea recta horizontal">↔ Línea</button><button class="dev-btn" id="btn-align-arc" style="color:#a78bfa;" title="Distribuir pines en arco semicircular">⌒ Arco</button><button class="dev-btn" id="btn-align-oval" style="color:#a78bfa;" title="Distribuir pines en óvalo completo">◯ Oval</button><div class="dev-toolbar-sep"></div><button class="dev-btn" id="btn-set-drone" style="color: #f59e0b;" title="Establecer Coordenadas Base (Lat, Lng)">📍 Origen Drone</button><button class="dev-btn" id="btn-set-north" style="color: #34d399;" title="Fijar la vista actual como el Norte Magnético">🧭 Fijar Norte</button><div class="dev-toolbar-sep"></div><button class="dev-btn action" id="btn-heatmap" title="Activa Telemetría Visual">🔥 Mapa Calor</button><button class="dev-btn" id="btn-edit-titles" style="color: #cbd5e1;" title="Editar Título y Subtítulo Central">📝 Títulos</button><button class="dev-btn nuke" id="btn-nuke-pins">🗑️ Limpiar Todo</button><button class="dev-btn export-ai" title="Exportar Matriz JSON al Portapapeles">🤖 COPIAR DATOS IA</button></div></div>
+        <div id="dev-toolbar-pins" class="dev-toolbar"><div class="macos-header"><div class="macos-dots"><i></i><i></i><i></i></div><div class="dev-toolbar-title">MODO PINES (MAPEO)</div><div style="width: 42px;"></div></div><div class="dev-tools-row"><button class="dev-btn active btn-pin-disp" data-pintype="disponible">Disp.</button><button class="dev-btn btn-pin-res" data-pintype="reservado">Res.</button><button class="dev-btn btn-pin-vend" data-pintype="vendido">Vend.</button><button class="dev-btn btn-pin-nodisp" data-pintype="no_disponible">No Disp.</button><div style="width: 1px; height: 20px; background: rgba(255,255,255,0.2); margin: 0 5px;"></div><div class="dev-toolbar-sep"></div><button class="dev-btn btn-pin-360" data-pintype="vista360">Pin 360</button><button class="dev-btn btn-pin-hor" data-pintype="horizonte">Horizonte</button><button class="dev-btn btn-pin-ruta" data-pintype="ruta" style="color:#f59e0b;">Ruta</button><div class="dev-toolbar-sep"></div><button class="dev-btn" id="btn-pin-path" style="color:#a78bfa;" title="Dibuja una ruta: los pines de lote seguirán ese camino. Doble-clic para confirmar.">✏️ Distribuir</button><div class="dev-toolbar-sep"></div><button class="dev-btn" id="btn-set-drone" style="color: #f59e0b;" title="Establecer Coordenadas Base (Lat, Lng)">📍 Origen Drone</button><button class="dev-btn" id="btn-set-north" style="color: #34d399;" title="Fijar la vista actual como el Norte Magnético">🧭 Fijar Norte</button><div class="dev-toolbar-sep"></div><button class="dev-btn action" id="btn-heatmap" title="Activa Telemetría Visual">🔥 Mapa Calor</button><button class="dev-btn" id="btn-edit-titles" style="color: #cbd5e1;" title="Editar Título y Subtítulo Central">📝 Títulos</button><button class="dev-btn nuke" id="btn-nuke-pins">🗑️ Limpiar Todo</button><button class="dev-btn export-ai" title="Exportar Matriz JSON al Portapapeles">🤖 COPIAR DATOS IA</button></div></div>
         <div class="premium-dock" id="js-dock">
             <div class="dock-legend"><div class="legend-item"><div class="legend-dot dot-disp"></div><span class="legend-text">Disponible</span></div><div class="legend-item"><div class="legend-dot dot-res"></div><span class="legend-text">Reservado</span></div><div class="legend-item"><div class="legend-dot dot-vend"></div><span class="legend-text">Vendido</span></div><div class="legend-item"><div class="legend-dot dot-nodisp"></div><span class="legend-text">No Disp.</span></div></div>
             <div class="dock-btn pegman-dock-btn" id="js-pegman" title="Arrastra para 360°"><img src="https://raw.githubusercontent.com/iLyCoNs/panellum/refs/heads/main/street.png" alt="Street View" class="pegman-img"><span class="hide-mobile">Arrastra para 360°</span><span class="hide-desktop">360°</span></div>
@@ -260,7 +260,7 @@
         async function fetchValorUFOnline() { try { const response = await fetch('https://mindicador.cl/api/uf', { cache: 'no-store' }); if (response.ok) { const data = await response.json(); if(data && data.serie && data.serie.length > 0) { UF_Online = data.serie[0].valor; return; } } } catch (error) {} }
         async function fetchMasterData() { try { const response = await fetch('datos.json?v=' + new Date().getTime()); if(response.ok) { const data = await response.json(); ConfigProyecto = data.configProyecto || ConfigProyecto; OrigenDrone = data.origen || null; NorteOffset = data.norte || 0; BaseDatosLotes = data.lotes || []; PuntosHorizonte = data.horizontes || []; allDrawnLines = data.trazos || []; } else { loadFromLocal(); } } catch(e) { loadFromLocal(); } applyProjectConfig(); }
 
-        let visor360, currentPinSizeIndex = 1, isIntroAnimating = true, isDevModeDrawActive = false, isDevModePinsActive = false, currentLineType = 'solida', currentLinePoints = [], currentPinTypeMap = 'disponible', currentTempLineId = 'temp_' + Date.now(), draggingVertex = null, pickedPin = null, snapCursor = null, ghostPin = null, snappedCoords = null, activePinArgs = null, isCreatingNewPin = false, isSnapToClose = false, isSnapToExisting = false;
+        let visor360, currentPinSizeIndex = 1, isIntroAnimating = true, isDevModeDrawActive = false, isDevModePinsActive = false, isPinPathMode = false, currentLineType = 'solida', currentLinePoints = [], currentPinTypeMap = 'disponible', currentTempLineId = 'temp_' + Date.now(), draggingVertex = null, pickedPin = null, snapCursor = null, ghostPin = null, snappedCoords = null, activePinArgs = null, isCreatingNewPin = false, isSnapToClose = false, isSnapToExisting = false;
         const DEFAULT_HFOV = 125, MAX_SCALE = 1.0, MIN_SCALE = 0.20, SNAP_DISTANCE = 8.0; 
 
         function intersectSegments(p0, p1, p2, p3) {
@@ -513,6 +513,19 @@
                 const timeDiff = Date.now() - startTime; const moveDist = Math.sqrt( Math.pow(mock.clientX - startX, 2) + Math.pow(mock.clientY - startY, 2) );
                 if (timeDiff < 500 && moveDist < 10) {
                     if (Date.now() - lastClickTime < 300 && isDevModeDrawActive) { document.getElementById('btn-finish-line')?.click(); lastClickTime = 0; return; }
+                    // Pin path mode: collect route points; double-click to distribute
+                    if (isDevModePinsActive && isPinPathMode) {
+                        if (Date.now() - lastClickTime < 300 && currentLinePoints.length >= 2) {
+                            distribuirPinesEnRuta();
+                            currentLinePoints = []; currentTempLineId = 'temp_' + Date.now();
+                            isPinPathMode = false; document.getElementById('btn-pin-path')?.classList.remove('active');
+                            lastClickTime = 0; refreshAllHotspots(); saveToLocal(); flashScreenSuccess(); return;
+                        }
+                        lastClickTime = Date.now();
+                        const coords = visor360.mouseEventToCoords(mock); if (!coords) return;
+                        currentLinePoints.push([parseFloat(coords[0].toFixed(2)), parseFloat(coords[1].toFixed(2))]);
+                        syncSVGElements(); updateSVGPaths(); return;
+                    }
                     lastClickTime = Date.now();
                     if (isDevModeDrawActive && currentLineType === 'eraser') { const coords = visor360.mouseEventToCoords(mock); if (!coords) return; let p = coords[0], y = coords[1]; let lineToDelete = null; let minDist = 3.5; allDrawnLines.forEach((line) => { line.puntos.forEach((pt) => { let dist = Math.sqrt(Math.pow(pt[0] - p, 2) + Math.pow(pt[1] - y, 2)); if (dist < minDist) { minDist = dist; lineToDelete = line.id; } }); }); if (lineToDelete) { allDrawnLines = allDrawnLines.filter((l) => l.id !== lineToDelete); refreshAllHotspots(); saveToLocal(); } return; }
                     if (isDevModeDrawActive && currentLineType === 'grid') {
@@ -567,6 +580,7 @@
             function handleMove(e) {
                 let mock = getMockEvent(e); if (mock.clientX === undefined) return;
                 if (isDevModePinsActive && pickedPin) { if (e.cancelable) e.preventDefault(); const gPin = document.getElementById('ghost-pin'); gPin.classList.add('active'); gPin.style.left = mock.clientX + 'px'; gPin.style.top = mock.clientY + 'px'; return; }
+                if (isDevModePinsActive && isPinPathMode && currentLinePoints.length > 0) { window.lastMouseX = mock.clientX; window.lastMouseY = mock.clientY; updateSVGPaths(); }
                 if (!isDevModeDrawActive || !visor360 || currentLineType === 'eraser') { if (snapCursor) snapCursor.classList.remove('active'); return; }
                 if (isDevModeDrawActive) { window.lastMouseX = mock.clientX; window.lastMouseY = mock.clientY; updateSVGPaths(); }
                 
@@ -685,7 +699,7 @@
         }
 
         function toggleDrawMode(forceActive) { isDevModeDrawActive = forceActive; if (!forceActive) { gridCornerA = null; } document.getElementById('dev-toolbar-draw')?.classList.toggle('show', isDevModeDrawActive); document.body.classList.toggle('dev-mode-active', isDevModeDrawActive); refreshAllHotspots(); }
-        function togglePinsMode(forceActive) { isDevModePinsActive = forceActive; document.getElementById('dev-toolbar-pins')?.classList.toggle('show', isDevModePinsActive); document.body.classList.toggle('dev-mode-pins-active', isDevModePinsActive); refreshAllHotspots(); }
+        function togglePinsMode(forceActive) { isDevModePinsActive = forceActive; if (!forceActive && isPinPathMode) { isPinPathMode = false; currentLinePoints = []; document.getElementById('btn-pin-path')?.classList.remove('active'); } document.getElementById('dev-toolbar-pins')?.classList.toggle('show', isDevModePinsActive); document.body.classList.toggle('dev-mode-pins-active', isDevModePinsActive); refreshAllHotspots(); }
 
         function setupDevModes() {
             document.querySelectorAll('.dev-toolbar').forEach(tb => { tb.addEventListener('mousedown', e => e.stopPropagation()); tb.addEventListener('mouseup', e => e.stopPropagation()); tb.addEventListener('touchstart', e => e.stopPropagation(), {passive: true}); tb.addEventListener('touchend', e => e.stopPropagation()); });
@@ -712,49 +726,31 @@
             document.getElementById('btn-set-drone')?.addEventListener('click', () => { let val = prompt("Fijar Coordenada del Drone (Lat, Lng)\nEj: -41.3245, -72.9832", OrigenDrone ? `${OrigenDrone.lat}, ${OrigenDrone.lng}` : ""); if (val && val.includes(',')) { let parts = val.split(','); OrigenDrone = { lat: parseFloat(parts[0].trim()), lng: parseFloat(parts[1].trim()) }; saveToLocal(); document.getElementById('js-gmap-iframe').src = `https://maps.google.com/maps?q=${OrigenDrone.lat},${OrigenDrone.lng}&t=k&z=16&ie=UTF8&iwloc=&output=embed`; document.getElementById('js-directions-btn').href = `https://www.google.com/maps/dir/?api=1&destination=${OrigenDrone.lat},${OrigenDrone.lng}`; alert("📍 Coordenada Base fijada y Mapa Satelital actualizado."); } });
             document.getElementById('btn-set-north')?.addEventListener('click', () => { if(!visor360) return; NorteOffset = visor360.getYaw(); saveToLocal(); alert("🧭 Brújula calibrada: El Norte Magnético apunta ahora a tu vista actual.\n(El parámetro 'norte' será incluido al Copiar Datos IA)."); const compassDial = document.getElementById('js-compass'); if(compassDial) compassDial.style.transform = `rotate(${-(visor360.getYaw() - NorteOffset)}deg)`; });
             document.getElementById('btn-edit-titles')?.addEventListener('click', () => { let t = prompt("Título del Proyecto (H1):", ConfigProyecto.titulo); let s = prompt("Subtítulo del Proyecto (p):", ConfigProyecto.subtitulo); if (t !== null && s !== null) { ConfigProyecto.titulo = t || 'PROYECTO INMOBILIARIO'; ConfigProyecto.subtitulo = s || ''; applyProjectConfig(); saveToLocal(); alert("Títulos actualizados temporalmente.\nAl hacer clic en 'COPIAR DATOS IA' se incluirán en el archivo JSON definitivo."); } });
-            const _alignBtnIds = new Set(['btn-set-drone','btn-set-north','btn-edit-titles','btn-align-line','btn-align-arc','btn-align-oval']);
-            document.querySelectorAll('#dev-toolbar-pins .dev-btn:not(.action):not(.export):not(.export-ai):not(.nuke)').forEach(btn => { if(!_alignBtnIds.has(btn.id) && btn.dataset.pintype) { btn.addEventListener('click', (e) => { currentPinTypeMap = e.target.dataset.pintype; document.querySelectorAll('#dev-toolbar-pins .dev-btn:not(.action):not(.export):not(.export-ai):not(.nuke)').forEach(b => b.classList.remove('active')); e.target.classList.add('active'); }); } });
+            const _utilBtnIds = new Set(['btn-set-drone','btn-set-north','btn-edit-titles','btn-pin-path']);
+            document.querySelectorAll('#dev-toolbar-pins .dev-btn:not(.action):not(.export):not(.export-ai):not(.nuke)').forEach(btn => { if(!_utilBtnIds.has(btn.id) && btn.dataset.pintype) { btn.addEventListener('click', (e) => { currentPinTypeMap = e.target.dataset.pintype; document.querySelectorAll('#dev-toolbar-pins .dev-btn:not(.action):not(.export):not(.export-ai):not(.nuke)').forEach(b => b.classList.remove('active')); e.target.classList.add('active'); }); } });
             document.getElementById('btn-heatmap')?.addEventListener('click', function() { isHeatmapActive = !isHeatmapActive; this.classList.toggle('active', isHeatmapActive); document.body.classList.toggle('heatmap-mode', isHeatmapActive); updateSVGPaths(); });
-            document.getElementById('btn-align-line')?.addEventListener('click', () => _alinearPines('line'));
-            document.getElementById('btn-align-arc')?.addEventListener('click',  () => _alinearPines('arc'));
-            document.getElementById('btn-align-oval')?.addEventListener('click', () => _alinearPines('oval'));
+            document.getElementById('btn-pin-path')?.addEventListener('click', (e) => {
+                isPinPathMode = !isPinPathMode;
+                if (isPinPathMode) { currentLinePoints = []; currentTempLineId = 'temp_pinpath_' + Date.now(); currentLineType = 'neon'; e.currentTarget.classList.add('active'); }
+                else { currentLinePoints = []; currentTempLineId = 'temp_' + Date.now(); e.currentTarget.classList.remove('active'); refreshAllHotspots(); }
+            });
         }
         
-        function _alinearPines(mode) {
+        function distribuirPinesEnRuta() {
             const pins = BaseDatosLotes.filter(l => l.tipo === 'lote');
-            if (pins.length < 2) { alert("Se necesitan al menos 2 pines de lote para alinear."); return; }
-            const label = mode === 'line' ? 'Línea horizontal' : mode === 'arc' ? 'Arco semicircular' : 'Óvalo completo';
-            if (!confirm(`🔮 Alinear ${pins.length} pines en ${label}\n\nLos pines se redistribuirán manteniendo el rango actual de posición.\n\n¿Continuar?`)) return;
-            // Sort by yaw (left → right)
-            pins.sort((a, b) => a.yaw - b.yaw);
-            const minYaw = pins[0].yaw, maxYaw = pins[pins.length-1].yaw;
-            const spanYaw = maxYaw - minYaw || 20;
-            const avgPitch = pins.reduce((s,p)=>s+p.pitch,0)/pins.length;
-            const minPitch = Math.min(...pins.map(p=>p.pitch));
-            const N = pins.length;
-            if (mode === 'line') {
-                pins.forEach((pin,i) => {
-                    pin.yaw   = parseFloat((minYaw + spanYaw * i / (N-1)).toFixed(2));
-                    pin.pitch = parseFloat(avgPitch.toFixed(2));
-                });
-            } else if (mode === 'arc') {
-                const cx = (minYaw + maxYaw) / 2, r = spanYaw / 2;
-                const rp = Math.max(3, r * 0.38); // pitch radius (arc height)
-                pins.forEach((pin,i) => {
-                    const a = Math.PI - (Math.PI * i / (N-1)); // 180° → 0°
-                    pin.yaw   = parseFloat((cx + r * Math.cos(a)).toFixed(2));
-                    pin.pitch = parseFloat((minPitch + rp - rp * Math.sin(a)).toFixed(2));
-                });
-            } else { // oval
-                const cx = (minYaw + maxYaw) / 2, ry = spanYaw / 2;
-                const rp = Math.max(3, ry * 0.35);
-                pins.forEach((pin,i) => {
-                    const a = (2 * Math.PI * i / N) - Math.PI/2;
-                    pin.yaw   = parseFloat((cx + ry * Math.cos(a)).toFixed(2));
-                    pin.pitch = parseFloat((avgPitch + rp * Math.sin(a)).toFixed(2));
-                });
-            }
-            refreshAllHotspots(); saveToLocal(); flashScreenSuccess();
+            const path = [...currentLinePoints];
+            if (!pins.length || path.length < 2) return;
+            pins.sort((a, b) => a.yaw - b.yaw); // preserve relative L→R order
+            const dists = [0];
+            for (let i=1; i<path.length; i++) { const dp=path[i][0]-path[i-1][0], dy=path[i][1]-path[i-1][1]; dists.push(dists[i-1]+Math.sqrt(dp*dp+dy*dy)); }
+            const total = dists[dists.length-1]; const M = pins.length;
+            pins.forEach((pin, i) => {
+                const t = M===1?0:i/(M-1), d = t*total;
+                let seg = 0; for(let j=1;j<dists.length;j++){if(dists[j]>=d){seg=j-1;break;}} if(seg>=path.length-1) seg=path.length-2;
+                const segLen=dists[seg+1]-dists[seg], segT=segLen>0?(d-dists[seg])/segLen:0;
+                pin.pitch=parseFloat((path[seg][0]+segT*(path[seg+1][0]-path[seg][0])).toFixed(2));
+                pin.yaw  =parseFloat((path[seg][1]+segT*(path[seg+1][1]-path[seg][1])).toFixed(2));
+            });
         }
 
         function limpiarProyecto() { if(!confirm("⚠️ ¡ADVERTENCIA NUCLEAR! Vas a borrar TODOS los lotes, calles y pines.\n\n¿Estás seguro?")) return; BaseDatosLotes = []; PuntosHorizonte = []; allDrawnLines = []; currentLinePoints = []; gridCornerA = null; refreshAllHotspots(); localStorage.removeItem('masterplan360_autosave'); }
