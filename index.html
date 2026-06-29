@@ -419,7 +419,7 @@
             const resizeObserver = new ResizeObserver(entries => { for (let entry of entries) { const rect = entry.target.getBoundingClientRect(); DOMCache.viewport.w = rect.width; DOMCache.viewport.h = rect.height; DOMCache.viewport.left = rect.left; DOMCache.viewport.top = rect.top; } if (isTouchDevice() && visor360 && viewerGpuReady) { const renderer = visor360.getRenderer(); if (renderer && typeof renderer.resize === 'function') renderer.resize(); } });
             resizeObserver.observe(container); const initialRect = container.getBoundingClientRect(); DOMCache.viewport.w = initialRect.width; DOMCache.viewport.h = initialRect.height; DOMCache.viewport.left = initialRect.left; DOMCache.viewport.top = initialRect.top;
             const svgEl = document.createElementNS("http://www.w3.org/2000/svg", "svg"); svgEl.id = "loteo-svg"; document.body.appendChild(svgEl);
-            setupUI(); setupFilters(); renderSidebarList(BaseDatosLotes); setupPegmanEngine(); setupGesturalBackdoor(); initPannellum(); runSplashScreen(); setupDevModes(); setupModalEditor(); setupInAppModal(); setupGlobalDelegation(); setupSunEngine();
+            setupUI(); setupFilters(); renderSidebarList(BaseDatosLotes); setupPegmanEngine(); setupGesturalBackdoor(); initPannellum(); runSplashScreen(); setupDevModes(); setupModalEditor(); setupFormKeyboardGuard(); setupInAppModal(); setupGlobalDelegation(); setupSunEngine();
             const urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('admin') === 'true') {
                 document.querySelector('.premium-header')?.style.setProperty('display','none'); document.querySelector('.premium-dock')?.style.setProperty('display','none'); document.getElementById('promo-banner-hud')?.style.setProperty('display','none'); document.getElementById('js-poi-trigger')?.style.setProperty('display','none');
@@ -708,6 +708,56 @@
         function extractYouTubeID(url) { if (!url) return null; const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/; const match = url.match(regExp); return (match && match[2].length === 11) ? match[2] : null; }
         window.openInAppViewer = function(e, url, label) { if(e) { e.preventDefault(); e.stopPropagation(); } if(!url) return; const modal = document.getElementById('inapp-modal'); const content = document.getElementById('js-inapp-content'); const iframe = document.getElementById('inapp-iframe-player'); const video = document.getElementById('inapp-video-player'); const tag = document.getElementById('inapp-modal-tag'); modal.classList.remove('mode-360', 'mode-yt', 'mode-mp4'); if(tag) tag.textContent = label || 'Tour Virtual'; if(iframe) iframe.style.display = 'none'; if(video) video.style.display = 'none'; const videoID = extractYouTubeID(url); if(videoID) { content.className = 'inapp-content is-yt'; modal.classList.add('mode-yt'); iframe.src = `https://www.youtube.com/embed/${videoID}?autoplay=1&rel=0&modestbranding=1&playsinline=1`; iframe.style.display = 'block'; } else if(isDirectVideoUrl(url)) { content.className = 'inapp-content is-mp4'; modal.classList.add('mode-mp4'); video.src = url; video.style.display = 'block'; video.play().catch(() => {}); } else { content.className = 'inapp-content is-360'; modal.classList.add('mode-360'); iframe.src = url; iframe.style.display = 'block'; } modal.classList.add('open'); };
 
+        function isFormFieldTarget(el) {
+            if (!el || el === document.body) return false;
+            const tag = el.tagName;
+            if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return true;
+            return !!el.isContentEditable;
+        }
+
+        function focusFirstPinEditorField() {
+            const modal = document.getElementById('pin-editor-modal');
+            if (!modal) return;
+            const fields = modal.querySelectorAll('input, textarea, select');
+            for (const f of fields) {
+                if (f.offsetParent !== null && f.style.display !== 'none' && getComputedStyle(f).display !== 'none') {
+                    f.focus();
+                    if (typeof f.select === 'function' && f.type !== 'select-one') f.select();
+                    return;
+                }
+            }
+            document.getElementById('pin-title')?.focus();
+        }
+
+        function setupFormKeyboardGuard() {
+            const pano = document.getElementById('panorama-container');
+            const modal = document.getElementById('pin-editor-modal');
+            const pinEditorOpen = () => modal?.classList.contains('open');
+
+            const blockPannellumWhenEditing = (e) => {
+                if (isFormFieldTarget(document.activeElement)) return;
+                if (!pinEditorOpen()) return;
+                e.stopImmediatePropagation();
+                focusFirstPinEditorField();
+            };
+
+            if (pano) {
+                pano.addEventListener('keydown', blockPannellumWhenEditing, true);
+                pano.addEventListener('keyup', (e) => {
+                    if (pinEditorOpen() && !isFormFieldTarget(document.activeElement)) e.stopImmediatePropagation();
+                }, true);
+            }
+
+            document.addEventListener('focusin', (e) => {
+                if (isFormFieldTarget(e.target)) pano?.blur();
+            });
+
+            if (modal) {
+                modal.addEventListener('mousedown', () => pano?.blur());
+                modal.addEventListener('touchstart', () => pano?.blur(), { passive: true });
+            }
+        }
+
         function setupModalEditor() {
             const btnCancelPin = document.getElementById('btn-cancel-pin'); const btnSavePin = document.getElementById('btn-save-pin'); const modalContent = document.getElementById('modal-content-box');
             if(modalContent) { modalContent.addEventListener('mousedown', (e) => e.stopPropagation()); modalContent.addEventListener('mouseup', (e) => e.stopPropagation()); modalContent.addEventListener('touchstart', (e) => e.stopPropagation(), {passive: true}); modalContent.addEventListener('touchend', (e) => e.stopPropagation()); }
@@ -758,6 +808,8 @@
             } else if(args.tipo === 'casa360') { document.getElementById('pin-title').placeholder = "Nombre (ej: Casa Modelo A)"; document.getElementById('pin-area').style.display = 'none'; document.getElementById('pin-price').style.display = 'none'; document.getElementById('pin-status').style.display = 'none'; document.getElementById('pin-img').style.display = 'block'; document.getElementById('pin-img').placeholder = "URL miniatura (opcional)"; document.getElementById('pin-video').style.display = 'block'; document.getElementById('pin-video').placeholder = "URL YouTube o .mp4 del tour 360° de la casa";
             } else { document.getElementById('pin-title').placeholder = "Número (Ej: 06)"; document.getElementById('pin-area').style.display = 'block'; document.getElementById('pin-price').style.display = 'block'; document.getElementById('pin-img').style.display = 'block'; document.getElementById('pin-video').style.display = 'block'; document.getElementById('pin-status').style.display = 'block'; document.getElementById('pin-area').placeholder = "Superficie (Ej: 0.5011 HA o 5000 m²)"; document.getElementById('pin-price').placeholder = "Precio (ej: 1500)"; }
             document.getElementById('pin-editor-modal').classList.add('open');
+            document.getElementById('panorama-container')?.blur();
+            setTimeout(focusFirstPinEditorField, 0);
         }
 
         function toggleDrawMode(forceActive) { isDevModeDrawActive = forceActive; document.getElementById('dev-toolbar-draw')?.classList.toggle('show', isDevModeDrawActive); document.body.classList.toggle('dev-mode-active', isDevModeDrawActive); refreshAllHotspots(); }
@@ -765,7 +817,7 @@
 
         function setupDevModes() {
             document.querySelectorAll('.dev-toolbar').forEach(tb => { tb.addEventListener('mousedown', e => e.stopPropagation()); tb.addEventListener('mouseup', e => e.stopPropagation()); tb.addEventListener('touchstart', e => e.stopPropagation(), {passive: true}); tb.addEventListener('touchend', e => e.stopPropagation()); });
-            document.addEventListener('keydown', (e) => { if (e.ctrlKey && e.code === 'Space') { e.preventDefault(); if(isDevModePinsActive) togglePinsMode(false); toggleDrawMode(!isDevModeDrawActive); } if (e.ctrlKey && (e.code === 'KeyP' || e.key.toLowerCase() === 'p')) { e.preventDefault(); if(isDevModeDrawActive) toggleDrawMode(false); togglePinsMode(!isDevModePinsActive); } if (e.ctrlKey && (e.code === 'KeyZ' || e.key.toLowerCase() === 'z')) { e.preventDefault(); if (isDevModeDrawActive) { if (currentLinePoints.length > 0) document.getElementById('btn-undo-point')?.click(); else if (allDrawnLines.length > 0) document.getElementById('btn-delete-last-line')?.click(); } } });
+            document.addEventListener('keydown', (e) => { if (isFormFieldTarget(document.activeElement)) return; if (e.ctrlKey && e.code === 'Space') { e.preventDefault(); if(isDevModePinsActive) togglePinsMode(false); toggleDrawMode(!isDevModeDrawActive); } if (e.ctrlKey && (e.code === 'KeyP' || e.key.toLowerCase() === 'p')) { e.preventDefault(); if(isDevModeDrawActive) toggleDrawMode(false); togglePinsMode(!isDevModePinsActive); } if (e.ctrlKey && (e.code === 'KeyZ' || e.key.toLowerCase() === 'z')) { e.preventDefault(); if (isDevModeDrawActive) { if (currentLinePoints.length > 0) document.getElementById('btn-undo-point')?.click(); else if (allDrawnLines.length > 0) document.getElementById('btn-delete-last-line')?.click(); } } });
             
             document.getElementById('btn-draw-solid')?.addEventListener('click', (e) => { setDrawMode('solida', e.target); }); 
             document.getElementById('btn-draw-dash')?.addEventListener('click', (e) => { setDrawMode('punteada', e.target); }); 
