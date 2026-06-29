@@ -617,6 +617,7 @@
                 document.getElementById('gh-user').value = savedUser;
                 document.getElementById('gh-repo').value = savedRepo;
                 document.getElementById('gh-token').value = savedToken;
+                conectarBoveda();
             }
         });
 
@@ -1253,37 +1254,56 @@
                 }
             });
 
-            const jsonString = JSON.stringify(masterData, null, 2);
-            const contentEncoded = btoa(unescape(encodeURIComponent(jsonString)));
-
             const user = safeGetStorage("masterplan_user");
             const repo = safeGetStorage("masterplan_repo");
             const token = safeGetStorage("masterplan_token");
-            const url = `https://api.github.com/repos/${user}/${repo}/contents/${FILENAME}`;
 
-            const payload = {
-                message: "🏢 Actualización de Proyecto, Textos e Inventario (Vía Panel de Administración)",
-                content: contentEncoded,
-                sha: shaActual 
-            };
+            if (!user || !repo || !token) {
+                mostrarToast("⛔ Sin credenciales. Inicia sesión primero.", false);
+                btn.innerHTML = `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"></path><path d="M17 21v-8H7v8"></path><path d="M7 3v5h8V3"></path></svg> Guardar Cambios`;
+                btn.style.pointerEvents = "auto"; btn.style.opacity = "1";
+                return;
+            }
+
+            const url = `https://api.github.com/repos/${user}/${repo}/contents/${FILENAME}`;
+            const authHeaders = { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' };
+
+            const jsonString = JSON.stringify(masterData, null, 2);
+            const contentEncoded = btoa(unescape(encodeURIComponent(jsonString)));
 
             try {
-                const response = await fetch(url, {
+                // Refresh SHA from GitHub to avoid 409 conflict errors
+                const shaRes = await fetch(url, { headers: authHeaders });
+                if (shaRes.ok) { const j = await shaRes.json(); shaActual = j.sha; }
+                else if (shaRes.status === 404) { shaActual = ""; }
+
+                let response = await fetch(url, {
                     method: 'PUT',
-                    headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
+                    headers: authHeaders,
+                    body: JSON.stringify({ message: "🏢 Actualización de Proyecto (Vía Panel de Administración)", content: contentEncoded, sha: shaActual })
                 });
+
+                // On conflict, fetch the latest SHA and retry once
+                if (response.status === 409 || response.status === 422) {
+                    const retryRes = await fetch(url, { headers: authHeaders });
+                    if (retryRes.ok) { shaActual = (await retryRes.json()).sha; }
+                    response = await fetch(url, {
+                        method: 'PUT',
+                        headers: authHeaders,
+                        body: JSON.stringify({ message: "🏢 Actualización de Proyecto (Vía Panel de Administración)", content: contentEncoded, sha: shaActual })
+                    });
+                }
 
                 if (response.ok) {
                     const result = await response.json();
-                    shaActual = result.content.sha; 
-                    mostrarToast("Panel Actualizado Exitosamente", true);
+                    shaActual = result.content.sha;
+                    mostrarToast("✅ Guardado en la nube exitosamente", true);
                 } else {
                     const err = await response.json();
-                    alert("⛔ Error al guardar: " + err.message);
+                    mostrarToast("⛔ Error al guardar: " + (err.message || response.status), false);
                 }
             } catch (error) {
-                alert("⚠️ Error crítico de conexión. Revisa tu internet.");
+                mostrarToast("⚠️ Error de conexión. Revisa tu internet.", false);
             }
 
             btn.innerHTML = `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"></path><path d="M17 21v-8H7v8"></path><path d="M7 3v5h8V3"></path></svg> Guardar Cambios`;
@@ -1334,20 +1354,20 @@
 
         window.addEventListener("message", (event) => {
             if (event.data && event.data.type === "SAVE_MASTERPLAN_DATA") {
-                console.log("¡Datos espaciales recibidos del motor 3D!");
-                
                 const newData = event.data.payload;
-                
-                masterData.origen = newData.origen;
-                masterData.norte = newData.norte;
-                masterData.lotes = newData.lotes;
-                masterData.horizontes = newData.horizontes;
-                masterData.trazos = newData.trazos;
+
+                masterData.origen      = newData.origen      ?? masterData.origen;
+                masterData.norte       = newData.norte       ?? masterData.norte;
+                masterData.lotes       = newData.lotes       ?? masterData.lotes;
+                masterData.horizontes  = newData.horizontes  ?? masterData.horizontes;
+                masterData.trazos      = newData.trazos      ?? masterData.trazos;
+                if (newData.configProyecto) {
+                    masterData.configProyecto = { ...masterData.configProyecto, ...newData.configProyecto };
+                }
 
                 renderUI();
-
-                mostrarToast("Geometría recibida. Subiendo a la bóveda...", true);
-                guardarCambios(); 
+                mostrarToast("⏫ Geometría recibida. Subiendo a la nube...", true);
+                guardarCambios();
             }
         });
 
