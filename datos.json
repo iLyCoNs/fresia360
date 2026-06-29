@@ -202,6 +202,41 @@
       "id": "nuevo_1782608247131",
       "numero": "00",
       "coordenadasDestino": ""
+    },
+    {
+      "pitch": -29.35,
+      "yaw": -62.09,
+      "tipo": "ruta",
+      "titulo": "RUTA  V-362",
+      "descripcion": "Acceso Principal",
+      "coordenadasDestino": "",
+      "id": "nuevo_1782709547430",
+      "numero": "362",
+      "distancia": "",
+      "tiempo": ""
+    },
+    {
+      "pitch": -20.87,
+      "yaw": -59.54,
+      "tipo": "ruta",
+      "titulo": "RUTA V-30 A FRESIA",
+      "descripcion": "Entrar a V-362",
+      "coordenadasDestino": "",
+      "id": "nuevo_1782709687467",
+      "numero": "30",
+      "distancia": "",
+      "tiempo": ""
+    },
+    {
+      "pitch": -2.05,
+      "yaw": -149.27,
+      "titulo": "FRESIA",
+      "tipo": "horizonte",
+      "distancia": "16.5",
+      "tiempo": "18",
+      "id": "nuevo_1782709774551",
+      "numero": "??",
+      "coordenadasDestino": ""
     }
   ],
   "trazos": [
