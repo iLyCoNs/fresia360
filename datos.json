@@ -134,15 +134,6 @@
       "id": "nuevo_1782706140803",
       "numero": "10",
       "terreno": "Plano"
-    },
-    {
-      "pitch": -63.01,
-      "yaw": -173.62,
-      "tipo": "vista360",
-      "titulo": "360° TinyHouse",
-      "url": "https://ilycons.github.io/fresia360/suelo.html",
-      "id": "nuevo_1782768911146",
-      "numero": "360"
     }
   ],
   "horizontes": [
