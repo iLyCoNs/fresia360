@@ -17,6 +17,9 @@
         .hide-mobile { display: block; } .hide-desktop { display: none !important; }
         @keyframes spin { 100% { transform: rotate(360deg); } } .spinner { animation: spin 1s linear infinite; transform-origin: center; }
         #panorama-container .pnlm-render-container { z-index: 0 !important; }
+        #panorama-container .pnlm-container,
+        #panorama-container .pnlm-render-container,
+        #panorama-container canvas { background: transparent !important; }
         #holographic-ui-engine { background: transparent !important; pointer-events: none; }
         #holographic-ui-engine > * { pointer-events: auto; }
         #loteo-svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
@@ -279,7 +282,42 @@
         async function fetchMasterData() { try { const response = await fetch('datos.json?v=' + new Date().getTime()); if(response.ok) { const data = await response.json(); ConfigProyecto = data.configProyecto || ConfigProyecto; OrigenDrone = data.origen || null; NorteOffset = data.norte || 0; BaseDatosLotes = data.lotes || []; PuntosHorizonte = data.horizontes || []; allDrawnLines = data.trazos || []; } else { loadFromLocal(); } } catch(e) { loadFromLocal(); } applyProjectConfig(); }
 
         let visor360, currentPinSizeIndex = 1, isIntroAnimating = true, isDevModeDrawActive = false, isDevModePinsActive = false, isPinPathMode = false, currentLineType = 'solida', currentLinePoints = [], currentPinTypeMap = 'disponible', currentTempLineId = 'temp_' + Date.now(), draggingVertex = null, pickedPin = null, snapCursor = null, ghostPin = null, snappedCoords = null, activePinArgs = null, isCreatingNewPin = false, isSnapToClose = false, isSnapToExisting = false;
-        const DEFAULT_HFOV = 125, MAX_SCALE = 1.0, MIN_SCALE = 0.20, SNAP_DISTANCE = 8.0; 
+        const DEFAULT_HFOV = 125, MAX_SCALE = 1.0, MIN_SCALE = 0.20, SNAP_DISTANCE = 8.0;
+
+        function getDefaultProjectView() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const targetLoteId = urlParams.get('lote');
+            if (targetLoteId) {
+                const searchStr = targetLoteId.toLowerCase().replace(/\s/g, '');
+                const targetPin = BaseDatosLotes.find((l) => (l.titulo || '').toLowerCase().replace(/\s/g, '').includes(searchStr) || (l.numero || '') === targetLoteId);
+                if (targetPin) return { pitch: targetPin.pitch, yaw: targetPin.yaw, hfov: 70 };
+            }
+            const lots = BaseDatosLotes.filter((l) => l.tipo === 'lote' && typeof l.pitch === 'number' && typeof l.yaw === 'number');
+            if (lots.length > 0) {
+                let sumP = 0, sumY = 0;
+                lots.forEach((l) => { sumP += l.pitch; sumY += l.yaw; });
+                return { pitch: sumP / lots.length, yaw: sumY / lots.length, hfov: 110 };
+            }
+            return { pitch: -35, yaw: -90, hfov: 110 };
+        }
+        function shouldSkipIntroFlight() { return PerfProfile.isEmbedded || new URLSearchParams(window.location.search).get('nointro') === '1'; }
+        function finishIntroBootstrap() {
+            isIntroAnimating = false;
+            const svg = document.getElementById('loteo-svg');
+            if (svg && isSvgRenderAllowed()) svg.style.opacity = '1';
+            syncSVGElements();
+            if (visor360) {
+                const v = getDefaultProjectView();
+                visor360.lookAt(v.pitch, v.yaw, v.hfov, 0);
+                const renderer = visor360.getRenderer && visor360.getRenderer();
+                if (renderer) { hookRendererOverlay(renderer); try { renderer.resize(); } catch (e) {} }
+            }
+        }
+        function mountPanoramaUI() {
+            const pnlmContainer = document.getElementById('panorama-container'); const uiEngine = document.getElementById('holographic-ui-engine'); const pnlmUi = document.querySelector('.pnlm-ui'); const svg = document.getElementById('loteo-svg');
+            if (pnlmUi && svg && svg.parentNode !== pnlmUi && isWebGLSupported) pnlmUi.insertBefore(svg, pnlmUi.firstChild);
+            if (pnlmContainer && uiEngine && uiEngine.parentNode !== pnlmContainer) { pnlmContainer.appendChild(uiEngine); uiEngine.style.zIndex = '999999'; uiEngine.style.background = 'transparent'; uiEngine.style.pointerEvents = 'none'; }
+        } 
 
         function intersectSegments(p0, p1, p2, p3) {
             let s1_x = p1[0] - p0[0], s1_y = p1[1] - p0[1]; let s2_x = p3[0] - p2[0], s2_y = p3[1] - p2[1];
@@ -463,10 +501,11 @@
             const handleLoad = () => { 
                 isWebGLSupported = true; viewerGpuReady = true; smartInitAttempts = 0; 
                 const renderer = visor360.getRenderer(); 
-                if(renderer) { SmartGpuProfile.patchRenderer(renderer); const canvas = typeof renderer.getCanvas === 'function' ? renderer.getCanvas() : null; SmartGpuProfile.bindContextRecovery(canvas, () => retryPannellumSmart(panoramaBase, true) ); }
                 const pnlmUi = document.querySelector('.pnlm-ui'); const svg = document.getElementById('loteo-svg'); 
+                if(renderer) { SmartGpuProfile.patchRenderer(renderer); const canvas = typeof renderer.getCanvas === 'function' ? renderer.getCanvas() : null; SmartGpuProfile.bindContextRecovery(canvas, () => retryPannellumSmart(panoramaBase, true) ); hookRendererOverlay(renderer); }
                 if (pnlmUi && svg && svg.parentNode !== pnlmUi) pnlmUi.insertBefore(svg, pnlmUi.firstChild); 
-                if (!isIntroAnimating) { if(renderer) hookRendererOverlay(renderer); syncSVGElements(); if (svg) svg.style.opacity = '1'; } 
+                if (!isIntroAnimating) { syncSVGElements(); if (svg) svg.style.opacity = '1'; }
+                setTimeout(() => { try { renderer?.resize?.(); visor360?.resize?.(); } catch (e) {} }, 120);
             };
             visor360.on('error', () => { isWebGLSupported = false; viewerGpuReady = false; const spText = document.getElementById('splash-loading-text'); if (spText) spText.innerText = 'REINTENTO CON MODO LITE GPU...'; setTimeout(() => retryPannellumSmart(panoramaBase, true), 600); });
             visor360.on('load', handleLoad);
@@ -476,27 +515,33 @@
         async function retryPannellumSmart(panoramaBase, forceLite) {
             if (!isTouchDevice()) return; smartInitAttempts++; if (smartInitAttempts > 3) { const sp = document.getElementById('splash-loading-text'); if (sp) sp.innerText = 'ERROR GPU: RECARGA LA PÁGINA'; return; } if (forceLite) { SmartGpuProfile.maxDPR = 1; SmartGpuProfile.maxTextureSize = 2048; SmartGpuProfile.isHighEnd = false; } viewerGpuReady = false; if (visor360) { try { visor360.destroy(); } catch (e) {} visor360 = null; }
             const panoramaUrl = await SmartGpuProfile.preparePanorama( panoramaBase, forceLite || smartInitAttempts > 1 );
-            visor360 = pannellum.viewer('panorama-container', { type: 'equirectangular', panorama: panoramaUrl, autoLoad: true, compass: false, hfov: 130, pitch: 8, yaw: -45, hotSpots: getHotspotsConfig(), fallback: 'loteo360.jpg', touchPanSpeedCoeffFactor: 1.35, friction: 0.12, showZoomCtrl: false, });
+            const bootView = getDefaultProjectView();
+            visor360 = pannellum.viewer('panorama-container', { type: 'equirectangular', panorama: panoramaUrl, autoLoad: true, compass: false, hfov: bootView.hfov, pitch: bootView.pitch, yaw: bootView.yaw, hotSpots: getHotspotsConfig(), fallback: 'loteo360.jpg', touchPanSpeedCoeffFactor: 1.35, friction: 0.12, showZoomCtrl: false, });
             attachSmartViewerHandlers(panoramaBase);
         }
 
         function runPannellumIntroBootstrap() {
             const beginIntro = () => {
+                const delay = shouldSkipIntroFlight() ? 150 : 1000;
                 setTimeout(() => {
-                    const pnlmContainer = document.getElementById('panorama-container'); const uiEngine = document.getElementById('holographic-ui-engine'); const pnlmUi = document.querySelector('.pnlm-ui'); const svg = document.getElementById('loteo-svg'); 
-                    if (pnlmUi && svg && svg.parentNode !== pnlmUi && isWebGLSupported) { pnlmUi.insertBefore(svg, pnlmUi.firstChild); }
+                    mountPanoramaUI();
                     let fsInterval = setInterval(() => { let fsBtn = document.querySelector('.pnlm-fullscreen-toggle-button'); if (fsBtn) { clearInterval(fsInterval); let newBtn = fsBtn.cloneNode(true); fsBtn.parentNode.replaceChild(newBtn, fsBtn); newBtn.addEventListener('click', () => { let docEl = document.documentElement; if (!document.fullscreenElement) { if (docEl.requestFullscreen) docEl.requestFullscreen(); else if (docEl.webkitRequestFullscreen) docEl.webkitRequestFullscreen(); newBtn.classList.add('pnlm-fullscreen-toggle-button-active'); } else { if (document.exitFullscreen) document.exitFullscreen(); else if (document.webkitExitFullscreen) document.webkitExitFullscreen(); newBtn.classList.remove('pnlm-fullscreen-toggle-button-active'); } if (isTouchDevice() && visor360 && viewerGpuReady) { setTimeout(() => { const r = visor360.getRenderer(); if (r && r.resize) r.resize(); }, 300); } }); } }, 500);
-                    if (pnlmContainer && uiEngine) { pnlmContainer.appendChild(uiEngine); uiEngine.style.zIndex = '999999'; uiEngine.style.background = 'transparent'; uiEngine.style.pointerEvents = 'none'; }
-                    if (!visor360) return; visor360.setHfov(DEFAULT_HFOV, 2500); visor360.setPitch(-40, 2500);
-                    const urlParams = new URLSearchParams(window.location.search); const targetLoteId = urlParams.get('lote');
+                    if (!visor360) { finishIntroBootstrap(); return; }
+                    const target = getDefaultProjectView();
+                    if (shouldSkipIntroFlight()) { mpLookAt(target.pitch, target.yaw, target.hfov, 0); finishIntroBootstrap(); return; }
+                    const startPitch = Math.min(-18, target.pitch + 18);
+                    const startYaw = target.yaw - 22;
+                    visor360.setHfov(125, 0);
+                    visor360.setPitch(startPitch, 0);
+                    visor360.setYaw(startYaw, 0);
                     setTimeout(() => {
-                        if (targetLoteId) { const searchStr = targetLoteId.toLowerCase().replace(/\s/g, ''); const targetPin = BaseDatosLotes.find( (l) => (l.titulo || '').toLowerCase().replace(/\s/g, '').includes(searchStr) || (l.numero || '') === targetLoteId, ); if (targetPin) mpLookAt(targetPin.pitch, targetPin.yaw, 70, 3000); else mpLookAt(5, 15, 100, 3000); } else { mpLookAt(5, 15, 100, 3000); }
+                        mpLookAt(target.pitch + 6, target.yaw - 8, 118, 2200);
                         setTimeout(() => {
-                            if (!targetLoteId) mpLookAt(12, 65, 115, 2500);
-                            setTimeout(() => { isIntroAnimating = false; if (svg && isSvgRenderAllowed()) svg.style.opacity = '1'; syncSVGElements(); if (visor360 && visor360.getRenderer) { const renderer = visor360.getRenderer(); if(renderer) { hookRendererOverlay(renderer); try { renderer.resize(); } catch(e) {} } } }, targetLoteId ? 0 : 2800);
-                        }, 3000);
-                    }, 1500);
-                }, 1000);
+                            mpLookAt(target.pitch, target.yaw, target.hfov, 2200);
+                            setTimeout(finishIntroBootstrap, 2300);
+                        }, 2300);
+                    }, 700);
+                }, delay);
             };
             if (isTouchDevice() && !viewerGpuReady) { let loops = 0; const waitGpu = setInterval(() => { loops++; if (viewerGpuReady || loops > 30) { clearInterval(waitGpu); viewerGpuReady = true; beginIntro(); } }, 100); return; } beginIntro();
         }
@@ -659,7 +704,8 @@
             if (!touchDev && !isWebGLSupported) { const spText = document.getElementById('splash-loading-text'); if (spText) spText.innerText = 'MODO DE COMPATIBILIDAD (SIN GPU)...'; const svg = document.getElementById('loteo-svg'); if (svg) svg.style.display = 'none'; }
             let panoramaUrl = 'loteo360.jpg';
             if (touchDev) { SmartGpuProfile.init(); viewerGpuReady = false; const spText = document.getElementById('splash-loading-text'); if (spText) spText.innerText = 'OPTIMIZANDO GPU PARA MÓVILES...'; panoramaUrl = await SmartGpuProfile.preparePanorama('loteo360.jpg', false); if (spText) spText.innerText = 'CARGANDO PANORAMA 360°...'; }
-            const viewerConfig = { type: 'equirectangular', panorama: panoramaUrl, autoLoad: true, compass: false, hfov: 130, pitch: 8, yaw: -45, hotSpots: getHotspotsConfig(), fallback: 'loteo360.jpg', };
+            const bootView = getDefaultProjectView();
+            const viewerConfig = { type: 'equirectangular', panorama: panoramaUrl, autoLoad: true, compass: false, hfov: bootView.hfov, pitch: bootView.pitch, yaw: bootView.yaw, hotSpots: getHotspotsConfig(), fallback: 'loteo360.jpg', };
             if (touchDev) { viewerConfig.touchPanSpeedCoeffFactor = 1.35; viewerConfig.friction = 0.12; viewerConfig.showZoomCtrl = false; }
             visor360 = pannellum.viewer('panorama-container', viewerConfig);
             if (touchDev) attachSmartViewerHandlers('loteo360.jpg');
@@ -675,9 +721,24 @@
             });
         }
 
-        function setupInAppModal() { const modal = document.getElementById('inapp-modal'); const closeBtn = document.getElementById('js-close-inapp'); const iframe = document.getElementById('inapp-iframe-player'); if(closeBtn) { closeBtn.addEventListener('click', () => { modal.classList.remove('open'); setTimeout(() => { iframe.src = ""; }, 300); }); } }
+        function setupInAppModal() {
+            const modal = document.getElementById('inapp-modal'); const closeBtn = document.getElementById('js-close-inapp'); const iframe = document.getElementById('inapp-iframe-player');
+            const closePortal = () => { if (modal) modal.classList.remove('open'); setTimeout(() => { if (iframe) iframe.src = ""; }, 300); };
+            if (closeBtn) closeBtn.addEventListener('click', closePortal);
+            window.addEventListener('message', (e) => { if (e.data && e.data.type === 'MP360_CLOSE_PORTAL') closePortal(); });
+        }
+        function resolvePortalUrl(url) {
+            if (!url) return url;
+            const trimmed = url.trim();
+            if (/^https?:\/\//i.test(trimmed)) return trimmed;
+            const resolved = new URL(trimmed, window.location.href);
+            if (/\.html?$/i.test(trimmed.split('?')[0]) || trimmed.includes('.html')) {
+                if (!resolved.searchParams.has('embedded')) resolved.searchParams.set('embedded', '1');
+            }
+            return resolved.href;
+        }
         function extractYouTubeID(url) { if (!url) return null; const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/; const match = url.match(regExp); return (match && match[2].length === 11) ? match[2] : null; }
-        window.openInAppViewer = function(e, url) { if(e) { e.preventDefault(); e.stopPropagation(); } if(!url) return; const modal = document.getElementById('inapp-modal'); const content = document.getElementById('js-inapp-content'); const iframe = document.getElementById('inapp-iframe-player'); const videoID = extractYouTubeID(url); if(videoID) { content.className = 'inapp-content is-yt'; iframe.src = `https://www.youtube.com/embed/${videoID}?autoplay=1&rel=0&modestbranding=1`; } else { content.className = 'inapp-content is-360'; iframe.src = url; } modal.classList.add('open'); };
+        window.openInAppViewer = function(e, url) { if(e) { e.preventDefault(); e.stopPropagation(); } if(!url) return; const modal = document.getElementById('inapp-modal'); const content = document.getElementById('js-inapp-content'); const iframe = document.getElementById('inapp-iframe-player'); const videoID = extractYouTubeID(url); if(videoID) { content.className = 'inapp-content is-yt'; iframe.src = `https://www.youtube.com/embed/${videoID}?autoplay=1&rel=0&modestbranding=1`; } else { content.className = 'inapp-content is-360'; iframe.src = resolvePortalUrl(url); } modal.classList.add('open'); };
 
         function setupModalEditor() {
             const btnCancelPin = document.getElementById('btn-cancel-pin'); const btnSavePin = document.getElementById('btn-save-pin'); const modalContent = document.getElementById('modal-content-box');
