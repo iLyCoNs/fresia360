@@ -821,98 +821,63 @@
         function enderezarTrazos() {
             const N = allDrawnLines.length;
             if (!visor360 || N < 2) { alert("Se necesitan al menos 2 lotes dibujados para enderezar."); return; }
-            if (!confirm(`📏 ENDEREZAR ${N} LOTES\n\nSe conservan las distancias entre subdivisiones.\nLos divisores internos se alinean en la dirección más recta común.\nBordes superior e inferior se rectifican.\n\n¿Continuar?`)) return;
+            if (!confirm(`📏 ENDEREZAR ${N} LOTES\n\nLas 4 esquinas extremas quedan fijas.\nBordes convertidos a líneas rectas perfectas.\nDivisores redistribuidos equitativamente.\n\n¿Continuar?`)) return;
 
             const ctnr = document.getElementById('panorama-container'); if (!ctnr) return;
             const W = ctnr.clientWidth, H = ctnr.clientHeight;
-            const camP = visor360.getPitch() * Math.PI / 180, camYw = visor360.getYaw() * Math.PI / 180, hfov = visor360.getHfov();
-            const scp = Math.sin(camP), ccp = Math.cos(camP), fc = 0.5 * W / Math.tan(hfov * Math.PI / 360), cxW = W / 2, cyH = H / 2;
+            const camP = visor360.getPitch()*Math.PI/180, camYw = visor360.getYaw()*Math.PI/180, hfov = visor360.getHfov();
+            const scp = Math.sin(camP), ccp = Math.cos(camP), fc = 0.5*W/Math.tan(hfov*Math.PI/360), cxW = W/2, cyH = H/2;
 
             function toSc(py) {
-                const p = py[0] * Math.PI / 180, y = py[1] * Math.PI / 180, sp = Math.sin(p), cp2 = Math.cos(p);
-                let yd = y - camYw; while (yd > Math.PI) yd -= 2 * Math.PI; while (yd < -Math.PI) yd += 2 * Math.PI;
-                const sy = Math.sin(yd), cy2 = Math.cos(yd), z = sp * scp + cp2 * cy2 * ccp;
-                return z > 0.0001 ? [cxW + (cp2 * sy / z) * fc, cyH - ((sp * ccp - cp2 * cy2 * scp) / z) * fc] : null;
+                const p=py[0]*Math.PI/180, y=py[1]*Math.PI/180, sp=Math.sin(p), cp2=Math.cos(p);
+                let yd=y-camYw; while(yd>Math.PI) yd-=2*Math.PI; while(yd<-Math.PI) yd+=2*Math.PI;
+                const sy=Math.sin(yd), cy2=Math.cos(yd), z=sp*scp+cp2*cy2*ccp;
+                return z>0.0001 ? [cxW+(cp2*sy/z)*fc, cyH-((sp*ccp-cp2*cy2*scp)/z)*fc] : null;
             }
             function toPY(sx, sy) {
-                const r = visor360.mouseEventToCoords({ clientX: DOMCache.viewport.left + sx, clientY: DOMCache.viewport.top + sy });
+                const r = visor360.mouseEventToCoords({clientX: DOMCache.viewport.left+sx, clientY: DOMCache.viewport.top+sy});
                 return r ? [parseFloat(r[0].toFixed(3)), parseFloat(r[1].toFixed(3))] : null;
             }
-            function lerp2(a, b, t) { return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]; }
-            function cumFracs(pts) {
-                const dists = [0];
-                for (let i = 1; i < pts.length; i++) dists.push(dists[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
-                const total = dists[dists.length - 1];
-                return dists.map(d => total > 0 ? d / total : 0);
+            function lerp2(a, b, t) { return [a[0]+(b[0]-a[0])*t, a[1]+(b[1]-a[1])*t]; }
+
+            // Step 1: find true corner vertices (appear in exactly 1 polygon;
+            // interior divider vertices are shared between 2 adjacent lots)
+            const keyMap = {};
+            allDrawnLines.forEach(l => l.puntos.forEach(pt => {
+                const k = `${pt[0].toFixed(2)},${pt[1].toFixed(2)}`;
+                if (!keyMap[k]) keyMap[k] = { pt, n: 0 };
+                keyMap[k].n++;
+            }));
+            const cornerPts = Object.values(keyMap).filter(v => v.n === 1).map(v => v.pt);
+            // Fallback: if occurrence-count gives ≠4, use all unique pitch/yaw vertices
+            const candidatePts = cornerPts.length === 4 ? cornerPts
+                : [...new Map(allDrawnLines.flatMap(l => l.puntos.map(pt =>
+                    [`${pt[0].toFixed(2)},${pt[1].toFixed(2)}`, pt]))).values()];
+
+            // Step 2: project candidates to screen
+            const cSc = candidatePts.map(pt => toSc(pt)).filter(v => v);
+            if (cSc.length < 4) { alert("⚠️ Posiciona la vista para ver toda la grilla."); return; }
+
+            // Step 3: identify the 4 corners of the parallelogram using screen X+Y / X-Y.
+            // This is geometrically correct for ANY convex quadrilateral (including diagonal grids):
+            //   TL = min(X+Y)  →  upper-left direction
+            //   TR = max(X-Y)  →  upper-right direction
+            //   BR = max(X+Y)  →  lower-right direction
+            //   BL = min(X-Y)  →  lower-left direction
+            const TL = cSc.reduce((m,v) => (v[0]+v[1]) < (m[0]+m[1]) ? v : m);
+            const TR = cSc.reduce((m,v) => (v[0]-v[1]) > (m[0]-m[1]) ? v : m);
+            const BR = cSc.reduce((m,v) => (v[0]+v[1]) > (m[0]+m[1]) ? v : m);
+            const BL = cSc.reduce((m,v) => (v[0]-v[1]) < (m[0]-m[1]) ? v : m);
+
+            // Step 4: re-create N evenly-spaced lots on straight edges TL→TR and BL→BR
+            const newLines = [], baseId = 'str_'+Date.now();
+            for (let i=0; i<N; i++) {
+                const t0=i/N, t1=(i+1)/N;
+                const tl=toPY(...lerp2(TL,TR,t0)), tr=toPY(...lerp2(TL,TR,t1));
+                const br=toPY(...lerp2(BL,BR,t1)), bl=toPY(...lerp2(BL,BR,t0));
+                if (tl&&tr&&br&&bl) newLines.push({id:baseId+'_'+i, tipo:'solida', puntos:[tl,tr,br,bl]});
             }
-            function circMeanAngle(angles) {
-                let sx = 0, sy = 0;
-                angles.forEach(a => { sx += Math.cos(a); sy += Math.sin(a); });
-                return Math.atan2(sy, sx);
-            }
-
-            const lots = allDrawnLines.map((line, idx) => {
-                const centroid = line.puntos.reduce((a, p) => [a[0] + p[0], a[1] + p[1]], [0, 0]).map(v => v / line.puntos.length);
-                return { line, idx, sc: toSc(centroid), centroid };
-            });
-            lots.sort((a, b) => {
-                if (!a.sc || !b.sc) return a.centroid[1] - b.centroid[1];
-                return a.sc[0] - b.sc[0];
-            });
-
-            const topChain = [], bottomChain = [];
-            for (let i = 0; i < N; i++) {
-                const pts = lots[i].line.puntos;
-                const s0 = toSc(pts[0]), s1 = toSc(pts[1]), s2 = toSc(pts[2]), s3 = toSc(pts[3]);
-                if (!s0 || !s1 || !s2 || !s3) { alert("⚠️ Posiciona la vista para ver toda la grilla."); return; }
-                if (i === 0) { topChain.push(s0); bottomChain.push(s3); }
-                topChain.push(s1);
-                bottomChain.push(s2);
-            }
-
-            const allBoundary = [...topChain, ...bottomChain];
-            const TL = allBoundary.reduce((m, v) => (v[0] + v[1]) < (m[0] + m[1]) ? v : m);
-            const TR = allBoundary.reduce((m, v) => (v[0] - v[1]) > (m[0] - m[1]) ? v : m);
-            const BR = allBoundary.reduce((m, v) => (v[0] + v[1]) > (m[0] + m[1]) ? v : m);
-            const BL = allBoundary.reduce((m, v) => (v[0] - v[1]) < (m[0] - m[1]) ? v : m);
-
-            const topFrac = cumFracs(topChain);
-            const botFrac = cumFracs(bottomChain);
-
-            const divAngles = [];
-            for (let i = 0; i <= N; i++) {
-                const dx = bottomChain[i][0] - topChain[i][0], dy = bottomChain[i][1] - topChain[i][1];
-                if (Math.hypot(dx, dy) > 0.5) divAngles.push(Math.atan2(dy, dx));
-            }
-            const divAngle = divAngles.length ? circMeanAngle(divAngles) : Math.atan2(BL[1] - TL[1], BL[0] - TL[0]);
-            const divUx = Math.cos(divAngle), divUy = Math.sin(divAngle);
-
-            const depths = topChain.map((tp, i) => (bottomChain[i][0] - tp[0]) * divUx + (bottomChain[i][1] - tp[1]) * divUy);
-            depths[0] = (BL[0] - TL[0]) * divUx + (BL[1] - TL[1]) * divUy;
-            depths[N] = (BR[0] - TR[0]) * divUx + (BR[1] - TR[1]) * divUy;
-
-            const newTop = topFrac.map(t => lerp2(TL, TR, t));
-            const newBot = newTop.map((tp, i) => [tp[0] + depths[i] * divUx, tp[1] + depths[i] * divUy]);
-
-            newTop[0] = [...TL]; newTop[N] = [...TR];
-            newBot[0] = [...BL]; newBot[N] = [...BR];
-
-            const newLines = [], baseId = 'str_' + Date.now();
-            for (let i = 0; i < N; i++) {
-                const tl = toPY(newTop[i][0], newTop[i][1]);
-                const tr = toPY(newTop[i + 1][0], newTop[i + 1][1]);
-                const br = toPY(newBot[i + 1][0], newBot[i + 1][1]);
-                const bl = toPY(newBot[i][0], newBot[i][1]);
-                if (tl && tr && br && bl) {
-                    newLines.push({
-                        id: lots[i].line.id || (baseId + '_' + i),
-                        tipo: lots[i].line.tipo || 'solida',
-                        puntos: [tl, tr, br, bl]
-                    });
-                }
-            }
-
-            if (newLines.length === N) { allDrawnLines = newLines; refreshAllHotspots(); saveToLocal(); flashScreenSuccess(); }
+            if (newLines.length===N) { allDrawnLines=newLines; refreshAllHotspots(); saveToLocal(); flashScreenSuccess(); }
             else { alert("⚠️ Enderezado incompleto. Asegúrate de ver toda la grilla en pantalla."); }
         }
 
