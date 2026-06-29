@@ -419,16 +419,16 @@
             allGridBlocks.forEach(g => {
                 const gEl = lGrid.querySelector(`[data-grid-id="${g.id}"]`); if (!gEl) return;
                 const [TL,TR,BR,BL] = g.corners; const N = g.divisiones;
+                const sTL=proj(TL[0],TL[1]), sTR=proj(TR[0],TR[1]), sBR=proj(BR[0],BR[1]), sBL=proj(BL[0],BL[1]);
+                if (!sTL||!sTR||!sBR||!sBL) { Array.from(gEl.children).forEach(p=>p.setAttribute('d','M -999 -999')); return; }
                 Array.from(gEl.children).forEach((path, i) => {
                     const t0=i/N, t1=(i+1)/N;
-                    const poly = [
-                        [TL[0]+(TR[0]-TL[0])*t0, TL[1]+(TR[1]-TL[1])*t0],
-                        [TL[0]+(TR[0]-TL[0])*t1, TL[1]+(TR[1]-TL[1])*t1],
-                        [BL[0]+(BR[0]-BL[0])*t1, BL[1]+(BR[1]-BL[1])*t1],
-                        [BL[0]+(BR[0]-BL[0])*t0, BL[1]+(BR[1]-BL[1])*t0]
+                    const pts = [
+                        [sTL[0]+(sTR[0]-sTL[0])*t0, sTL[1]+(sTR[1]-sTL[1])*t0],
+                        [sTL[0]+(sTR[0]-sTL[0])*t1, sTL[1]+(sTR[1]-sTL[1])*t1],
+                        [sBL[0]+(sBR[0]-sBL[0])*t1, sBL[1]+(sBR[1]-sBL[1])*t1],
+                        [sBL[0]+(sBR[0]-sBL[0])*t0, sBL[1]+(sBR[1]-sBL[1])*t0]
                     ];
-                    const pts = poly.map(pt => proj(pt[0], pt[1]));
-                    if (pts.some(p => !p)) { path.setAttribute('d','M -999 -999'); return; }
                     path.setAttribute('d', `M ${pts[0][0]},${pts[0][1]} L ${pts[1][0]},${pts[1][1]} L ${pts[2][0]},${pts[2][1]} L ${pts[3][0]},${pts[3][1]} Z`);
                 });
             });
@@ -543,18 +543,22 @@
                     lastClickTime = Date.now();
                     if (isDevModeDrawActive && currentLineType === 'eraser') { const coords = visor360.mouseEventToCoords(mock); if (!coords) return; let p = coords[0], y = coords[1]; let lineToDelete = null; let minDist = 3.5; allDrawnLines.forEach((line) => { line.puntos.forEach((pt) => { let dist = Math.sqrt(Math.pow(pt[0] - p, 2) + Math.pow(pt[1] - y, 2)); if (dist < minDist) { minDist = dist; lineToDelete = line.id; } }); }); if (lineToDelete) { allDrawnLines = allDrawnLines.filter((l) => l.id !== lineToDelete); refreshAllHotspots(); saveToLocal(); } return; }
                     if (isDevModeDrawActive && currentLineType === 'grid') {
-                        const coords = visor360.mouseEventToCoords(mock); if (!coords) return;
-                        const pt = [parseFloat(coords[0].toFixed(3)), parseFloat(coords[1].toFixed(3))];
                         if (!gridCornerA) {
-                            gridCornerA = pt;
-                            const _hid = 'grid_preview_corner_' + Date.now();
-                            visor360.addHotSpot({ id: _hid, pitch: pt[0], yaw: pt[1], createTooltipFunc: (div) => { div.classList.add('vertex-marker','grid-corner-marker','drawing-node'); div.id = _hid; }, createTooltipArgs: {} });
+                            const coords = visor360.mouseEventToCoords(mock); if (!coords) return;
+                            gridCornerA = { sx: mock.clientX, sy: mock.clientY, pitch: parseFloat(coords[0].toFixed(3)), yaw: parseFloat(coords[1].toFixed(3)) };
+                            const _hid = 'grid_preview_a';
+                            visor360.addHotSpot({ id: _hid, pitch: gridCornerA.pitch, yaw: gridCornerA.yaw, createTooltipFunc: (div) => { div.classList.add('vertex-marker','grid-corner-marker','drawing-node'); div.id = _hid; }, createTooltipArgs: {} });
                         } else {
-                            const cornerB = pt;
+                            const bx = mock.clientX, by = mock.clientY;
+                            const x1 = Math.min(gridCornerA.sx, bx), x2 = Math.max(gridCornerA.sx, bx);
+                            const y1 = Math.min(gridCornerA.sy, by), y2 = Math.max(gridCornerA.sy, by);
+                            function sToPY(sx, sy) { const r = visor360.mouseEventToCoords({ clientX: sx, clientY: sy }); return r ? [parseFloat(r[0].toFixed(3)), parseFloat(r[1].toFixed(3))] : null; }
+                            const TL = sToPY(x1,y1), TR = sToPY(x2,y1), BR = sToPY(x2,y2), BL = sToPY(x1,y2);
+                            try { visor360.removeHotSpot('grid_preview_a'); } catch(e){}
+                            if (!TL||!TR||!BR||!BL) { gridCornerA = null; return; }
                             const divStr = prompt('¿Cuántos lotes quieres crear? (1–20)', '4');
                             const N = Math.max(1, Math.min(20, parseInt(divStr) || 4));
-                            try { visor360.removeHotSpot('grid_preview_corner_' + Date.now()); } catch(e){}
-                            allGridBlocks.push({ id: 'grid_' + Date.now(), tipo: 'grid', corners: [ gridCornerA, [gridCornerA[0], cornerB[1]], cornerB, [cornerB[0], gridCornerA[1]] ], divisiones: N });
+                            allGridBlocks.push({ id: 'grid_' + Date.now(), tipo: 'grid', corners: [TL,TR,BR,BL], divisiones: N });
                             gridCornerA = null;
                             refreshAllHotspots(); saveToLocal();
                         }
