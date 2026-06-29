@@ -154,7 +154,7 @@
             <div class="filter-group"><button class="filter-btn active" data-status="todos">Todos</button><button class="filter-btn" data-status="favoritos">❤️ Favs</button><button class="filter-btn" data-status="disponible">Disp.</button><button class="filter-btn" data-status="reservado">Reser.</button><button class="filter-btn" data-status="vendido">Vend.</button><button class="filter-btn" data-status="no_disponible">No Disp.</button></div>
             <div class="lotes-list" id="js-lotes-list"></div>
         </div>
-        <div id="dev-toolbar-draw" class="dev-toolbar"><div class="macos-header"><div class="macos-dots"><i></i><i></i><i></i></div><div class="dev-toolbar-title">MODO ARQUITECTO (DIBUJO LIBRE)</div><div style="width: 42px;"></div></div><div class="dev-tools-row"><button class="dev-btn active" id="btn-draw-solid">Sólida</button><button class="dev-btn" id="btn-draw-dash">Punteada</button><button class="dev-btn" id="btn-draw-neon" style="color: #06b6d4;">Neón</button><button class="dev-btn" id="btn-draw-street" title="Dibuja la ruta, las calles se fusionarán al unirse">🛣️ Calle</button><button class="dev-btn" id="btn-draw-rect" title="Añade un polígono base que puedes deformar">🔲 Cuadro Base</button><button class="dev-btn" id="btn-draw-grid" style="color:#10b981;" title="Grid Lotes: 2 clics → diagonal del rectángulo → elige cuántos lotes. Arrastra las 4 esquinas naranjas para deformar toda la grilla.">📐 Grid Lotes</button><button class="dev-btn" id="btn-draw-cut" style="color: #f59e0b;" title="Apunta hacia donde quieres cortar">✂️ Subdividir</button><button class="dev-btn" id="btn-eraser" style="color: #fca5a5;">🧹 Goma</button><div style="width: 1px; height: 20px; background: rgba(255,255,255,0.2); margin: 0 5px;"></div><button class="dev-btn action" id="btn-undo-point" title="Borrar último vértice trazado">Deshacer Punto</button><button class="dev-btn export" id="btn-finish-line" title="Sella la figura en el suelo">Terminar y Anclar ⚓</button><button class="dev-btn nuke" id="btn-nuke">🗑️ Limpiar Todo</button><button class="dev-btn export-ai" title="Exportar Matriz JSON al Portapapeles">🤖 COPIAR DATOS IA</button></div></div>
+        <div id="dev-toolbar-draw" class="dev-toolbar"><div class="macos-header"><div class="macos-dots"><i></i><i></i><i></i></div><div class="dev-toolbar-title">MODO ARQUITECTO (DIBUJO LIBRE)</div><div style="width: 42px;"></div></div><div class="dev-tools-row"><button class="dev-btn active" id="btn-draw-solid">Sólida</button><button class="dev-btn" id="btn-draw-dash">Punteada</button><button class="dev-btn" id="btn-draw-neon" style="color: #06b6d4;">Neón</button><button class="dev-btn" id="btn-draw-street" title="Dibuja la ruta, las calles se fusionarán al unirse">🛣️ Calle</button><button class="dev-btn" id="btn-draw-rect" title="Añade un polígono base que puedes deformar">🔲 Cuadro Base</button><button class="dev-btn" id="btn-draw-grid" style="color:#10b981;" title="Grid Lotes: 2 clics → diagonal del rectángulo → elige cuántos lotes. Arrastra las 4 esquinas naranjas para deformar toda la grilla.">📐 Grid Lotes</button><button class="dev-btn" id="btn-draw-cut" style="color: #f59e0b;" title="Apunta hacia donde quieres cortar">✂️ Subdividir</button><button class="dev-btn" id="btn-eraser" style="color: #fca5a5;">🧹 Goma</button><div style="width: 1px; height: 20px; background: rgba(255,255,255,0.2); margin: 0 5px;"></div><button class="dev-btn action" id="btn-undo-point" title="Borrar último vértice trazado">Deshacer Punto</button><button class="dev-btn export" id="btn-finish-line" title="Sella la figura en el suelo">Terminar y Anclar ⚓</button><button class="dev-btn" id="btn-straighten" style="color:#06b6d4;border-color:rgba(6,182,212,0.4);" title="Endereza todos los lotes: promedia los bordes superior/inferior y espacia los divisores equitativamente → grilla rectangular perfecta">📏 Enderezar</button><button class="dev-btn nuke" id="btn-nuke">🗑️ Limpiar Todo</button><button class="dev-btn export-ai" title="Exportar Matriz JSON al Portapapeles">🤖 COPIAR DATOS IA</button></div></div>
         <div id="dev-toolbar-pins" class="dev-toolbar"><div class="macos-header"><div class="macos-dots"><i></i><i></i><i></i></div><div class="dev-toolbar-title">MODO PINES (MAPEO)</div><div style="width: 42px;"></div></div><div class="dev-tools-row"><button class="dev-btn active btn-pin-disp" data-pintype="disponible">Disp.</button><button class="dev-btn btn-pin-res" data-pintype="reservado">Res.</button><button class="dev-btn btn-pin-vend" data-pintype="vendido">Vend.</button><button class="dev-btn btn-pin-nodisp" data-pintype="no_disponible">No Disp.</button><div style="width: 1px; height: 20px; background: rgba(255,255,255,0.2); margin: 0 5px;"></div><button class="dev-btn btn-pin-360" data-pintype="vista360">Pin 360</button><button class="dev-btn btn-pin-hor" data-pintype="horizonte">Horizonte</button><button class="dev-btn" id="btn-set-drone" style="color: #f59e0b;" title="Establecer Coordenadas Base (Lat, Lng)">📍 Origen Drone</button><button class="dev-btn" id="btn-set-north" style="color: #34d399;" title="Fijar la vista actual como el Norte Magnético">🧭 Fijar Norte</button><div style="width: 1px; height: 20px; background: rgba(255,255,255,0.2); margin: 0 5px;"></div><button class="dev-btn action" id="btn-heatmap" title="Activa Telemetría Visual">🔥 Mapa Calor</button><button class="dev-btn" id="btn-edit-titles" style="color: #cbd5e1;" title="Editar Título y Subtítulo Central">📝 Títulos</button><button class="dev-btn nuke" id="btn-nuke-pins">🗑️ Limpiar Todo</button><button class="dev-btn export-ai" title="Exportar Matriz JSON al Portapapeles">🤖 COPIAR DATOS IA</button></div></div>
         <div class="premium-dock" id="js-dock">
             <div class="dock-legend"><div class="legend-item"><div class="legend-dot dot-disp"></div><span class="legend-text">Disponible</span></div><div class="legend-item"><div class="legend-dot dot-res"></div><span class="legend-text">Reservado</span></div><div class="legend-item"><div class="legend-dot dot-vend"></div><span class="legend-text">Vendido</span></div><div class="legend-item"><div class="legend-dot dot-nodisp"></div><span class="legend-text">No Disp.</span></div></div>
@@ -683,6 +683,7 @@
             
             document.getElementById('btn-draw-rect')?.addEventListener('click', () => { if(!visor360) return; const p = visor360.getPitch(); const y = visor360.getYaw(); const pts = [ [p+3, y-3], [p+3, y+3], [p-3, y+3], [p-3, y-3] ]; let tipoTrazo = (currentLineType === 'eraser' || currentLineType === 'cortar') ? 'solida' : currentLineType; allDrawnLines.push({ id: 'rect_' + Date.now(), tipo: tipoTrazo, puntos: pts }); refreshAllHotspots(); saveToLocal(); });
             document.getElementById('btn-undo-point')?.addEventListener('click', () => { if (currentLinePoints.length > 0) { currentLinePoints.pop(); refreshAllHotspots(); } });
+            document.getElementById('btn-straighten')?.addEventListener('click', enderezarTrazos);
             document.getElementById('btn-finish-line')?.addEventListener('click', () => { if (currentLinePoints.length > 1) { if (currentLineType !== 'cortar') { allDrawnLines.push({ id: currentTempLineId, tipo: currentLineType, puntos: [...currentLinePoints] }); } currentLinePoints = []; currentTempLineId = 'temp_' + Date.now(); refreshAllHotspots(); saveToLocal(); } });
 
             const btnDeleteLastLine = document.createElement('button'); btnDeleteLastLine.id = 'btn-delete-last-line'; btnDeleteLastLine.style.display = 'none'; document.body.appendChild(btnDeleteLastLine);
@@ -696,6 +697,48 @@
         }
         
         function limpiarProyecto() { if(!confirm("⚠️ ¡ADVERTENCIA NUCLEAR! Vas a borrar TODOS los lotes, calles y pines.\n\n¿Estás seguro?")) return; BaseDatosLotes = []; PuntosHorizonte = []; allDrawnLines = []; currentLinePoints = []; gridCornerA = null; refreshAllHotspots(); localStorage.removeItem('masterplan360_autosave'); }
+
+        function enderezarTrazos() {
+            const N = allDrawnLines.length;
+            if (!visor360 || N < 2) { alert("Se necesitan al menos 2 lotes dibujados para enderezar."); return; }
+            if (!confirm(`📏 Enderezar ${N} lote(s)\n\nPromedia los bordes superior e inferior y espacia los divisores equitativamente, dejando líneas perfectamente rectas.\n\n¿Continuar?`)) return;
+            const container = document.getElementById('panorama-container'); if (!container) return;
+            const w = container.clientWidth, h = container.clientHeight;
+            const camP = visor360.getPitch()*Math.PI/180, camYr = visor360.getYaw()*Math.PI/180, hfov = visor360.getHfov();
+            const scp = Math.sin(camP), ccp = Math.cos(camP), f = 0.5*w/Math.tan(hfov*Math.PI/360), cx2 = w/2, cys = h/2;
+            function toSc(pt) {
+                const p=pt[0]*Math.PI/180, y=pt[1]*Math.PI/180, sp=Math.sin(p), cp2=Math.cos(p);
+                let yd=y-camYr; while(yd>Math.PI) yd-=2*Math.PI; while(yd<-Math.PI) yd+=2*Math.PI;
+                const sy=Math.sin(yd), cy2=Math.cos(yd), z=sp*scp+cp2*cy2*ccp;
+                return z>0.0001 ? [cx2+(cp2*sy/z)*f, cys-((sp*ccp-cp2*cy2*scp)/z)*f] : null;
+            }
+            function toPY(sx, sy) {
+                const r = visor360.mouseEventToCoords({clientX: DOMCache.viewport.left+sx, clientY: DOMCache.viewport.top+sy});
+                return r ? [parseFloat(r[0].toFixed(3)), parseFloat(r[1].toFixed(3))] : null;
+            }
+            // Collect all screen Y values to find median (split top/bottom edges)
+            const allYs = [];
+            allDrawnLines.forEach(l => l.puntos.forEach(pt => { const s=toSc(pt); if(s) allYs.push(s[1]); }));
+            const medY = [...allYs].sort((a,b)=>a-b)[Math.floor(allYs.length/2)];
+            const topYs=[], botYs=[], allXs=[];
+            allDrawnLines.forEach(l => l.puntos.forEach(pt => {
+                const s=toSc(pt); if(!s) return;
+                allXs.push(s[0]);
+                if(s[1] < medY) topYs.push(s[1]); else botYs.push(s[1]);
+            }));
+            if(!topYs.length || !botYs.length || !allXs.length) return;
+            const avgTY = topYs.reduce((a,b)=>a+b,0)/topYs.length;
+            const avgBY = botYs.reduce((a,b)=>a+b,0)/botYs.length;
+            const minX = Math.min(...allXs), maxX = Math.max(...allXs);
+            const newLines = []; const baseId = 'str_'+Date.now();
+            for(let i=0; i<N; i++) {
+                const x0=minX+(maxX-minX)*i/N, x1=minX+(maxX-minX)*(i+1)/N;
+                const tl=toPY(x0,avgTY), tr=toPY(x1,avgTY), br=toPY(x1,avgBY), bl=toPY(x0,avgBY);
+                if(tl&&tr&&br&&bl) newLines.push({id:baseId+'_'+i, tipo:'solida', puntos:[tl,tr,br,bl]});
+            }
+            if(newLines.length===N) { allDrawnLines=newLines; refreshAllHotspots(); saveToLocal(); flashScreenSuccess(); }
+            else { flashScreenError(); }
+        }
 
         function exportarDatosParaIA(event) {
             const dataToSave = { configProyecto: ConfigProyecto, origen: OrigenDrone, norte: NorteOffset, lotes: BaseDatosLotes, horizontes: PuntosHorizonte, trazos: allDrawnLines };
