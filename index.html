@@ -577,8 +577,9 @@
                             } return;
                         }
                         if (snappedCoords) { p = snappedCoords[0]; y = snappedCoords[1]; }
-                        if (currentLinePoints.length >= 3) { let dOrg = Math.sqrt(Math.pow(p-currentLinePoints[0][0],2)+Math.pow(y-currentLinePoints[0][1],2)); if (dOrg < SNAP_DISTANCE) isClosingShape = true; }
-                        if (!isClosingShape && snappedCoords && currentLinePoints.length >= 2 && Math.abs(p-currentLinePoints[0][0]) < 0.01 && Math.abs(y-currentLinePoints[0][1]) < 0.01) isClosingShape = true;
+                        const _snapCloseR = SNAP_DISTANCE * (isTouchDevice() ? 2.5 : 1.5);
+                        if (currentLinePoints.length >= 3) { let dOrg = Math.sqrt(Math.pow(p-currentLinePoints[0][0],2)+Math.pow(y-currentLinePoints[0][1],2)); if (dOrg < _snapCloseR) isClosingShape = true; }
+                        if (!isClosingShape && snappedCoords && currentLinePoints.length >= 2 && Math.abs(p-currentLinePoints[0][0]) < 0.05 && Math.abs(y-currentLinePoints[0][1]) < 0.05) isClosingShape = true;
                         if (isClosingShape) { document.getElementById('btn-finish-line')?.click(); } else { currentLinePoints.push([p, y]); if (isSnapToExisting && currentLinePoints.length >= 3) { document.getElementById('btn-finish-line')?.click(); } else { let _hid = 'temp_base_pt_'+Date.now(); visor360.addHotSpot({ pitch: p, yaw: y, id: _hid, createTooltipFunc: renderHiddenVertex, createTooltipArgs: { lineId: currentTempLineId, type: currentLineType, isGuide: true, idx: currentLinePoints.length-1, hsId: _hid }, }); syncSVGElements(); updateSVGPaths(); } }
                     } else if (isDevModePinsActive && !pickedPin) {
                         if (e.target && e.target.closest('.qa-btn')) return; const coords = visor360.mouseEventToCoords(mock); if (!coords) return; const p = coords[0].toFixed(2), y = coords[1].toFixed(2); let baseArgs = { pitch: parseFloat(p), yaw: parseFloat(y) };
@@ -602,7 +603,38 @@
                     return; 
                 }
                 
-                try { const coords = visor360.mouseEventToCoords(mock); let foundSnap = false; snappedCoords = null; isSnapToClose = false; isSnapToExisting = false; if (currentLinePoints.length >= 3 && currentLineType !== 'cortar' && currentLineType !== 'eraser') { let dP0 = Math.sqrt(Math.pow(coords[0]-currentLinePoints[0][0],2)+Math.pow(coords[1]-currentLinePoints[0][1],2)); if (dP0 < SNAP_DISTANCE) { foundSnap = true; snappedCoords = [...currentLinePoints[0]]; isSnapToClose = true; } } if (!foundSnap) { const existPts = []; allDrawnLines.forEach((l) => existPts.push(...l.puntos)); for (let pt of existPts) { const d = Math.sqrt(Math.pow(pt[0]-coords[0],2)+Math.pow(pt[1]-coords[1],2)); if (d < SNAP_DISTANCE * 3) { foundSnap = true; snappedCoords = [...pt]; isSnapToExisting = true; break; } } } if (!foundSnap) { for (let pt of currentLinePoints) { const d = Math.sqrt(Math.pow(pt[0]-coords[0],2)+Math.pow(pt[1]-coords[1],2)); if (d < SNAP_DISTANCE) { foundSnap = true; snappedCoords = [...pt]; break; } } } if (foundSnap) { snapCursor.style.left = mock.clientX+'px'; snapCursor.style.top = mock.clientY+'px'; snapCursor.classList.add('active'); snapCursor.classList.toggle('is-closing', isSnapToClose); snapCursor.classList.toggle('is-connecting', isSnapToExisting); } else { snapCursor.classList.remove('active'); snapCursor.classList.remove('is-closing'); snapCursor.classList.remove('is-connecting'); } } catch (err) {}
+                try {
+                    const coords = visor360.mouseEventToCoords(mock);
+                    let foundSnap = false; snappedCoords = null; isSnapToClose = false; isSnapToExisting = false;
+                    const touch = isTouchDevice();
+                    const SNAP_CLOSE  = SNAP_DISTANCE * (touch ? 2.5 : 1.5);
+                    const SNAP_EXIST  = SNAP_DISTANCE * (touch ? 5.0 : 3.0);
+                    // 1. Snap to own polygon origin (green – close shape)
+                    if (currentLinePoints.length >= 3 && currentLineType !== 'cortar' && currentLineType !== 'eraser') {
+                        const dP0 = Math.sqrt(Math.pow(coords[0]-currentLinePoints[0][0],2)+Math.pow(coords[1]-currentLinePoints[0][1],2));
+                        if (dP0 < SNAP_CLOSE) { foundSnap = true; snappedCoords = [...currentLinePoints[0]]; isSnapToClose = true; }
+                    }
+                    // 2. Snap to nearest sealed polygon vertex (amber – connect to existing lot)
+                    if (!foundSnap) {
+                        let minD = Infinity, nearPt = null;
+                        allDrawnLines.forEach(l => l.puntos.forEach(pt => {
+                            const d = Math.sqrt(Math.pow(pt[0]-coords[0],2)+Math.pow(pt[1]-coords[1],2));
+                            if (d < SNAP_EXIST && d < minD) { minD = d; nearPt = pt; }
+                        }));
+                        if (nearPt) { foundSnap = true; snappedCoords = [...nearPt]; isSnapToExisting = true; }
+                    }
+                    // 3. Snap to own current line points
+                    if (!foundSnap) {
+                        let minD = Infinity, nearPt = null;
+                        currentLinePoints.forEach(pt => {
+                            const d = Math.sqrt(Math.pow(pt[0]-coords[0],2)+Math.pow(pt[1]-coords[1],2));
+                            if (d < SNAP_DISTANCE && d < minD) { minD = d; nearPt = pt; }
+                        });
+                        if (nearPt) { foundSnap = true; snappedCoords = [...nearPt]; }
+                    }
+                    if (foundSnap) { snapCursor.style.left = mock.clientX+'px'; snapCursor.style.top = mock.clientY+'px'; snapCursor.classList.add('active'); snapCursor.classList.toggle('is-closing', isSnapToClose); snapCursor.classList.toggle('is-connecting', isSnapToExisting); }
+                    else { snapCursor.classList.remove('active'); snapCursor.classList.remove('is-closing'); snapCursor.classList.remove('is-connecting'); }
+                } catch (err) {}
             }
             container.addEventListener('mousedown', handleStart); container.addEventListener('touchstart', handleStart, { passive: false }); window.addEventListener('mouseup', handleEnd); window.addEventListener('touchend', handleEnd); window.addEventListener('mousemove', handleMove); window.addEventListener('touchmove', handleMove, { passive: false });
         }
