@@ -4,7 +4,138 @@
     "lng": -73.3173470901525
   },
   "norte": -112.61619796926988,
-  "lotes": [],
+  "lotes": [
+    {
+      "pitch": -58.02,
+      "yaw": -179.3,
+      "tipo": "lote",
+      "status": "disponible",
+      "titulo": "Lote 01",
+      "superficie": "0,5011 HÁ",
+      "precio": "UF 0",
+      "imagen": "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&q=80",
+      "id": "nuevo_1782705833541",
+      "numero": "01",
+      "terreno": "Plano"
+    },
+    {
+      "pitch": -64.04,
+      "yaw": -178.41,
+      "tipo": "lote",
+      "status": "disponible",
+      "titulo": "Lote 02",
+      "superficie": "0,5019 HÁ",
+      "precio": "UF 0",
+      "imagen": "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&q=80",
+      "id": "nuevo_1782705866709",
+      "numero": "02",
+      "terreno": "Plano"
+    },
+    {
+      "pitch": -71.04,
+      "yaw": -176.64,
+      "tipo": "lote",
+      "status": "disponible",
+      "titulo": "Lote 03",
+      "superficie": "0,5019 HÁ",
+      "precio": "UF 0",
+      "imagen": "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&q=80",
+      "id": "nuevo_1782705943333",
+      "numero": "03",
+      "terreno": "Plano"
+    },
+    {
+      "pitch": -78.88,
+      "yaw": -170.11,
+      "tipo": "lote",
+      "status": "disponible",
+      "titulo": "Lote 04",
+      "superficie": "0,5005 HÁ",
+      "precio": "UF 0",
+      "imagen": "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&q=80",
+      "id": "nuevo_1782705961579",
+      "numero": "04",
+      "terreno": "Plano"
+    },
+    {
+      "pitch": -86.22,
+      "yaw": -149.9,
+      "tipo": "lote",
+      "status": "disponible",
+      "titulo": "Lote 05",
+      "superficie": "0,5012 HÁ",
+      "precio": "UF 0",
+      "imagen": "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&q=80",
+      "id": "nuevo_1782705986044",
+      "numero": "05",
+      "terreno": "Plano"
+    },
+    {
+      "pitch": -85.11,
+      "yaw": -28.72,
+      "tipo": "lote",
+      "status": "disponible",
+      "titulo": "Lote 06",
+      "superficie": "0,5012 HÁ",
+      "precio": "UF 0",
+      "imagen": "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&q=80",
+      "id": "nuevo_1782706025862",
+      "numero": "06",
+      "terreno": "Plano"
+    },
+    {
+      "pitch": -77.73,
+      "yaw": -12.74,
+      "tipo": "lote",
+      "status": "disponible",
+      "titulo": "Lote 07",
+      "superficie": "0,5004 HÁ",
+      "precio": "UF 0",
+      "imagen": "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&q=80",
+      "id": "nuevo_1782706042408",
+      "numero": "07",
+      "terreno": "Plano"
+    },
+    {
+      "pitch": -70.25,
+      "yaw": -8.82,
+      "tipo": "lote",
+      "status": "disponible",
+      "titulo": "Lote 08",
+      "superficie": "0,5007 HÁ",
+      "precio": "UF 0",
+      "imagen": "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&q=80",
+      "id": "nuevo_1782706088082",
+      "numero": "08",
+      "terreno": "Plano"
+    },
+    {
+      "pitch": -63.27,
+      "yaw": -6.83,
+      "tipo": "lote",
+      "status": "disponible",
+      "titulo": "Lote 09",
+      "superficie": "0,5110 HÁ",
+      "precio": "UF 0",
+      "imagen": "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&q=80",
+      "id": "nuevo_1782706122019",
+      "numero": "09",
+      "terreno": "Plano"
+    },
+    {
+      "pitch": -56.65,
+      "yaw": -5.63,
+      "tipo": "lote",
+      "status": "disponible",
+      "titulo": "Lote 10",
+      "superficie": "0,7101 HÁ",
+      "precio": "UF 0",
+      "imagen": "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&q=80",
+      "id": "nuevo_1782706140803",
+      "numero": "10",
+      "terreno": "Plano"
+    }
+  ],
   "horizontes": [
     {
       "pitch": 1.69,
@@ -171,8 +302,8 @@
           17.399
         ],
         [
-          -86.871,
-          74.038
+          -86.816,
+          72.362
         ],
         [
           -82.25,
@@ -189,16 +320,16 @@
       "tipo": "solida",
       "puntos": [
         [
-          -86.871,
-          74.038
+          -86.816,
+          72.362
         ],
         [
-          -82.294,
-          155.011
+          -82.254,
+          153.945
         ],
         [
-          -80.235,
-          -132.894
+          -80.09,
+          -134.525
         ],
         [
           -82.25,
@@ -211,8 +342,8 @@
       "tipo": "solida",
       "puntos": [
         [
-          -82.294,
-          155.011
+          -82.254,
+          153.945
         ],
         [
           -74.803,
@@ -223,8 +354,8 @@
           -156.318
         ],
         [
-          -80.235,
-          -132.894
+          -80.09,
+          -134.525
         ]
       ]
     },
