@@ -86,22 +86,25 @@
         .btn-action-new.whatsapp { grid-column: span 2; min-height: 28px; padding: 7px 10px; border-radius: 11px; background: linear-gradient(180deg, #34eb7a 0%, #25D366 42%, #1FA855 100%); color: #fff; border: 0.5px solid rgba(255,255,255,0.4); box-shadow: 0 1px 0 rgba(255,255,255,0.3) inset, 0 4px 12px rgba(37,211,102,0.32), 0 0 0 0.5px rgba(18,140,126,0.28); font-size: 7.5px; font-weight: 800; letter-spacing: 0.3px; text-transform: uppercase; gap: 5px; position: relative; overflow: hidden; } .btn-action-new.whatsapp::before { content: ''; position: absolute; inset: 0; background: linear-gradient(120deg, rgba(255,255,255,0.22) 0%, transparent 45%); pointer-events: none; } .btn-action-new.whatsapp:hover { background: linear-gradient(180deg, #3ef080 0%, #2ee06d 42%, #22b85c 100%); color: #fff; transform: translateY(-1px); box-shadow: 0 1px 0 rgba(255,255,255,0.35) inset, 0 8px 18px rgba(37,211,102,0.45), 0 0 0 0.5px rgba(18,140,126,0.35); } .btn-action-new.whatsapp:active { transform: translateY(0); box-shadow: 0 1px 0 rgba(255,255,255,0.25) inset, 0 4px 10px rgba(37,211,102,0.35); } .btn-wa-icon { width: 14px; height: 14px; display: block; shape-rendering: geometricPrecision; filter: drop-shadow(0 1px 1px rgba(0,0,0,0.12)); }
         .btn-action-new.share { background: rgba(59, 130, 246, 0.1); color: #3b82f6; border-color: rgba(59, 130, 246, 0.2); } .btn-action-new.share:hover { background: #3b82f6; color: #fff; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3); } .btn-action-new.youtube-btn { background: rgba(239, 68, 68, 0.1); color: #ef4444; border-color: rgba(239, 68, 68, 0.2); } .btn-action-new.youtube-btn:hover { background: #ef4444; color: #fff; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3); } .btn-action-new.video { background: rgba(0, 102, 204, 0.1); color: #0066cc; border-color: rgba(0, 102, 204, 0.2); } .btn-action-new.video:hover { background: #0066cc; color: #fff; box-shadow: 0 4px 15px rgba(0, 102, 204, 0.3); } .btn-action-new.full { grid-column: span 2; } .btn-action-new.disabled { opacity: 0.5; cursor: not-allowed; pointer-events: none; background: rgba(0,0,0,0.02); color: #86868b; border-color: transparent;}
         .pin-360 { background: rgba(250, 250, 252, 0.95); color: #0066cc; border-radius: 30px; border: 1px solid rgba(255, 255, 255, 1); display: flex; align-items: center; justify-content: center; gap: 6px; padding: 0 14px 0 10px; height: 34px; font-weight: 800; font-size: 13px; cursor: pointer; box-shadow: 0 8px 25px rgba(0,0,0,0.35); backdrop-filter: blur(10px); transition: transform 0.2s, box-shadow 0.2s, background 0.2s; pointer-events: auto; white-space: nowrap; position: relative; } .pin-360 svg { width: 16px; height: 16px; pointer-events: none; stroke-width: 2.5;} .pin-360:hover { transform: scale(1.08); background: #0066cc; color: #fff; border-color: #0066cc; box-shadow: 0 12px 30px rgba(0, 102, 204, 0.5); } .pin-360:hover svg { stroke: #fff; }
-        .pin-casa360 { position: relative; display: flex; flex-direction: column; align-items: center; gap: 4px; pointer-events: auto; cursor: pointer; filter: drop-shadow(0 8px 18px rgba(88, 28, 135, 0.45)); transition: transform 0.25s cubic-bezier(0.2,0.8,0.2,1); }
-        .pin-casa360-body { display: flex; align-items: center; gap: 5px; padding: 6px 11px 6px 8px; border-radius: 999px; background: linear-gradient(135deg, rgba(124, 58, 237, 0.96), rgba(6, 182, 212, 0.92)); border: 1px solid rgba(255,255,255,0.55); box-shadow: 0 1px 0 rgba(255,255,255,0.35) inset, 0 8px 22px rgba(79, 70, 229, 0.45); animation: casa360Pulse 2.2s ease-in-out infinite alternate; }
-        .pin-casa360-body svg { width: 15px; height: 15px; color: #fff; flex-shrink: 0; pointer-events: none; }
-        .pin-casa360-label { font-size: 8px; font-weight: 800; letter-spacing: 0.6px; text-transform: uppercase; color: #fff; line-height: 1; pointer-events: none; white-space: nowrap; }
-        .pin-casa360-badge { font-size: 5.5px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: rgba(255,255,255,0.88); background: rgba(15, 23, 42, 0.55); padding: 2px 6px; border-radius: 999px; border: 0.5px solid rgba(255,255,255,0.2); pointer-events: none; }
-        .smart-pin-wrapper:hover .pin-casa360, .pin-casa360:hover { transform: scale(1.12) translateY(-4px); }
-        @keyframes casa360Pulse { from { box-shadow: 0 1px 0 rgba(255,255,255,0.35) inset, 0 8px 18px rgba(79, 70, 229, 0.35); } to { box-shadow: 0 1px 0 rgba(255,255,255,0.45) inset, 0 12px 28px rgba(6, 182, 212, 0.55); } }
-        .casa360-card { position: absolute; bottom: calc(100% + 12px); left: 50%; transform: translateX(-50%) scale(0.94); width: 210px; background: rgba(255,255,255,0.94); backdrop-filter: blur(20px); border: 0.5px solid rgba(255,255,255,0.85); border-radius: 18px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.22), 0 0 0 0.5px rgba(124,58,237,0.15); visibility: hidden; opacity: 0; pointer-events: none; transition: opacity 0.2s, transform 0.2s, visibility 0s linear 0.2s; z-index: 999999; }
-        .casa360-card::after { content: ''; position: absolute; bottom: -10px; left: 0; width: 100%; height: 10px; pointer-events: auto; }
+        .smart-pin-wrapper.has-casa360 { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; }
+        .smart-pin-wrapper.has-casa360 .pin-scaler { display: flex; flex-direction: column; align-items: center; }
+        .pin-casa360 { position: relative; display: flex; flex-direction: column; align-items: center; gap: 8px; pointer-events: auto; cursor: pointer; filter: drop-shadow(0 10px 24px rgba(88, 28, 135, 0.5)); transition: transform 0.25s cubic-bezier(0.2,0.8,0.2,1); }
+        .pin-casa360-body { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 12px 22px 12px 16px; border-radius: 999px; background: linear-gradient(135deg, rgba(124, 58, 237, 0.96), rgba(6, 182, 212, 0.92)); border: 1px solid rgba(255,255,255,0.55); box-shadow: 0 1px 0 rgba(255,255,255,0.35) inset, 0 10px 28px rgba(79, 70, 229, 0.48); animation: casa360Pulse 2.2s ease-in-out infinite alternate; }
+        .pin-casa360-body svg { width: 30px; height: 30px; color: #fff; flex-shrink: 0; pointer-events: none; }
+        .pin-casa360-label { font-size: 16px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: #fff; line-height: 1; pointer-events: none; white-space: nowrap; }
+        .pin-casa360-badge { font-size: 11px; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; color: rgba(255,255,255,0.88); background: rgba(15, 23, 42, 0.55); padding: 4px 12px; border-radius: 999px; border: 0.5px solid rgba(255,255,255,0.2); pointer-events: none; }
+        .smart-pin-wrapper:hover .pin-casa360, .pin-casa360:hover { transform: scale(1.08) translateY(-4px); }
+        @keyframes casa360Pulse { from { box-shadow: 0 1px 0 rgba(255,255,255,0.35) inset, 0 10px 22px rgba(79, 70, 229, 0.35); } to { box-shadow: 0 1px 0 rgba(255,255,255,0.45) inset, 0 16px 36px rgba(6, 182, 212, 0.55); } }
+        .casa360-card { position: absolute; bottom: calc(100% + 18px); left: 50%; transform: translateX(-50%) scale(0.94); transform-origin: bottom center; width: 260px; max-width: min(260px, 78vw); background: rgba(255,255,255,0.94); backdrop-filter: blur(20px); border: 0.5px solid rgba(255,255,255,0.85); border-radius: 20px; overflow: hidden; box-shadow: 0 24px 48px rgba(0,0,0,0.22), 0 0 0 0.5px rgba(124,58,237,0.15); visibility: hidden; opacity: 0; pointer-events: none; transition: opacity 0.2s, transform 0.2s, visibility 0s linear 0.2s; z-index: 999999; }
+        .casa360-card::after { content: ''; position: absolute; bottom: -14px; left: 0; width: 100%; height: 14px; pointer-events: auto; }
         body:not(.dev-mode-pins-active) .smart-pin-wrapper:hover .casa360-card, body:not(.dev-mode-pins-active) .casa360-card:hover, body:not(.dev-mode-pins-active) .smart-pin-wrapper.casa360-open .casa360-card { visibility: visible; opacity: 1; pointer-events: auto; transform: translateX(-50%) scale(1); transition: opacity 0.2s, transform 0.2s, visibility 0s linear 0s; }
-        .casa360-card-img { width: 100%; height: 88px; object-fit: cover; display: block; }
-        .casa360-card-body { padding: 10px 12px 12px; text-align: center; }
-        .casa360-card-kicker { font-size: 6px; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; color: #7c3aed; margin-bottom: 4px; }
-        .casa360-card-title { font-size: 11px; font-weight: 800; color: #1d1d1f; line-height: 1.2; margin-bottom: 8px; letter-spacing: -0.15px; }
-        .casa360-card-btn { display: inline-flex; align-items: center; justify-content: center; gap: 5px; width: 100%; padding: 8px 10px; border: none; border-radius: 12px; background: linear-gradient(135deg, #7c3aed, #06b6d4); color: #fff; font-size: 8px; font-weight: 800; letter-spacing: 0.35px; text-transform: uppercase; cursor: pointer; box-shadow: 0 6px 16px rgba(124,58,237,0.35); pointer-events: auto; transition: transform 0.2s, box-shadow 0.2s; }
-        .casa360-card-btn:hover { transform: translateY(-1px); box-shadow: 0 10px 22px rgba(6,182,212,0.4); }
+        .casa360-card-img { width: 100%; height: 110px; object-fit: cover; display: block; }
+        .casa360-card-body { padding: 14px 16px 16px; text-align: center; display: flex; flex-direction: column; align-items: center; width: 100%; box-sizing: border-box; gap: 6px; }
+        .casa360-card-kicker { font-size: 7px; font-weight: 800; letter-spacing: 1.4px; text-transform: uppercase; color: #7c3aed; margin: 0; line-height: 1; }
+        .casa360-card-title { font-size: 13px; font-weight: 800; color: #1d1d1f; line-height: 1.25; margin: 0 0 4px; letter-spacing: -0.15px; width: 100%; }
+        .casa360-card-btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 12px 14px; border: none; border-radius: 14px; background: linear-gradient(135deg, #7c3aed, #06b6d4); color: #fff; font-size: 9px; font-weight: 800; letter-spacing: 0.4px; text-transform: uppercase; cursor: pointer; box-shadow: 0 8px 20px rgba(124,58,237,0.35); pointer-events: auto; transition: transform 0.2s, box-shadow 0.2s; line-height: 1; text-align: center; box-sizing: border-box; }
+        .casa360-card-btn svg { width: 14px; height: 14px; flex-shrink: 0; display: block; pointer-events: none; }
+        .casa360-card-btn:hover { transform: translateY(-1px); box-shadow: 0 12px 26px rgba(6,182,212,0.4); }
         @keyframes fastSweep { 0% { transform: scale(1.25) translateX(12%); } 100% { transform: scale(1.25) translateX(-12%); } }
         .portal-card { position: absolute; bottom: calc(100% + 12px); left: 50%; transform: translateX(-50%) scale(0.94); width: 220px; background: rgba(255,255,255,0.96); backdrop-filter: blur(20px); border: 0.5px solid rgba(255,255,255,0.88); border-radius: 18px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.22), 0 0 0 0.5px rgba(0,102,204,0.14); visibility: hidden; opacity: 0; pointer-events: none; transition: opacity 0.2s, transform 0.2s, visibility 0s linear 0.2s; z-index: 999999; display: flex; flex-direction: column; }
         .portal-card::after { content: ''; position: absolute; bottom: -10px; left: 0; width: 100%; height: 10px; pointer-events: auto; }
@@ -201,7 +204,7 @@
             .pegman-dock-btn { position: static !important; width: auto !important; height: auto !important; background: transparent !important; border-radius: 10px !important; border: none !important; box-shadow: none !important; opacity: 1 !important; animation: none !important; transform: none !important; padding: 4px 2px !important; flex: 1; flex-direction: column; gap: 4px; } .pegman-dock-btn:hover { transform: none !important; box-shadow: none !important; background: rgba(255,255,255,0.1) !important; } .pegman-img { width: 14px !important; margin: 0 auto; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.5)) !important; }
             .hide-mobile { display: none !important; } .pegman-drag-hint { display: block !important; }
             .dock-legend { width: max-content; bottom: calc(100% + 8px); padding: 5px 12px; gap: 8px; border-radius: 12px; left: 50%; transform: translateX(-50%); z-index: 99999;} .legend-text { font-size: 7px !important; letter-spacing: 0.5px; } .legend-dot { width: 4px; height: 4px; }
-            .hud-glass-card { padding: 3px 8px; border-radius: 6px; } .hud-label-title { font-size: 8px !important; letter-spacing: 1px;} .hud-val { font-size: 8px !important; } .hud-unit { font-size: 5px !important; } .hud-line-down { height: 20px; } body:not(.dev-mode-pins-active) .smart-pin-wrapper:hover .lote-card, body:not(.dev-mode-pins-active) .lote-card:hover, body:not(.dev-mode-pins-active) .smart-pin-wrapper:hover .portal-card, body:not(.dev-mode-pins-active) .portal-card:hover { transform: translateX(-50%) scale(calc(0.90 * var(--card-scale))); transform-origin: bottom center; } .lote-card, .portal-card { margin-bottom: 16px; } .route-pin-capsule { padding: 3px 8px; max-width: min(200px, 44vw); } .route-pin-title { font-size: 7px; } .route-pin-stem { height: 12px; } .route-pin-dot { width: 4px; height: 4px; } .route-pin-info-card { min-width: 132px; max-width: min(200px, 48vw); padding: 8px 10px; } .route-pin-nav-btn { font-size: 6px; padding: 4px 6px; }
+            .hud-glass-card { padding: 3px 8px; border-radius: 6px; } .hud-label-title { font-size: 8px !important; letter-spacing: 1px;} .hud-val { font-size: 8px !important; } .hud-unit { font-size: 5px !important; } .hud-line-down { height: 20px; } body:not(.dev-mode-pins-active) .smart-pin-wrapper:hover .lote-card, body:not(.dev-mode-pins-active) .lote-card:hover, body:not(.dev-mode-pins-active) .smart-pin-wrapper:hover .portal-card, body:not(.dev-mode-pins-active) .portal-card:hover { transform: translateX(-50%) scale(calc(0.90 * var(--card-scale))); transform-origin: bottom center; } .lote-card, .portal-card { margin-bottom: 16px; } body:not(.dev-mode-pins-active) .smart-pin-wrapper:hover .casa360-card, body:not(.dev-mode-pins-active) .casa360-card:hover, body:not(.dev-mode-pins-active) .smart-pin-wrapper.casa360-open .casa360-card { transform: translateX(-50%) scale(calc(0.92 * var(--card-scale, 1))); transform-origin: bottom center; } .casa360-card { width: min(260px, 84vw); bottom: calc(100% + 14px); } .pin-casa360-label { font-size: 14px; } .pin-casa360-body svg { width: 26px; height: 26px; } .pin-casa360-body { padding: 10px 18px 10px 14px; gap: 8px; } .casa360-card-btn { font-size: 8px; padding: 11px 12px; } .route-pin-capsule { padding: 3px 8px; max-width: min(200px, 44vw); } .route-pin-title { font-size: 7px; } .route-pin-stem { height: 12px; } .route-pin-dot { width: 4px; height: 4px; } .route-pin-info-card { min-width: 132px; max-width: min(200px, 48vw); padding: 8px 10px; } .route-pin-nav-btn { font-size: 6px; padding: 4px 6px; }
             .map-panel { bottom: auto !important; top: 50% !important; left: 50% !important; right: auto !important; transform: translate(-50%, -50%) scale(0.94) !important; width: 85vw !important; height: 60vh !important; max-height: none !important; z-index: 9999999 !important; border-radius: 20px !important; } .map-panel.open { transform: translate(-50%, -50%) scale(1) !important; } .map-overlay-bottom { height: 140px !important; } .gps-tracker-box { bottom: 65px !important; width: 85% !important; max-width: 300px !important; padding: 10px 14px !important; } .btn-directions { bottom: 15px !important; width: 85% !important; max-width: 300px !important; justify-content: center !important; padding: 10px 16px !important; font-size: 11px !important;}
             .premium-sidebar { bottom: auto !important; top: 50% !important; left: 50% !important; right: auto !important; transform: translate(-50%, -50%) scale(0.94) !important; width: 85vw !important; height: 60vh !important; max-height: none !important; z-index: 9999999 !important; border-radius: 20px !important; padding: 20px !important; } .premium-sidebar.open { transform: translate(-50%, -50%) scale(1) !important; }
             #inapp-modal { background: rgba(8, 12, 20, 0.98); } .inapp-shell { padding: max(56px, calc(env(safe-area-inset-top) + 48px)) 8px max(16px, env(safe-area-inset-bottom)); } .inapp-content.is-yt { max-height: 38vh; border-radius: 14px; } .inapp-content.is-mp4 { height: 58vh; border-radius: 16px; } #inapp-modal.mode-360 .inapp-shell { padding: 0; } #inapp-modal.mode-360 .inapp-content.is-360 { width: 100%; height: 100%; border-radius: 0; border: none; } .btn-volver-360 { top: max(12px, env(safe-area-inset-top)); right: max(12px, env(safe-area-inset-right)); left: auto; padding: 10px 16px; font-size: 11px; } .inapp-modal-tag { font-size: 8px; top: max(14px, calc(env(safe-area-inset-top) + 2px)); }
@@ -355,7 +358,8 @@
         async function fetchValorUFOnline() { try { const response = await fetch('https://mindicador.cl/api/uf', { cache: 'no-store' }); if (response.ok) { const data = await response.json(); if(data && data.serie && data.serie.length > 0) { UF_Online = data.serie[0].valor; return; } } } catch (error) {} }
         async function fetchMasterData() { try { const response = await fetch('datos-suelo.json?v=' + new Date().getTime()); if(response.ok) { const data = await response.json(); ConfigProyecto = data.configProyecto || ConfigProyecto; OrigenDrone = data.origen || null; NorteOffset = data.norte ?? data.norteSuelo ?? 0; BaseDatosLotes = data.lotes || data.lotesSuelo || []; PuntosHorizonte = data.horizontes || data.horizontesSuelo || []; allDrawnLines = data.trazos || data.trazosSuelo || []; } else { loadFromLocal(); } } catch(e) { loadFromLocal(); } applyProjectConfig(); }
 
-        let visor360, currentPinSizeIndex = 1, isIntroAnimating = true, isDevModeDrawActive = false, isDevModePinsActive = false, currentLineType = 'solida', currentLinePoints = [], currentPinTypeMap = 'disponible', currentTempLineId = 'temp_' + Date.now(), draggingVertex = null, pickedPin = null, snapCursor = null, ghostPin = null, snappedCoords = null, activePinArgs = null, isCreatingNewPin = false, isSnapToClose = false, isSnapToExisting = false;
+        let visor360, currentPinSizeIndex = 1, isIntroAnimating = true, isDevModeDrawActive = false, isDevModePinsActive = false, currentLineType = 'solida', currentLinePoints = [], currentPinTypeMap = 'disponible', currentTempLineId = 'temp_' + Date.now(), draggingVertex = null, pickedPin = null, snapCursor = null, ghostPin = null, snappedCoords = null, activePinArgs = null, isCreatingNewPin = false, isSnapToClose = false, isSnapToExisting = false, inAppCameraSnapshot = null;
+        const INAPP_BACK_ARROW_SVG = '<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>';
         const DEFAULT_HFOV = 125, MAX_SCALE = 1.0, MIN_SCALE = 0.20, SNAP_DISTANCE = 8.0; 
 
         function intersectSegments(p0, p1, p2, p3) {
@@ -553,6 +557,52 @@
             attachSmartViewerHandlers(panoramaBase);
         }
 
+        function getSueloCasa360IntroTarget() {
+            const pin = BaseDatosLotes.find(l => l.tipo === 'casa360');
+            if (pin) return { pitch: pin.pitch, yaw: pin.yaw, hfov: 74 };
+            return { pitch: 0.57, yaw: -3.51, hfov: 74 };
+        }
+
+        function finishSueloIntroAnimation() {
+            isIntroAnimating = false;
+            const svg = document.getElementById('loteo-svg');
+            if (svg && isSvgRenderAllowed()) svg.style.opacity = '1';
+            syncSVGElements();
+            if (visor360 && visor360.getRenderer) {
+                const renderer = visor360.getRenderer();
+                if (renderer) hookRendererOverlay(renderer);
+            }
+        }
+
+        function runSueloCinematicIntro() {
+            const target = getSueloCasa360IntroTarget();
+            const urlParams = new URLSearchParams(window.location.search);
+            const targetLoteId = urlParams.get('lote');
+            const MOVE_MS = 2800;
+            const FINISH_MS = 3200;
+            if (!visor360) return;
+            if (targetLoteId) {
+                const searchStr = targetLoteId.toLowerCase().replace(/\s/g, '');
+                const targetPin = BaseDatosLotes.find(l => (l.titulo || '').toLowerCase().replace(/\s/g, '').includes(searchStr) || (l.numero || '') === targetLoteId);
+                if (targetPin) visor360.lookAt(targetPin.pitch, targetPin.yaw, 70, 3000);
+                else visor360.lookAt(target.pitch, target.yaw, target.hfov, 3000);
+                setTimeout(finishSueloIntroAnimation, 3000);
+                return;
+            }
+            visor360.setHfov(DEFAULT_HFOV, 2200);
+            visor360.setPitch(52, 2200);
+            setTimeout(() => {
+                visor360.lookAt(28, -110, 118, MOVE_MS);
+                setTimeout(() => {
+                    visor360.lookAt(8, -55, 92, MOVE_MS);
+                    setTimeout(() => {
+                        visor360.lookAt(target.pitch, target.yaw, target.hfov, FINISH_MS);
+                        setTimeout(finishSueloIntroAnimation, FINISH_MS);
+                    }, MOVE_MS);
+                }, MOVE_MS);
+            }, 1400);
+        }
+
         function runPannellumIntroBootstrap() {
             const beginIntro = () => {
                 setTimeout(() => {
@@ -560,15 +610,7 @@
                     if (pnlmUi && svg && svg.parentNode !== pnlmUi && isWebGLSupported) { pnlmUi.insertBefore(svg, pnlmUi.firstChild); }
                     let fsInterval = setInterval(() => { let fsBtn = document.querySelector('.pnlm-fullscreen-toggle-button'); if (fsBtn) { clearInterval(fsInterval); let newBtn = fsBtn.cloneNode(true); fsBtn.parentNode.replaceChild(newBtn, fsBtn); newBtn.addEventListener('click', () => { let docEl = document.documentElement; if (!document.fullscreenElement) { if (docEl.requestFullscreen) docEl.requestFullscreen(); else if (docEl.webkitRequestFullscreen) docEl.webkitRequestFullscreen(); newBtn.classList.add('pnlm-fullscreen-toggle-button-active'); } else { if (document.exitFullscreen) document.exitFullscreen(); else if (document.webkitExitFullscreen) document.webkitExitFullscreen(); newBtn.classList.remove('pnlm-fullscreen-toggle-button-active'); } if (isTouchDevice() && visor360 && viewerGpuReady) { setTimeout(() => { const r = visor360.getRenderer(); if (r && r.resize) r.resize(); }, 300); } }); } }, 500);
                     if (pnlmContainer && uiEngine) { pnlmContainer.appendChild(uiEngine); uiEngine.style.zIndex = '999999'; }
-                    if (!visor360) return; visor360.setHfov(DEFAULT_HFOV, 2500); visor360.setPitch(-40, 2500);
-                    const urlParams = new URLSearchParams(window.location.search); const targetLoteId = urlParams.get('lote');
-                    setTimeout(() => {
-                        if (targetLoteId) { const searchStr = targetLoteId.toLowerCase().replace(/\s/g, ''); const targetPin = BaseDatosLotes.find( (l) => (l.titulo || '').toLowerCase().replace(/\s/g, '').includes(searchStr) || (l.numero || '') === targetLoteId, ); if (targetPin) visor360.lookAt(targetPin.pitch, targetPin.yaw, 70, 3000); else visor360.lookAt(5, 15, 100, 3000); } else { visor360.lookAt(5, 15, 100, 3000); }
-                        setTimeout(() => {
-                            if (!targetLoteId) visor360.lookAt(-89, 65, 115, 3000);
-                            setTimeout(() => { isIntroAnimating = false; if (svg && isSvgRenderAllowed()) svg.style.opacity = '1'; syncSVGElements(); if (visor360 && visor360.getRenderer) { const renderer = visor360.getRenderer(); if(renderer) hookRendererOverlay(renderer); } }, targetLoteId ? 0 : 3000);
-                        }, 3000);
-                    }, 1500);
+                    runSueloCinematicIntro();
                 }, 1000);
             };
             if (isTouchDevice() && !viewerGpuReady) { let loops = 0; const waitGpu = setInterval(() => { loops++; if (viewerGpuReady || loops > 30) { clearInterval(waitGpu); viewerGpuReady = true; beginIntro(); } }, 100); return; } beginIntro();
@@ -707,11 +749,39 @@
             });
         }
 
+        function setInAppBackLabel(text) { const btn = document.getElementById('js-close-inapp'); if (btn) btn.innerHTML = INAPP_BACK_ARROW_SVG + (text || 'Volver al 360'); }
         function setupInAppModal() { const modal = document.getElementById('inapp-modal'); const closeBtn = document.getElementById('js-close-inapp'); if(closeBtn) { closeBtn.addEventListener('click', (e) => { e.preventDefault(); closeInAppViewer(); }); } if(modal) { modal.addEventListener('click', (e) => { if(e.target === modal) closeInAppViewer(); }); } }
         function isDirectVideoUrl(url) { if(!url) return false; const clean = url.toLowerCase().split('?')[0]; return /\.(mp4|webm|mov|m4v|ogg)(\?|$)/i.test(clean); }
-        function closeInAppViewer() { const modal = document.getElementById('inapp-modal'); const iframe = document.getElementById('inapp-iframe-player'); const video = document.getElementById('inapp-video-player'); const content = document.getElementById('js-inapp-content'); const tag = document.getElementById('inapp-modal-tag'); if(modal) { modal.classList.remove('open', 'mode-360', 'mode-yt', 'mode-mp4'); } setTimeout(() => { if(iframe) { iframe.src = ''; iframe.style.display = 'none'; } if(video) { video.pause(); video.removeAttribute('src'); video.load(); video.style.display = 'none'; } if(content) content.className = 'inapp-content'; if(tag) tag.textContent = 'Tour Virtual'; }, 300); }
+        function closeInAppViewer() {
+            const snap = inAppCameraSnapshot;
+            const modal = document.getElementById('inapp-modal'); const iframe = document.getElementById('inapp-iframe-player'); const video = document.getElementById('inapp-video-player'); const content = document.getElementById('js-inapp-content'); const tag = document.getElementById('inapp-modal-tag');
+            if(modal) { modal.classList.remove('open', 'mode-360', 'mode-yt', 'mode-mp4'); }
+            setTimeout(() => { if(iframe) { iframe.src = ''; iframe.style.display = 'none'; } if(video) { video.pause(); video.removeAttribute('src'); video.load(); video.style.display = 'none'; } if(content) content.className = 'inapp-content'; if(tag) tag.textContent = 'Tour Virtual'; setInAppBackLabel('Volver al 360'); }, 300);
+            inAppCameraSnapshot = null;
+            if (snap && visor360) { setTimeout(() => { visor360.lookAt(snap.pitch, snap.yaw, snap.hfov, 900); }, 80); }
+        }
         function extractYouTubeID(url) { if (!url) return null; const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/; const match = url.match(regExp); return (match && match[2].length === 11) ? match[2] : null; }
-        window.openInAppViewer = function(e, url, label) { if(e) { e.preventDefault(); e.stopPropagation(); } if(!url) return; const modal = document.getElementById('inapp-modal'); const content = document.getElementById('js-inapp-content'); const iframe = document.getElementById('inapp-iframe-player'); const video = document.getElementById('inapp-video-player'); const tag = document.getElementById('inapp-modal-tag'); modal.classList.remove('mode-360', 'mode-yt', 'mode-mp4'); if(tag) tag.textContent = label || 'Tour Virtual'; if(iframe) iframe.style.display = 'none'; if(video) video.style.display = 'none'; const videoID = extractYouTubeID(url); if(videoID) { content.className = 'inapp-content is-yt'; modal.classList.add('mode-yt'); iframe.src = `https://www.youtube.com/embed/${videoID}?autoplay=1&rel=0&modestbranding=1&playsinline=1`; iframe.style.display = 'block'; } else if(isDirectVideoUrl(url)) { content.className = 'inapp-content is-mp4'; modal.classList.add('mode-mp4'); video.src = url; video.style.display = 'block'; video.play().catch(() => {}); } else { content.className = 'inapp-content is-360'; modal.classList.add('mode-360'); iframe.src = url; iframe.style.display = 'block'; } modal.classList.add('open'); };
+        window.openInAppViewer = function(e, url, label, opts) {
+            opts = opts || {};
+            if(e) { e.preventDefault(); e.stopPropagation(); }
+            if(!url) return;
+            const modal = document.getElementById('inapp-modal'); const content = document.getElementById('js-inapp-content'); const iframe = document.getElementById('inapp-iframe-player'); const video = document.getElementById('inapp-video-player'); const tag = document.getElementById('inapp-modal-tag');
+            if (visor360 && modal && !modal.classList.contains('open')) {
+                inAppCameraSnapshot = { pitch: visor360.getPitch(), yaw: visor360.getYaw(), hfov: visor360.getHfov() };
+            }
+            modal.classList.remove('mode-360', 'mode-yt', 'mode-mp4');
+            if(tag) tag.textContent = label || 'Tour Virtual';
+            if(iframe) iframe.style.display = 'none';
+            if(video) video.style.display = 'none';
+            const videoID = extractYouTubeID(url);
+            const isMp4 = isDirectVideoUrl(url);
+            const backLabel = opts.backLabel || (opts.fromCasa360 ? 'Volver al entorno' : ((isMp4 || videoID) ? 'Volver al entorno' : 'Volver al 360'));
+            setInAppBackLabel(backLabel);
+            if(videoID) { content.className = 'inapp-content is-yt'; modal.classList.add('mode-yt'); iframe.src = `https://www.youtube.com/embed/${videoID}?autoplay=1&rel=0&modestbranding=1&playsinline=1`; iframe.style.display = 'block'; }
+            else if(isMp4) { content.className = 'inapp-content is-mp4'; modal.classList.add('mode-mp4'); video.src = url; video.style.display = 'block'; video.play().catch(() => {}); }
+            else { content.className = 'inapp-content is-360'; modal.classList.add('mode-360'); iframe.src = url; iframe.style.display = 'block'; }
+            modal.classList.add('open');
+        };
 
         function isFormFieldTarget(el) {
             if (!el || el === document.body) return false;
@@ -1022,9 +1092,9 @@
             const url = args.url || ''; const thumb = args.imagen || 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&q=80'; const title = args.titulo || 'Casa Modelo';
             pin.innerHTML = `<div class="pin-casa360-body"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 10.5L12 3l9 7.5V20a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1v-9.5z"/></svg><span class="pin-casa360-label">Casa 360°</span></div><span class="pin-casa360-badge">Tour</span>`;
             const card = document.createElement('div'); card.classList.add('casa360-card');
-            card.innerHTML = `<img class="casa360-card-img" src="${thumb}" alt="${title}" draggable="false"><div class="casa360-card-body"><div class="casa360-card-kicker">Video Tour Inmersivo</div><div class="casa360-card-title">${title}</div><button type="button" class="casa360-card-btn"><svg width="10" height="10" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg> Ver Casa en 360°</button></div>`;
+            card.innerHTML = `<img class="casa360-card-img" src="${thumb}" alt="${title}" draggable="false"><div class="casa360-card-body"><div class="casa360-card-kicker">Video Tour Inmersivo</div><div class="casa360-card-title">${title}</div><button type="button" class="casa360-card-btn"><svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg><span>Ver Casa en 360°</span></button></div>`;
             const playBtn = card.querySelector('.casa360-card-btn');
-            playBtn.addEventListener('click', (e) => { if(isDevModePinsActive) return; e.preventDefault(); e.stopPropagation(); openInAppViewer(e, url, title); });
+            playBtn.addEventListener('click', (e) => { if(isDevModePinsActive) return; e.preventDefault(); e.stopPropagation(); openInAppViewer(e, url, title, { fromCasa360: true, backLabel: 'Volver al entorno' }); });
             scaler.appendChild(pin); wrapper.appendChild(scaler); wrapper.appendChild(card); addQuickActions(wrapper, args); hotSpotDiv.appendChild(wrapper); bindPinEvents(pin, args, hotSpotDiv);
             if (isTouchDevice() || document.body.classList.contains('is-embedded')) {
                 pin.addEventListener('click', (e) => {
