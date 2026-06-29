@@ -701,16 +701,18 @@
         function enderezarTrazos() {
             const N = allDrawnLines.length;
             if (!visor360 || N < 2) { alert("Se necesitan al menos 2 lotes dibujados para enderezar."); return; }
-            if (!confirm(`📏 Enderezar ${N} lote(s)\n\nLas 4 esquinas extremas quedan fijas.\nLos bordes superior e inferior se convierten en líneas rectas que las unen.\nEl espaciado de cada divisor intermedio se preserva.\n\n¿Continuar?`)) return;
-            const container = document.getElementById('panorama-container'); if (!container) return;
-            const w = container.clientWidth, h = container.clientHeight;
-            const camP = visor360.getPitch()*Math.PI/180, camYr = visor360.getYaw()*Math.PI/180, hfov = visor360.getHfov();
-            const scp = Math.sin(camP), ccp = Math.cos(camP), f = 0.5*w/Math.tan(hfov*Math.PI/360), cx2 = w/2, cys = h/2;
-            function toSc(pt) {
-                const p=pt[0]*Math.PI/180, y=pt[1]*Math.PI/180, sp=Math.sin(p), cp2=Math.cos(p);
-                let yd=y-camYr; while(yd>Math.PI) yd-=2*Math.PI; while(yd<-Math.PI) yd+=2*Math.PI;
+            if (!confirm(`📏 ENDEREZAR ${N} LOTES\n\nLas 4 esquinas extremas quedan fijas.\nBordes convertidos a líneas rectas perfectas.\nDivisores redistribuidos equitativamente.\n\n¿Continuar?`)) return;
+
+            const ctnr = document.getElementById('panorama-container'); if (!ctnr) return;
+            const W = ctnr.clientWidth, H = ctnr.clientHeight;
+            const camP = visor360.getPitch()*Math.PI/180, camYw = visor360.getYaw()*Math.PI/180, hfov = visor360.getHfov();
+            const scp = Math.sin(camP), ccp = Math.cos(camP), fc = 0.5*W/Math.tan(hfov*Math.PI/360), cxW = W/2, cyH = H/2;
+
+            function toSc(py) {
+                const p=py[0]*Math.PI/180, y=py[1]*Math.PI/180, sp=Math.sin(p), cp2=Math.cos(p);
+                let yd=y-camYw; while(yd>Math.PI) yd-=2*Math.PI; while(yd<-Math.PI) yd+=2*Math.PI;
                 const sy=Math.sin(yd), cy2=Math.cos(yd), z=sp*scp+cp2*cy2*ccp;
-                return z>0.0001 ? [cx2+(cp2*sy/z)*f, cys-((sp*ccp-cp2*cy2*scp)/z)*f] : null;
+                return z>0.0001 ? [cxW+(cp2*sy/z)*fc, cyH-((sp*ccp-cp2*cy2*scp)/z)*fc] : null;
             }
             function toPY(sx, sy) {
                 const r = visor360.mouseEventToCoords({clientX: DOMCache.viewport.left+sx, clientY: DOMCache.viewport.top+sy});
@@ -718,44 +720,31 @@
             }
             function lerp2(a, b, t) { return [a[0]+(b[0]-a[0])*t, a[1]+(b[1]-a[1])*t]; }
 
-            // Project all vertices to screen
-            const lotSc = allDrawnLines.map(l => l.puntos.map(pt => toSc(pt)));
-            const allSc = lotSc.flat().filter(v => v);
-            if (allSc.length < 8) return;
+            // Project every vertex; keep only visible points
+            const allSc = allDrawnLines.flatMap(l => l.puntos.map(pt => toSc(pt))).filter(v => v);
+            if (allSc.length < 4) { alert("⚠️ Posiciona el panorama para que todos los lotes sean visibles e intenta de nuevo."); return; }
 
-            // Split into top/bottom groups using median Y
-            const medY = [...allSc.map(v=>v[1])].sort((a,b)=>a-b)[Math.floor(allSc.length/2)];
-            const topGrp = allSc.filter(v=>v[1]<medY), botGrp = allSc.filter(v=>v[1]>=medY);
-            if (!topGrp.length || !botGrp.length) return;
+            // Bounding box of all projected vertices
+            const xs = allSc.map(v=>v[0]), ys = allSc.map(v=>v[1]);
+            const mnX=Math.min(...xs), mxX=Math.max(...xs), mnY=Math.min(...ys), mxY=Math.max(...ys);
 
-            // 4 fixed corner pillars (extreme vertices of each group)
-            const TL = topGrp.reduce((m,v)=>v[0]<m[0]?v:m, topGrp[0]);
-            const TR = topGrp.reduce((m,v)=>v[0]>m[0]?v:m, topGrp[0]);
-            const BL = botGrp.reduce((m,v)=>v[0]<m[0]?v:m, botGrp[0]);
-            const BR = botGrp.reduce((m,v)=>v[0]>m[0]?v:m, botGrp[0]);
-            const topSpan = TR[0]-TL[0], botSpan = BR[0]-BL[0];
-            if (topSpan < 1 || botSpan < 1) return;
+            // 4 corner pillars = vertex NEAREST to each corner of the bounding box
+            // (robust: no top/bottom classification needed)
+            function nearest(tx, ty) {
+                return allSc.reduce((m,v) => Math.hypot(v[0]-tx,v[1]-ty) < Math.hypot(m[0]-tx,m[1]-ty) ? v : m, allSc[0]);
+            }
+            const TL=nearest(mnX,mnY), TR=nearest(mxX,mnY), BR=nearest(mxX,mxY), BL=nearest(mnX,mxY);
 
-            const newLines = []; const baseId = 'str_'+Date.now();
-            allDrawnLines.forEach((line, i) => {
-                const verts = lotSc[i]; if (verts.some(v=>!v)) return;
-                // Split this lot's vertices into top/bottom
-                const lTop = verts.filter(v=>v[1]<medY).sort((a,b)=>a[0]-b[0]);
-                const lBot = verts.filter(v=>v[1]>=medY).sort((a,b)=>a[0]-b[0]);
-                if (lTop.length<2 || lBot.length<2) return;
-                // Ratio of this lot's left/right dividers along the overall top edge
-                const t0 = (( lTop[0][0]+lBot[0][0])/2 - (TL[0]+BL[0])/2) / ((topSpan+botSpan)/2);
-                const t1 = (( lTop[lTop.length-1][0]+lBot[lBot.length-1][0])/2 - (TL[0]+BL[0])/2) / ((topSpan+botSpan)/2);
-                const tc0 = Math.max(0, Math.min(1, t0)), tc1 = Math.max(0, Math.min(1, t1));
-                // Project onto straight edges
-                const nTL=lerp2(TL,TR,tc0), nTR=lerp2(TL,TR,tc1);
-                const nBR=lerp2(BL,BR,tc1), nBL=lerp2(BL,BR,tc0);
-                const tl=toPY(nTL[0],nTL[1]), tr=toPY(nTR[0],nTR[1]);
-                const br=toPY(nBR[0],nBR[1]), bl=toPY(nBL[0],nBL[1]);
-                if(tl&&tr&&br&&bl) newLines.push({id:baseId+'_'+i, tipo:'solida', puntos:[tl,tr,br,bl]});
-            });
-            if(newLines.length===N) { allDrawnLines=newLines; refreshAllHotspots(); saveToLocal(); flashScreenSuccess(); }
-            else { flashScreenError(); }
+            // Re-create N evenly-spaced lots within those 4 pillars
+            const newLines = [], baseId = 'str_'+Date.now();
+            for (let i=0; i<N; i++) {
+                const t0=i/N, t1=(i+1)/N;
+                const tl=toPY(...lerp2(TL,TR,t0)), tr=toPY(...lerp2(TL,TR,t1));
+                const br=toPY(...lerp2(BL,BR,t1)), bl=toPY(...lerp2(BL,BR,t0));
+                if (tl&&tr&&br&&bl) newLines.push({id:baseId+'_'+i, tipo:'solida', puntos:[tl,tr,br,bl]});
+            }
+            if (newLines.length===N) { allDrawnLines=newLines; refreshAllHotspots(); saveToLocal(); flashScreenSuccess(); }
+            else { alert("⚠️ Enderezado incompleto. Asegúrate de ver toda la grilla en pantalla e intenta de nuevo."); }
         }
 
         function exportarDatosParaIA(event) {
