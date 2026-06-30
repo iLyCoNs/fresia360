@@ -594,6 +594,59 @@
         let shaSueloActual = "";
         let masterData = {};
         let editorVistaActual = 'aereo';
+        let guardarCambiosEnCurso = false;
+
+        async function fetchGithubFileSha(user, repo, token, filename) {
+            const url = `https://api.github.com/repos/${user}/${repo}/contents/${filename}`;
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github.v3+json' }
+            });
+            if (response.status === 404) return '';
+            if (!response.ok) {
+                const err = await response.json().catch(() => ({}));
+                throw new Error(err.message || `HTTP ${response.status}`);
+            }
+            const jsonRes = await response.json();
+            return jsonRes.sha || '';
+        }
+
+        async function refrescarShaAereo(user, repo, token) {
+            shaActual = await fetchGithubFileSha(user, repo, token, FILENAME);
+            return shaActual;
+        }
+
+        async function refrescarShaSuelo(user, repo, token) {
+            shaSueloActual = await fetchGithubFileSha(user, repo, token, FILENAME_SUELO);
+            return shaSueloActual;
+        }
+
+        async function putGithubContents(user, repo, token, filename, message, contentEncoded, shaRef, onShaUpdate) {
+            const url = `https://api.github.com/repos/${user}/${repo}/contents/${filename}`;
+            const attemptPut = async (shaValue, isRetry) => {
+                const payload = { message, content: contentEncoded };
+                if (shaValue) payload.sha = shaValue;
+                const response = await fetch(url, {
+                    method: 'PUT',
+                    headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (response.ok) {
+                    const result = await response.json();
+                    if (result.content && result.content.sha && onShaUpdate) onShaUpdate(result.content.sha);
+                    return { ok: true, result };
+                }
+                const err = await response.json().catch(() => ({}));
+                const msg = err.message || `HTTP ${response.status}`;
+                if (!isRetry && (msg.includes('does not match') || response.status === 409)) {
+                    const freshSha = await fetchGithubFileSha(user, repo, token, filename);
+                    if (onShaUpdate) onShaUpdate(freshSha);
+                    return attemptPut(freshSha, true);
+                }
+                return { ok: false, message: msg };
+            };
+            return attemptPut(shaRef, false);
+        }
 
         // MOTOR DE FONDOS DE PANTALLA
         const wallpapers = {
@@ -786,12 +839,20 @@
                 if(data.code === 'Ok' && data.routes && data.routes.length > 0) {
                     const route = data.routes[0];
                     const distKm = (route.distance / 1000).toFixed(1);
-                    const timeMin = Math.round(route.duration / 60);
+                    const traffic = (function(d) {
+                        d = d || new Date(); const h = d.getHours(), day = d.getDay(), month = d.getMonth();
+                        let f = 1.0; const wd = day >= 1 && day <= 5;
+                        if (wd && ((h >= 7 && h < 9) || (h >= 17 && h < 20))) f = 1.42;
+                        else if (wd && h >= 12 && h < 14) f = 1.12;
+                        if (month >= 11 || month <= 1) f *= 1.1;
+                        return f;
+                    })();
+                    const timeMin = Math.round((route.duration / 60) * traffic);
 
                     document.querySelector(`input[data-id="${horizId}"][data-field="distancia"]`).value = distKm + " KM";
                     document.querySelector(`input[data-id="${horizId}"][data-field="tiempo"]`).value = timeMin + " MIN";
 
-                    mostrarToast("✅ Ruta terrestre exacta calculada", true);
+                    mostrarToast("✅ Ruta por carretera + factor tráfico Chile", true);
                 } else {
                     alert("⚠️ Imposible trazar ruta. Verifica que haya conexión terrestre.");
                 }
@@ -933,22 +994,16 @@
 
             const jsonString = JSON.stringify(sueloData, null, 2);
             const contentEncoded = btoa(unescape(encodeURIComponent(jsonString)));
-            const url = `https://api.github.com/repos/${user}/${repo}/contents/${FILENAME_SUELO}`;
-            const ghPayload = {
-                message: "🌿 Actualización Vista Suelo 360° (Panel Admin)",
-                content: contentEncoded
-            };
-            if (shaSueloActual) ghPayload.sha = shaSueloActual;
-
             try {
-                const response = await fetch(url, {
-                    method: 'PUT',
-                    headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
-                    body: JSON.stringify(ghPayload)
-                });
-                if (response.ok) {
-                    const result = await response.json();
-                    shaSueloActual = result.content.sha;
+                await refrescarShaSuelo(user, repo, token);
+                const upload = await putGithubContents(
+                    user, repo, token, FILENAME_SUELO,
+                    "🌿 Actualización Vista Suelo 360° (Panel Admin)",
+                    contentEncoded,
+                    shaSueloActual,
+                    (sha) => { shaSueloActual = sha; }
+                );
+                if (upload.ok) {
                     masterData.norteSuelo = sueloData.norte;
                     masterData.lotesSuelo = sueloData.lotes;
                     masterData.horizontesSuelo = sueloData.horizontes;
@@ -956,8 +1011,7 @@
                     mostrarToast("Vista suelo guardada en datos-suelo.json", true);
                     return true;
                 }
-                const err = await response.json();
-                alert("⛔ Error al subir vista suelo: " + (err.message || response.status));
+                alert("⛔ Error al subir vista suelo: " + upload.message);
                 return false;
             } catch (error) {
                 alert("⚠️ Error de conexión al subir vista suelo.");
@@ -1296,6 +1350,8 @@
         }
 
         async function guardarCambios() {
+            if (guardarCambiosEnCurso) return false;
+            guardarCambiosEnCurso = true;
             const btn = document.getElementById('btn-save-master');
             btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" stroke-linecap="round" stroke-linejoin="round" style="animation: spin 1s linear infinite; transform-origin: center;"/></svg> Procesando...`;
             btn.style.pointerEvents = "none";
@@ -1364,37 +1420,34 @@
             const user = safeGetStorage("masterplan_user");
             const repo = safeGetStorage("masterplan_repo");
             const token = safeGetStorage("masterplan_token");
-            const url = `https://api.github.com/repos/${user}/${repo}/contents/${FILENAME}`;
-
-            const payload = {
-                message: "🏢 Actualización de Proyecto, Textos e Inventario (Vía Panel de Administración)",
-                content: contentEncoded,
-                sha: shaActual 
-            };
-
             try {
-                const response = await fetch(url, {
-                    method: 'PUT',
-                    headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-
-                if (response.ok) {
-                    const result = await response.json();
-                    shaActual = result.content.sha; 
+                await refrescarShaAereo(user, repo, token);
+                const upload = await putGithubContents(
+                    user, repo, token, FILENAME,
+                    "🏢 Actualización de Proyecto, Textos e Inventario (Vía Panel de Administración)",
+                    contentEncoded,
+                    shaActual,
+                    (sha) => { shaActual = sha; }
+                );
+                if (upload.ok) {
                     mostrarToast("Panel Actualizado Exitosamente", true);
                     pushMasterplanToEditor();
-                } else {
-                    const err = await response.json();
-                    alert("⛔ Error al guardar: " + err.message);
+                    guardarCambiosEnCurso = false;
+                    btn.innerHTML = `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"></path><path d="M17 21v-8H7v8"></path><path d="M7 3v5h8V3"></path></svg> Guardar Cambios`;
+                    btn.style.pointerEvents = "auto";
+                    btn.style.opacity = "1";
+                    return true;
                 }
+                alert("⛔ Error al guardar: " + upload.message);
             } catch (error) {
                 alert("⚠️ Error crítico de conexión. Revisa tu internet.");
             }
 
+            guardarCambiosEnCurso = false;
             btn.innerHTML = `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"></path><path d="M17 21v-8H7v8"></path><path d="M7 3v5h8V3"></path></svg> Guardar Cambios`;
             btn.style.pointerEvents = "auto";
             btn.style.opacity = "1";
+            return false;
         }
 
         function mostrarToast(mensaje, isSuccess = true) {
@@ -1518,8 +1571,16 @@
                     renderUI();
                     mostrarToast("Geometría aérea recibida. Subiendo a la bóveda...", true);
                     guardarCambios();
-                    pushMasterplanToEditor();
                 }
+            }
+            if (event.data && event.data.type === "SAVE_SUELO_DATA") {
+                const newData = event.data.payload;
+                masterData.norteSuelo = newData.norte ?? 0;
+                masterData.lotesSuelo = newData.lotes || [];
+                masterData.horizontesSuelo = newData.horizontes || [];
+                masterData.trazosSuelo = newData.trazos || [];
+                mostrarToast("Vista suelo recibida. Subiendo a la nube...", true);
+                subirDatosSuelo(newData);
             }
         });
 
