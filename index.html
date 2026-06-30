@@ -146,6 +146,10 @@
         .btn-pin-ruta::before { content:'🛣️'; display:inline-block; font-size:10px; margin-right: 4px; }
         .btn-calc-route:disabled { opacity: 0.55; cursor: wait; }
         .ruta-traffic-badge { font-size: 6px; color: #94a3b8; letter-spacing: 0.3px; margin-left: 2px; vertical-align: super; }
+        .horizon-expand-arrow { display: none; flex-shrink: 0; width: 22px; height: 22px; border-radius: 50%; border: 1px solid rgba(253, 146, 39, 0.55); background: rgba(253, 146, 39, 0.18); color: #FD9227; cursor: pointer; align-items: center; justify-content: center; padding: 0; margin-left: 2px; pointer-events: auto; touch-action: manipulation; transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1), background 0.2s, border-color 0.2s; box-shadow: 0 0 10px rgba(253, 146, 39, 0.35); animation: horizonArrowPulse 1.35s ease-in-out infinite; }
+        .horizon-expand-arrow svg { display: block; pointer-events: none; filter: drop-shadow(0 0 4px rgba(253, 146, 39, 0.6)); }
+        @keyframes horizonArrowPulse { 0%, 100% { transform: translateX(0) scale(1); box-shadow: 0 0 8px rgba(253, 146, 39, 0.35), 0 0 0 0 rgba(253, 146, 39, 0.25); } 50% { transform: translateX(3px) scale(1.08); box-shadow: 0 0 16px rgba(253, 146, 39, 0.75), 0 0 0 4px rgba(253, 146, 39, 0.12); } }
+        .horizon-pill-extra { display: flex; align-items: center; gap: 10px; }
         /* --- PIN CASA 360 (TOUR/VIDEO) --- */
         .casa-hud-wrapper { position: absolute; top: 0; left: 0; transform: translate(-50%, -50%); z-index: 10; pointer-events: none; animation: fadeInHUD 1s ease-out forwards; opacity: 0; }
         .casa-hud-wrapper:hover { z-index: 999999; }
@@ -258,6 +262,15 @@
             .premium-sidebar { bottom: auto !important; top: 50% !important; left: 50% !important; right: auto !important; transform: translate(-50%, 100vh) scale(0.9) !important; width: 85vw !important; height: 60vh !important; max-height: none !important; z-index: 9999999 !important; border-radius: 20px !important; padding: 20px !important; } .premium-sidebar.open { transform: translate(-50%, -50%) scale(1) !important; }
             #inapp-modal { flex-direction: column; justify-content: center; gap: 16px; background: rgba(8, 12, 20, 0.98); } .btn-volver-360 { position: relative !important; top: auto !important; bottom: auto !important; left: auto !important; width: max-content !important; transform: translateY(20px) !important; padding: 14px 28px !important; font-size: 14px !important; box-shadow: 0 15px 40px rgba(0,0,0,0.8) !important; border: 1px solid rgba(255,255,255,0.4) !important; background: rgba(15, 22, 36, 0.95) !important; order: 2; margin: 0 auto; pointer-events: auto;} #inapp-modal.open .btn-volver-360 { transform: translateY(0) !important; } .inapp-content { order: 1; pointer-events: auto;} .inapp-content.is-yt { width: 100%; aspect-ratio: auto; height: 35vh; border-radius: 0; } .inapp-content.is-360 { width: 92%; height: 75vh; border-radius: 20px; }
             .poi-trigger-btn { top: 56px; right: 12px; left: auto !important; transform: none !important; width: 34px; height: 34px; justify-content: center; opacity: 1; z-index: 999999; padding: 0; } body.has-banner .poi-trigger-btn { top: 84px; } .poi-icon { font-size: 16px; margin: 0; } .poi-panel { top: 100px; right: 12px; left: auto !important; transform: scale(0.95); transform-origin: top right; width: 280px; max-width: calc(100vw - 24px); } body.has-banner .poi-panel { top: 128px; } .poi-panel.open { transform: scale(1) !important; }
+            .horizon-hud-wrapper .horizon-detail-card { display: none !important; }
+            .horizon-hud-wrapper .ruta-glass-pill { gap: 6px; padding: 4px 8px 4px 14px; max-width: none; }
+            .horizon-hud-wrapper .horizon-expand-arrow { display: flex; }
+            .horizon-hud-wrapper .horizon-pill-extra { max-width: 0; opacity: 0; overflow: hidden; gap: 8px; transition: max-width 0.38s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.28s ease; pointer-events: none; }
+            .horizon-hud-wrapper.horizon-pill-expanded .horizon-pill-extra { max-width: 240px; opacity: 1; pointer-events: auto; }
+            .horizon-hud-wrapper.horizon-pill-expanded .horizon-expand-arrow { animation: none; transform: rotate(90deg); background: rgba(145, 200, 255, 0.2); border-color: rgba(145, 200, 255, 0.5); color: #91C8FF; box-shadow: 0 0 10px rgba(145, 200, 255, 0.35); }
+            .horizon-hud-wrapper.horizon-pill-expanded .ruta-glass-pill { padding-right: 10px; border-color: rgba(145, 200, 255, 0.35); }
+            body.dev-mode-pins-active .horizon-hud-wrapper .horizon-expand-arrow { display: none !important; }
+            body.dev-mode-pins-active .horizon-hud-wrapper .horizon-pill-extra { max-width: none !important; opacity: 1 !important; overflow: visible !important; pointer-events: auto !important; }
             #mac-gallery-modal { padding: 12px; align-items: center; justify-content: center; } .mac-g-window { width: 100%; height: 80vh; max-height: 700px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.2); margin: auto; box-shadow: 0 20px 40px rgba(0,0,0,0.6); } .mac-g-header { height: 48px; padding: 0 16px; } .mac-g-traffic span { width: 14px; height: 14px; margin-right: 4px; } .mac-g-nav { width: 36px; height: 36px; background: rgba(0,0,0,0.6); border-color: rgba(255,255,255,0.3); } .mac-g-prev { left: 10px; } .mac-g-next { right: 10px; } .mac-g-main-img.zoomed { transform: scale(2.5); } .mac-g-footer { height: 75px; padding: 0 12px; } .mac-g-thumb { width: 50px; height: 50px; }
         }
     </style>
@@ -2667,16 +2680,35 @@
             const title = (opts.title || args.titulo || 'RUTA').toUpperCase();
             const trafficTip = args.rutaEtiquetaTrafico ? ' title="' + args.rutaEtiquetaTrafico.replace(/"/g, '&quot;') + '"' : '';
             const trfBadge = opts.showTrafficBadge !== false ? '<span class="ruta-traffic-badge">TRF</span>' : '';
-            return `<span class="ruta-title">${title}</span><div class="ruta-divider"></div><div class="ruta-metrics"><span class="ruta-val">${distArr.v}<small>${distArr.u}</small></span><span class="ruta-val"${trafficTip}>~${timeArr.v}<small>${timeArr.u}</small>${trfBadge}</span></div><div class="ruta-links"><a href="${links.linkWaze}" target="_blank" class="r-link waze" title="Ir con Waze" draggable="false">${SVG_WAZE}</a><a href="${links.linkGmapsFromProject}" target="_blank" class="r-link gmaps" title="Ir con Google Maps" draggable="false">${SVG_MAPS_PIN}</a></div>`;
+            const pillExtra = `<div class="ruta-divider"></div><div class="ruta-metrics"><span class="ruta-val">${distArr.v}<small>${distArr.u}</small></span><span class="ruta-val"${trafficTip}>~${timeArr.v}<small>${timeArr.u}</small>${trfBadge}</span></div><div class="ruta-links"><a href="${links.linkWaze}" target="_blank" class="r-link waze" title="Ir con Waze" draggable="false">${SVG_WAZE}</a><a href="${links.linkGmapsFromProject}" target="_blank" class="r-link gmaps" title="Ir con Google Maps" draggable="false">${SVG_MAPS_PIN}</a></div>`;
+            if (opts.horizonMobileExpand) {
+                const arrowBtn = '<button type="button" class="horizon-expand-arrow" aria-label="Desplegar distancia y navegación"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button>';
+                return `<span class="ruta-title">${title}</span>${arrowBtn}<div class="horizon-pill-extra">${pillExtra}</div>`;
+            }
+            return `<span class="ruta-title">${title}</span>${pillExtra}`;
         }
         function setupNavPinTouchInteractions() {
             if (setupNavPinTouchInteractions._bound) return;
             setupNavPinTouchInteractions._bound = true;
             let lastTap = 0;
+            const isMobileNav = () => window.matchMedia('(max-width: 768px)').matches;
             document.addEventListener('touchend', (e) => {
                 if (document.body.classList.contains('dev-mode-pins-active')) return;
+                const arrow = e.target.closest('.horizon-hud-wrapper .horizon-expand-arrow');
+                if (arrow && isMobileNav()) {
+                    const wrapper = arrow.closest('.horizon-hud-wrapper');
+                    if (!wrapper) return;
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const now = Date.now();
+                    if (now - lastTap < 300) return;
+                    lastTap = now;
+                    document.querySelectorAll('.horizon-hud-wrapper.horizon-pill-expanded').forEach(el => { if (el !== wrapper) el.classList.remove('horizon-pill-expanded'); });
+                    wrapper.classList.toggle('horizon-pill-expanded');
+                    return;
+                }
                 const pill = e.target.closest('.horizon-hud-wrapper .ruta-glass-pill');
-                if (!pill || e.target.closest('a.r-link')) return;
+                if (!pill || e.target.closest('a.r-link') || isMobileNav()) return;
                 const wrapper = pill.closest('.horizon-hud-wrapper');
                 if (!wrapper) return;
                 e.preventDefault();
@@ -2691,8 +2723,14 @@
                 if (document.body.classList.contains('dev-mode-pins-active')) return;
                 if (!e.target.closest('.horizon-hud-wrapper')) {
                     document.querySelectorAll('.horizon-hud-wrapper.horizon-pin-open').forEach(el => el.classList.remove('horizon-pin-open'));
+                    document.querySelectorAll('.horizon-hud-wrapper.horizon-pill-expanded').forEach(el => el.classList.remove('horizon-pill-expanded'));
                 }
             });
+            document.addEventListener('touchend', (e) => {
+                if (document.body.classList.contains('dev-mode-pins-active') || !isMobileNav()) return;
+                if (e.target.closest('.horizon-hud-wrapper')) return;
+                document.querySelectorAll('.horizon-hud-wrapper.horizon-pill-expanded').forEach(el => el.classList.remove('horizon-pill-expanded'));
+            }, { passive: true });
         }
 
         function generarSmartPin(hotSpotDiv, args) {
@@ -2773,7 +2811,7 @@
             const timeTxt = (args.tiempo || '0 MIN').replace(/^~/, '');
             const trafficLine = args.rutaEtiquetaTrafico || 'Estimación con tráfico Chile';
 
-            wrapper.innerHTML = `<div class="horizon-detail-card"><div class="hdc-head"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> ${args.titulo || 'Destino'}</div><div class="hdc-metrics"><span>Distancia <b>${distTxt}</b></span><span>Tiempo <b>~${timeTxt}</b></span></div><div class="hdc-traffic">${trafficLine}</div><div class="hdc-nav-row"><a href="${links.linkWaze}" target="_blank" class="hdc-nav-btn waze" draggable="false">${SVG_WAZE} Waze</a><a href="${links.linkGmapsFromProject}" target="_blank" class="hdc-nav-btn gmaps" draggable="false">${SVG_MAPS_PIN} Maps</a></div></div><div class="ruta-glass-pill">${buildNavGlassPillMarkup(args, { title: args.titulo || 'HORIZONTE' })}</div><div class="ruta-line-down"></div><div class="ruta-target-dot"></div>`;
+            wrapper.innerHTML = `<div class="horizon-detail-card"><div class="hdc-head"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> ${args.titulo || 'Destino'}</div><div class="hdc-metrics"><span>Distancia <b>${distTxt}</b></span><span>Tiempo <b>~${timeTxt}</b></span></div><div class="hdc-traffic">${trafficLine}</div><div class="hdc-nav-row"><a href="${links.linkWaze}" target="_blank" class="hdc-nav-btn waze" draggable="false">${SVG_WAZE} Waze</a><a href="${links.linkGmapsFromProject}" target="_blank" class="hdc-nav-btn gmaps" draggable="false">${SVG_MAPS_PIN} Maps</a></div></div><div class="ruta-glass-pill">${buildNavGlassPillMarkup(args, { title: args.titulo || 'HORIZONTE', horizonMobileExpand: true })}</div><div class="ruta-line-down"></div><div class="ruta-target-dot"></div>`;
             hotSpotDiv.appendChild(wrapper); addQuickActions(wrapper, args);
             const pill = wrapper.querySelector('.ruta-glass-pill');
             bindPinEvents(pill || wrapper, args, hotSpotDiv);
