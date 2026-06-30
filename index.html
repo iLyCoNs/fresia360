@@ -30,6 +30,9 @@
         g[data-tipo="divisoria"] path, g[data-tipo="borde-macro"] path { fill: none !important; pointer-events: none !important; }
         g[data-tipo="area-invisible"] path { stroke: transparent !important; fill-opacity: 1; }
         .linea-area-fill { stroke: transparent !important; pointer-events: auto; }
+        g.lote-interactivo[data-tipo="area-invisible"] path.linea-area-fill { fill: rgba(var(--c-disp), var(--o-disp)) !important; }
+        body.dev-mode-active g.lote-interactivo[data-tipo="area-invisible"] path.linea-area-fill { fill: rgba(var(--c-disp), 0.22) !important; }
+        body.dev-mode-active g.lote-interactivo[data-tipo="area-invisible"]:hover path, body.dev-mode-active g.lote-interactivo[data-tipo="area-invisible"].hovered path { fill: rgba(var(--c-disp), 0.28) !important; stroke: transparent !important; filter: none !important; }
         g[data-tipo="area-invisible"].lote-interactivo:hover path, g[data-tipo="area-invisible"].lote-interactivo.hovered path { stroke: transparent !important; }
         g.lote-interactivo path.linea-relleno-mp { fill: rgba(var(--c-disp), var(--o-disp)); stroke: none !important; pointer-events: auto; }
         g.lote-interactivo.hovered path.linea-relleno-mp, g.lote-interactivo:hover path.linea-relleno-mp { fill: transparent !important; stroke: #ffffff !important; stroke-width: var(--stroke-dyn-hover) !important; filter: drop-shadow(0 0 8px rgba(255,255,255,0.9)); }
@@ -39,8 +42,9 @@
         .linea-franja-preview { fill: rgba(16,185,129,0.07); stroke: rgba(255,255,255,0.5); stroke-width: calc(var(--stroke-dyn) * 0.55); stroke-dasharray: 5 4; pointer-events: none; }
         .vertex-marker.franja-corner-marker { background: #10b981 !important; border-color: #fff !important; box-shadow: 0 0 14px rgba(16,185,129,0.85); width: 16px !important; height: 16px !important; }
         .franja-lot-label { position: absolute; transform: translate(-50%,-50%); background: rgba(16,185,129,0.92); color: #fff; font-size: 10px; font-weight: 800; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.35); pointer-events: none; z-index: 99999; }
-        .franja-div-handle { position: absolute; transform: translate(-50%,-50%); width: 28px; height: 14px; background: rgba(245,158,11,0.92); border: 2px solid #fff; border-radius: 4px; box-shadow: 0 2px 10px rgba(0,0,0,0.45); cursor: ew-resize; pointer-events: auto; z-index: 100001; touch-action: none; }
-        .franja-div-handle::after { content: ''; position: absolute; top: -18px; left: -18px; right: -18px; bottom: -18px; }
+        .franja-div-handle { position: absolute; transform: translate(-50%,-50%); width: 10px; height: 44px; background: rgba(245,158,11,0.88); border: 2px solid #fff; border-radius: 5px; box-shadow: 0 2px 12px rgba(0,0,0,0.5); cursor: ew-resize; pointer-events: auto; z-index: 100001; touch-action: none; }
+        .franja-div-handle::before { content: ''; position: absolute; top: 6px; bottom: 6px; left: 50%; width: 2px; transform: translateX(-50%); background: rgba(255,255,255,0.85); border-radius: 1px; box-shadow: -3px 0 0 rgba(255,255,255,0.5), 3px 0 0 rgba(255,255,255,0.5); }
+        .franja-div-handle::after { content: ''; position: absolute; top: -24px; left: -28px; right: -28px; bottom: -24px; }
         .franja-div-handle:hover, .franja-div-handle.is-dragging { background: #fbbf24; transform: translate(-50%,-50%) scale(1.12); box-shadow: 0 0 14px rgba(245,158,11,0.85); }
         g[data-tipo="franja-grupo"] path { fill: rgba(16,185,129,0.04); stroke: rgba(16,185,129,0.45); stroke-width: calc(var(--stroke-dyn) * 0.5); stroke-dasharray: 4 4; pointer-events: none; }
         .btn-franja-lotes::before { content:'🏘️'; display:inline-block; font-size:10px; margin-right: 3px; }
@@ -407,6 +411,119 @@
             }
             return grp.franjaSplits;
         }
+        function inferFranjaSplitsFromLotes(corners, sortedLotes) {
+            const N = sortedLotes.length;
+            const [TL, TR] = corners;
+            const splits = [0];
+            const proj = getPanoramaScreenProjector();
+            let tlSc = null, trSc = null, len2 = 0, dx = 0, dy = 0;
+            if (proj) {
+                tlSc = proj.toScreen(TL[0], TL[1]); trSc = proj.toScreen(TR[0], TR[1]);
+                if (tlSc && trSc) { dx = trSc[0] - tlSc[0]; dy = trSc[1] - tlSc[1]; len2 = dx * dx + dy * dy; }
+            }
+            for (let i = 1; i < N; i++) {
+                const lot = sortedLotes[i];
+                const sep = lot.puntos && lot.puntos[0];
+                let t = i / N;
+                if (tlSc && trSc && len2 > 1 && sep) {
+                    const sc = proj.toScreen(sep[0], sep[1]);
+                    if (sc) t = Math.max(0.01, Math.min(0.99, ((sc[0] - tlSc[0]) * dx + (sc[1] - tlSc[1]) * dy) / len2));
+                }
+                splits.push(t);
+            }
+            splits.push(1);
+            for (let i = 1; i < splits.length - 1; i++) splits[i] = Math.max(splits[i - 1] + 0.02, splits[i]);
+            splits[splits.length - 1] = 1; splits[0] = 0;
+            return splits;
+        }
+        function promoteMacroEdgesToFranja(edges) {
+            if (!edges || edges.length < 3) return false;
+            const divisoria = edges.filter(e => e.tipo === 'divisoria');
+            const borde = edges.filter(e => e.tipo === 'borde-macro');
+            const pool = borde.length >= 3 ? borde : edges;
+            const allPts = [];
+            pool.forEach(e => e.puntos.forEach(p => allPts.push(p)));
+            const proj = getPanoramaScreenProjector();
+            if (!proj) return false;
+            const tagged = allPts.map(p => ({ py: p, sc: proj.toScreen(p[0], p[1]) })).filter(x => x.sc);
+            if (tagged.length < 4) return false;
+            const TL = tagged.reduce((m, p) => p.sc[0] + p.sc[1] < m.sc[0] + m.sc[1] ? p : m).py;
+            const TR = tagged.reduce((m, p) => p.sc[0] - p.sc[1] > m.sc[0] - m.sc[1] ? p : m).py;
+            const BR = tagged.reduce((m, p) => p.sc[0] + p.sc[1] > m.sc[0] + m.sc[1] ? p : m).py;
+            const BL = tagged.reduce((m, p) => p.sc[0] - p.sc[1] < m.sc[0] - m.sc[1] ? p : m).py;
+            const N = Math.max(2, divisoria.length + 1);
+            const corners = [TL, TR, BR, BL].map(p => [...p]);
+            let splits = Array.from({ length: N + 1 }, (_, i) => i / N);
+            const tlSc = proj.toScreen(TL[0], TL[1]), trSc = proj.toScreen(TR[0], TR[1]);
+            if (divisoria.length && tlSc && trSc) {
+                const dx = trSc[0] - tlSc[0], dy = trSc[1] - tlSc[1], len2 = dx * dx + dy * dy;
+                if (len2 > 1) {
+                    const divTs = divisoria.map(div => {
+                        const mid = [(div.puntos[0][0] + div.puntos[1][0]) / 2, (div.puntos[0][1] + div.puntos[1][1]) / 2];
+                        const msc = proj.toScreen(mid[0], mid[1]);
+                        return msc ? ((msc[0] - tlSc[0]) * dx + (msc[1] - tlSc[1]) * dy) / len2 : null;
+                    }).filter(t => t !== null).sort((a, b) => a - b);
+                    if (divTs.length) {
+                        splits = [0, ...divTs, 1];
+                        for (let i = 1; i < splits.length - 1; i++) splits[i] = Math.max(splits[i - 1] + 0.02, Math.min(0.98, splits[i]));
+                        splits[splits.length - 1] = 1;
+                    }
+                }
+            }
+            const edgeIds = new Set(edges.map(e => e.id));
+            allDrawnLines = allDrawnLines.filter(l => !edgeIds.has(l.id));
+            const gid = 'franja_' + Date.now();
+            allDrawnLines.push({ id: gid, tipo: 'franja-grupo', franjaCount: N, puntos: corners, franjaSplits: splits });
+            rebuildFranjaGroup(gid);
+            return true;
+        }
+        function ensureFranjaIntegrity() {
+            migrateFranjaGroupsFromData();
+            allDrawnLines.filter(l => l.tipo === 'franja-grupo').forEach(g => {
+                const nFills = allDrawnLines.filter(l => l.franjaGrupo === g.id && l.tipo === 'area-invisible').length;
+                if (nFills !== (g.franjaCount || 0)) rebuildFranjaGroup(g.id);
+            });
+            const orphans = allDrawnLines.filter(l => l.tipo === 'area-invisible' && !l.franjaGrupo);
+            if (orphans.length >= 2) { promoteClusterToFranja(orphans); return; }
+            const orphanEdges = allDrawnLines.filter(l => isMacroEdgeType(l.tipo) && !l.franjaGrupo);
+            if (orphanEdges.length >= 3) promoteMacroEdgesToFranja(orphanEdges);
+            document.body.classList.toggle('auto-macro-active', allDrawnLines.some(l => isMacroEdgeType(l.tipo) || l.tipo === 'area-invisible'));
+        }
+        function eraseDrawnLine(lineId) {
+            const line = allDrawnLines.find(l => l.id === lineId);
+            if (!line) return;
+            if (line.id === currentTempLineId) { currentLinePoints = []; refreshAllHotspots(); saveToLocal(); return; }
+            if (line.tipo === 'franja-grupo') {
+                const gid = line.id;
+                allDrawnLines = allDrawnLines.filter(l => l.franjaGrupo !== gid && l.id !== gid);
+                clearFranjaDraft();
+                ensureFranjaIntegrity();
+                refreshAllHotspots(); saveToLocal(); return;
+            }
+            if (line.franjaGrupo) {
+                const gid = line.franjaGrupo;
+                const grp = allDrawnLines.find(l => l.id === gid);
+                allDrawnLines = allDrawnLines.filter(l => l.id !== lineId);
+                if (grp && line.tipo === 'area-invisible') {
+                    grp.franjaCount = Math.max(2, (grp.franjaCount || 2) - 1);
+                    ensureFranjaSplits(grp);
+                    if (line.franjaIdx != null && grp.franjaSplits.length > line.franjaIdx + 1) grp.franjaSplits.splice(line.franjaIdx + 1, 1);
+                }
+                rebuildFranjaGroup(gid);
+                ensureFranjaIntegrity();
+                refreshAllHotspots(); saveToLocal(); return;
+            }
+            if (isMacroEdgeType(line.tipo)) {
+                const cluster = allDrawnLines.filter(l => isMacroEdgeType(l.tipo) && !l.franjaGrupo);
+                allDrawnLines = allDrawnLines.filter(l => l.id !== lineId);
+                if (cluster.length >= 2) ensureFranjaIntegrity();
+                else refreshAllHotspots();
+                saveToLocal(); return;
+            }
+            allDrawnLines = allDrawnLines.filter(l => l.id !== lineId);
+            ensureFranjaIntegrity();
+            refreshAllHotspots(); saveToLocal();
+        }
         function sortLotesAlongStrip(lotes) {
             return [...lotes].sort((a, b) => {
                 const ca = a.puntos.reduce((s, p, i) => i ? s + p[1] : p[1], 0) / a.puntos.length;
@@ -437,10 +554,11 @@
                 if (isMacroEdgeType(l.tipo) && !l.franjaGrupo) return false;
                 return true;
             });
+            const corners = [first[0], first[1], last[2], last[3]].map(p => [...p]);
             const gid = 'franja_' + Date.now();
             allDrawnLines.push({
                 id: gid, tipo: 'franja-grupo', franjaCount: N,
-                puntos: [first[0], first[1], last[2], last[3]].map(p => [...p])
+                puntos: corners, franjaSplits: inferFranjaSplitsFromLotes(corners, sorted)
             });
             rebuildFranjaGroup(gid);
             return true;
@@ -698,6 +816,7 @@
         function finalizeAutoMacroSession() {
             purgeAllNonFranjaLoteTrazos();
             allDrawnLines.filter(l => l.tipo === 'franja-grupo').forEach(g => rebuildFranjaGroup(g.id));
+            ensureFranjaIntegrity();
         }
         function initAutoMacroFromData() {
             migrateFranjaGroupsFromData();
@@ -705,7 +824,7 @@
             const fills = allDrawnLines.filter(l => isAutoMacroLotePoly(l) && l.tipo !== 'franja-grupo');
             const hasMacroEdges = allDrawnLines.some(l => isMacroEdgeType(l.tipo));
             if (fills.length >= 2 && !hasMacroEdges) { runAutoMacroTransform(fills); finalizeAutoMacroSession(); }
-            else if (hasMacroEdges && fills.some(l => l.tipo === 'area-invisible' || l.tipo === 'masterplan_fill')) document.body.classList.add('auto-macro-active');
+            else ensureFranjaIntegrity();
         }
         function clearFranjaDraft() {
             franjaCornerA = null; franjaPreviewQuad = null; franjaPreviewDivs = [];
@@ -852,7 +971,8 @@
                         const g = document.createElementNS("http://www.w3.org/2000/svg", "g"); g.dataset.lineId = line.id; g.dataset.tipo = line.tipo; g.classList.add('lote-interactivo'); 
                         const pBase = document.createElementNS("http://www.w3.org/2000/svg", "path"); 
                         if (line.tipo === 'masterplan_fill') pBase.setAttribute("class", "linea-relleno-mp"); else if (line.tipo === 'neon') pBase.setAttribute("class", "linea-neon"); else if (line.tipo === 'punteada') pBase.setAttribute("class", "linea-punteada"); else if (line.tipo === 'cortar') pBase.setAttribute("class", "linea-corte"); else if (line.tipo === 'area-invisible') pBase.setAttribute("class", "linea-area-fill"); else pBase.setAttribute("class", "linea-solida");
-                        g.appendChild(pBase); g.addEventListener('mousedown', (e) => { if (currentLineType === 'eraser') { e.stopPropagation(); if (line.id === currentTempLineId) currentLinePoints = []; else allDrawnLines = allDrawnLines.filter(l => l.id !== line.id); refreshAllHotspots(); saveToLocal(); } }); g.addEventListener('touchstart', () => { g.classList.add('hovered'); }, {passive: true}); g.addEventListener('touchend', () => { setTimeout(() => g.classList.remove('hovered'), 1500); }, {passive: true}); lLotes.appendChild(g); DOMCache.paths[line.id] = { gNode: g, base: [pBase] };
+                        if (line.tipo === 'area-invisible') g.setAttribute('data-status', 'disponible');
+                        g.appendChild(pBase); g.addEventListener('mousedown', (e) => { if (currentLineType === 'eraser') { e.stopPropagation(); eraseDrawnLine(line.id); } }); g.addEventListener('touchstart', () => { g.classList.add('hovered'); }, {passive: true}); g.addEventListener('touchend', () => { setTimeout(() => g.classList.remove('hovered'), 1500); }, {passive: true}); lLotes.appendChild(g); DOMCache.paths[line.id] = { gNode: g, base: [pBase] };
                     }
                 } else {
                     if (line.tipo === 'calle') {
@@ -880,7 +1000,7 @@
                 const cacheObj = DOMCache.paths[lineId]; if (!cacheObj) return;
                 let lineData = allDrawnLines.find(l => l.id === lineId); if (!lineData && lineId === currentTempLineId) lineData = { tipo: currentLineType, puntos: currentLinePoints }; if (!lineData && lineId === 'franja_preview_quad' && franjaPreviewQuad) lineData = { tipo: 'franja-preview', puntos: franjaPreviewQuad }; if (!lineData && lineId.startsWith('franja_preview_div_')) lineData = franjaPreviewDivs.find(d => d.id === lineId); if (!lineData) return;
                 let isClosed = (lineData.tipo !== 'calle' && lineData.tipo !== 'cortar' && lineData.tipo !== 'divisoria' && lineData.tipo !== 'borde-macro' && lineData.tipo !== 'franja-preview-div' && lineId !== currentTempLineId);
-                if (cacheObj.gNode && lineData.tipo !== 'calle' && lineData.tipo !== 'franja-grupo') { if (lineData.puntos && lineData.puntos.length > 0) { let cP = 0, cY = 0; lineData.puntos.forEach(pt => { cP += pt[0]; cY += pt[1]; }); cP /= lineData.puntos.length; cY /= lineData.puntos.length; let closestPin = null; let minDist = 30; BaseDatosLotes.forEach(pin => { if(pin.tipo === 'lote') { let dist = Math.pow(pin.pitch - cP, 2) + Math.pow(pin.yaw - cY, 2); if(dist < minDist) { minDist = dist; closestPin = pin; } } }); let polyStatus = closestPin ? closestPin.status : 'disponible'; cacheObj.gNode.setAttribute('data-status', polyStatus); } }
+                if (cacheObj.gNode && lineData.tipo !== 'calle' && lineData.tipo !== 'franja-grupo') { if (lineData.puntos && lineData.puntos.length > 0) { let polyStatus = 'disponible'; if (lineData.franjaNumero || lineData.tipo === 'area-invisible') polyStatus = 'disponible'; else { let cP = 0, cY = 0; lineData.puntos.forEach(pt => { cP += pt[0]; cY += pt[1]; }); cP /= lineData.puntos.length; cY /= lineData.puntos.length; let closestPin = null; let minDist = 30; BaseDatosLotes.forEach(pin => { if(pin.tipo === 'lote') { let dist = Math.pow(pin.pitch - cP, 2) + Math.pow(pin.yaw - cY, 2); if(dist < minDist) { minDist = dist; closestPin = pin; } } }); if (closestPin) polyStatus = closestPin.status; } cacheObj.gNode.setAttribute('data-status', polyStatus); } }
                 let dBase = '', pts = lineData.puntos, hasVisiblePoints = false;
                 for (let i = 0; i < pts.length; i++) {
                     let p1 = pts[i], p2 = pts[(i + 1) % pts.length];
@@ -997,7 +1117,7 @@
                 if (timeDiff < 500 && moveDist < 10) {
                     if (Date.now() - lastClickTime < 300 && isDevModeDrawActive && currentLineType !== 'franja') { anclarTrazoActivo(); lastClickTime = 0; return; }
                     lastClickTime = Date.now();
-                    if (isDevModeDrawActive && currentLineType === 'eraser') { const coords = visor360.mouseEventToCoords(mock); if (!coords) return; let p = coords[0], y = coords[1]; let lineToDelete = null; let minDist = 3.5; allDrawnLines.forEach((line) => { line.puntos.forEach((pt) => { let dist = Math.sqrt(Math.pow(pt[0] - p, 2) + Math.pow(pt[1] - y, 2)); if (dist < minDist) { minDist = dist; lineToDelete = line.id; } }); }); if (lineToDelete) { allDrawnLines = allDrawnLines.filter((l) => l.id !== lineToDelete); refreshAllHotspots(); saveToLocal(); } return; }
+                    if (isDevModeDrawActive && currentLineType === 'eraser') { const coords = visor360.mouseEventToCoords(mock); if (!coords) return; let p = coords[0], y = coords[1]; let lineToDelete = null; let minDist = 3.5; allDrawnLines.forEach((line) => { line.puntos.forEach((pt) => { let dist = Math.sqrt(Math.pow(pt[0] - p, 2) + Math.pow(pt[1] - y, 2)); if (dist < minDist) { minDist = dist; lineToDelete = line.id; } }); }); if (lineToDelete) eraseDrawnLine(lineToDelete); return; }
                     if (isDevModeDrawActive && currentLineType === 'franja') {
                         if (!franjaCornerA) {
                             const coords = visor360.mouseEventToCoords(mock); if (!coords) return;
@@ -1058,6 +1178,22 @@
             }
             function handleMove(e) {
                 let mock = getMockEvent(e); if (mock.clientX === undefined) return;
+                if (draggingFranjaDiv) {
+                    if (e.cancelable) e.preventDefault();
+                    applyFranjaDivDrag(draggingFranjaDiv.gid, draggingFranjaDiv.splitIdx, mock.clientX, mock.clientY);
+                    syncSVGElements(); updateSVGPaths();
+                    return;
+                }
+                if (draggingVertex) {
+                    if (e.cancelable) e.preventDefault();
+                    window.lastMouseX = mock.clientX; window.lastMouseY = mock.clientY;
+                    try {
+                        const coords = visor360?.mouseEventToCoords(mock);
+                        if (coords && !isNaN(coords[0])) applyDraggedVertexCoords(coords);
+                    } catch(err) {}
+                    syncSVGElements(); updateSVGPaths();
+                    return;
+                }
                 if (isDevModePinsActive && pickedPin) { if (e.cancelable) e.preventDefault(); const gPin = document.getElementById('ghost-pin'); gPin.classList.add('active'); gPin.style.left = mock.clientX + 'px'; gPin.style.top = mock.clientY + 'px'; return; }
                 if (isDevModeDrawActive && currentLineType === 'franja' && franjaCornerA) {
                     window.lastMouseX = mock.clientX; window.lastMouseY = mock.clientY;
@@ -1068,23 +1204,6 @@
                 }
                 if (!isDevModeDrawActive || !visor360 || currentLineType === 'eraser') { if (snapCursor) snapCursor.classList.remove('active'); return; }
                 if (isDevModeDrawActive) { window.lastMouseX = mock.clientX; window.lastMouseY = mock.clientY; updateSVGPaths(); }
-                
-                if (draggingFranjaDiv) {
-                    if (e.cancelable) e.preventDefault(); e.stopPropagation();
-                    applyFranjaDivDrag(draggingFranjaDiv.gid, draggingFranjaDiv.splitIdx, mock.clientX, mock.clientY);
-                    syncSVGElements(); updateSVGPaths();
-                    return;
-                }
-                if (draggingVertex) { 
-                    if (e.cancelable) e.preventDefault(); e.stopPropagation(); 
-                    window.lastMouseX = mock.clientX; window.lastMouseY = mock.clientY;
-                    try {
-                        const coords = visor360.mouseEventToCoords(mock);
-                        if (coords && !isNaN(coords[0])) applyDraggedVertexCoords(coords);
-                    } catch(err) {}
-                    syncSVGElements(); updateSVGPaths();
-                    return; 
-                }
                 
                 try { const coords = visor360.mouseEventToCoords(mock); let foundSnap = false; snappedCoords = null; isSnapToClose = false; if (currentLinePoints.length >= 3 && currentLineType !== 'cortar' && currentLineType !== 'eraser' && currentLineType !== 'divisoria' && currentLineType !== 'franja') { let dP0 = Math.sqrt(Math.pow(coords[0]-currentLinePoints[0][0],2)+Math.pow(coords[1]-currentLinePoints[0][1],2)); if (dP0 < SNAP_DISTANCE) { foundSnap = true; snappedCoords = [...currentLinePoints[0]]; isSnapToClose = true; } } if (!foundSnap) { const allPts = [...currentLinePoints]; allDrawnLines.forEach((l) => allPts.push(...l.puntos)); for (let pt of allPts) { const d = Math.sqrt(Math.pow(pt[0]-coords[0],2)+Math.pow(pt[1]-coords[1],2)); if (d < SNAP_DISTANCE) { foundSnap = true; snappedCoords = [...pt]; break; } } } if (foundSnap) { snapCursor.style.left = mock.clientX+'px'; snapCursor.style.top = mock.clientY+'px'; snapCursor.classList.add('active'); snapCursor.classList.toggle('is-closing', isSnapToClose); } else { snapCursor.classList.remove('active'); snapCursor.classList.remove('is-closing'); } } catch (err) {}
             }
@@ -1295,7 +1414,7 @@
         }
 
         function refreshAllHotspots() {
-            if(!visor360) return; DOMCache.markers = {}; const currentSpots = visor360.getConfig().hotSpots || [];
+            if(!visor360) return; ensureFranjaIntegrity(); DOMCache.markers = {}; const currentSpots = visor360.getConfig().hotSpots || [];
             for (let i = currentSpots.length - 1; i >= 0; i--) { if(currentSpots[i].id) { try { visor360.removeHotSpot(currentSpots[i].id); } catch(err) {} } }
             document.querySelectorAll('.pnlm-hotspot-base').forEach(el => { try { if(el.parentNode) el.parentNode.removeChild(el); } catch(err) {} });
             setTimeout(() => { getHotspotsConfig().forEach(hs => { try { visor360.addHotSpot(hs); } catch(err) {} }); syncSVGElements(); updateSVGPaths(); renderSidebarList(BaseDatosLotes); }, 10);
