@@ -97,8 +97,8 @@
       "terreno": "Plano"
     },
     {
-      "pitch": -69.14,
-      "yaw": -8.73,
+      "pitch": -70.05,
+      "yaw": -8.63,
       "tipo": "lote",
       "status": "disponible",
       "titulo": "Lote 08 (7-H)",
@@ -110,8 +110,8 @@
       "terreno": "Plano"
     },
     {
-      "pitch": -62.29,
-      "yaw": -6.97,
+      "pitch": -63.01,
+      "yaw": -7.11,
       "tipo": "lote",
       "status": "disponible",
       "titulo": "Lote 09 (7-I)",
@@ -153,8 +153,8 @@
       "rutaCalculadaEn": 1782846224449
     },
     {
-      "pitch": 1.29,
-      "yaw": -7.24,
+      "pitch": 1.49,
+      "yaw": -3.57,
       "titulo": "Volcán Calbuco",
       "tipo": "horizonte",
       "distancia": "83.2",
@@ -175,8 +175,8 @@
       "coordenadasDestino": ""
     },
     {
-      "pitch": 0.39,
-      "yaw": 34.96,
+      "pitch": -0.39,
+      "yaw": 50.45,
       "titulo": "Puerto Montt",
       "tipo": "horizonte",
       "distancia": "57.6",
