@@ -39,6 +39,8 @@
         .linea-borde-macro { stroke: rgba(255,255,255,0.94) !important; stroke-width: calc(var(--stroke-dyn) * 0.48) !important; stroke-linejoin: round; stroke-linecap: round; filter: drop-shadow(0 0 1px rgba(255,255,255,0.35)); pointer-events: none; }
         body.auto-macro-active g[data-tipo="borde-macro"] path { stroke-width: calc(var(--stroke-dyn) * 0.44) !important; }
         body.auto-macro-active g[data-tipo="divisoria"] path { stroke-width: calc(var(--stroke-dyn) * 0.38) !important; stroke-dasharray: 2.5 4.5; }
+        body.auto-macro-active:not(.dev-mode-active) g[data-tipo="franja-grupo"] { display: none; }
+        body.auto-macro-active g.lote-interactivo[data-tipo="area-invisible"] path.linea-area-fill { fill: rgba(var(--c-disp), 0.20) !important; }
         body.eraser-mode-active g[data-tipo="divisoria"] path, body.eraser-mode-active g[data-tipo="borde-macro"] path, body.eraser-mode-active g[data-tipo="franja-grupo"] path { pointer-events: auto !important; cursor: crosshair; }
         body.eraser-mode-active .linea-corte { pointer-events: auto !important; cursor: crosshair; }
         body.eraser-mode-active .vertex-marker { cursor: crosshair; }
@@ -213,7 +215,7 @@
             <div class="filter-group"><button class="filter-btn active" data-status="todos">Todos</button><button class="filter-btn" data-status="favoritos">❤️ Favs</button><button class="filter-btn" data-status="disponible">Disp.</button><button class="filter-btn" data-status="reservado">Reser.</button><button class="filter-btn" data-status="vendido">Vend.</button><button class="filter-btn" data-status="no_disponible">No Disp.</button></div>
             <div class="lotes-list" id="js-lotes-list"></div>
         </div>
-        <div id="dev-toolbar-draw" class="dev-toolbar"><div class="macos-header"><div class="macos-dots"><i></i><i></i><i></i></div><div class="dev-toolbar-title">MODO ARQUITECTO (DIBUJO LIBRE)</div><div style="width: 42px;"></div></div><div class="dev-tools-row"><button class="dev-btn active" id="btn-draw-solid">Sólida</button><button class="dev-btn" id="btn-draw-dash">Punteada</button><button class="dev-btn" id="btn-draw-street" title="Dibuja la ruta, las calles se fusionarán al unirse">🛣️ Calle</button><button class="dev-btn" id="btn-draw-cut" style="color: #f59e0b;" title="Apunta hacia donde quieres cortar">✂️ Subdividir</button><button class="dev-btn" id="btn-draw-divisoria" title="Dibuja una línea punteada interna (no se cierra automáticamente)">📏 Divisoria</button><button class="dev-btn btn-franja-lotes" id="btn-draw-franja" style="color: #10b981; font-weight: 800;" title="2 clics: rectángulo calcado al suelo → elige cuántos lotes. Bordes finos + divisiones punteadas premium.">Franja Lotes</button><button class="dev-btn" id="btn-straighten-franja" style="color: #f59e0b; font-weight: 800;" title="Endereza franja(s): bordes y divisiones en líneas rectas para levantamiento">📏 Enderezar</button><div style="width: 1px; height: 20px; background: rgba(255,255,255,0.2); margin: 0 5px;"></div><button class="dev-btn" id="btn-auto-macro" style="color: #a855f7; font-weight: 800;" title="Convierte lotes adyacentes en un Macro-Lote">✨ AUTO-MACRO</button><button class="dev-btn" id="btn-eraser" style="color: #fca5a5;">🧹 Goma</button><div style="width: 1px; height: 20px; background: rgba(255,255,255,0.2); margin: 0 5px;"></div><button class="dev-btn action" id="btn-undo-point" title="Borrar último vértice trazado">Deshacer Punto</button><button class="dev-btn nuke" id="btn-nuke">🗑️ Limpiar Todo</button><button class="dev-btn export-ai" title="Guardar directamente en el servidor">☁️ GUARDAR EN LA NUBE</button></div></div>
+        <div id="dev-toolbar-draw" class="dev-toolbar"><div class="macos-header"><div class="macos-dots"><i></i><i></i><i></i></div><div class="dev-toolbar-title">MODO ARQUITECTO (DIBUJO LIBRE)</div><div style="width: 42px;"></div></div><div class="dev-tools-row"><button class="dev-btn active" id="btn-draw-solid">Sólida</button><button class="dev-btn" id="btn-draw-dash">Punteada</button><button class="dev-btn" id="btn-draw-street" title="Dibuja la ruta, las calles se fusionarán al unirse">🛣️ Calle</button><button class="dev-btn" id="btn-draw-cut" style="color: #f59e0b;" title="Apunta hacia donde quieres cortar">✂️ Subdividir</button><button class="dev-btn" id="btn-draw-divisoria" title="Dibuja una línea punteada interna (no se cierra automáticamente)">📏 Divisoria</button><button class="dev-btn btn-franja-lotes" id="btn-draw-franja" style="color: #10b981; font-weight: 800;" title="2 clics: rectángulo calcado al suelo → elige cuántos lotes. Bordes finos + divisiones punteadas premium.">Franja Lotes</button><button class="dev-btn" id="btn-extend-lote" style="color: #22d3ee; font-weight: 800;" title="Anexa 1 lote al borde de la hilera (ej. lote 10 más grande). 1er clic: borde del lote 9 · 2do clic: ancho deseado">➕ Lote anexo</button><button class="dev-btn" id="btn-straighten-franja" style="color: #f59e0b; font-weight: 800;" title="Endereza franja(s): bordes y divisiones en líneas rectas para levantamiento">📏 Enderezar</button><div style="width: 1px; height: 20px; background: rgba(255,255,255,0.2); margin: 0 5px;"></div><button class="dev-btn" id="btn-auto-macro" style="color: #a855f7; font-weight: 800;" title="Convierte lotes adyacentes en un Macro-Lote">✨ AUTO-MACRO</button><button class="dev-btn" id="btn-eraser" style="color: #fca5a5;">🧹 Goma</button><div style="width: 1px; height: 20px; background: rgba(255,255,255,0.2); margin: 0 5px;"></div><button class="dev-btn action" id="btn-undo-point" title="Borrar último vértice trazado">Deshacer Punto</button><button class="dev-btn nuke" id="btn-nuke">🗑️ Limpiar Todo</button><button class="dev-btn export-ai" title="Guardar directamente en el servidor">☁️ GUARDAR EN LA NUBE</button></div></div>
         <div id="dev-toolbar-pins" class="dev-toolbar"><div class="macos-header"><div class="macos-dots"><i></i><i></i><i></i></div><div class="dev-toolbar-title">MODO PINES (MAPEO)</div><div style="width: 42px;"></div></div><div class="dev-tools-row"><button class="dev-btn active btn-pin-disp" data-pintype="disponible">Disp.</button><button class="dev-btn btn-pin-res" data-pintype="reservado">Res.</button><button class="dev-btn btn-pin-vend" data-pintype="vendido">Vend.</button><button class="dev-btn btn-pin-nodisp" data-pintype="no_disponible">No Disp.</button><div style="width: 1px; height: 20px; background: rgba(255,255,255,0.2); margin: 0 5px;"></div><button class="dev-btn btn-pin-360" data-pintype="vista360">Pin 360</button><button class="dev-btn btn-pin-casa" data-pintype="casa360">Casa 360</button><button class="dev-btn btn-pin-hor" data-pintype="horizonte">Horizonte</button><button class="dev-btn btn-pin-ruta" data-pintype="ruta">Ruta</button><button class="dev-btn" id="btn-set-drone" style="color: #f59e0b;" title="Establecer Coordenadas Base (Lat, Lng)">📍 Origen Drone</button><button class="dev-btn" id="btn-set-north" style="color: #34d399;" title="Fijar la vista actual como el Norte Magnético">🧭 Fijar Norte</button><div style="width: 1px; height: 20px; background: rgba(255,255,255,0.2); margin: 0 5px;"></div><button class="dev-btn action" id="btn-heatmap" title="Activa Telemetría Visual">🔥 Mapa Calor</button><button class="dev-btn" id="btn-edit-titles" style="color: #cbd5e1;" title="Editar Título y Subtítulo Central">📝 Títulos</button><button class="dev-btn nuke" id="btn-nuke-pins">🗑️ Limpiar Todo</button><button class="dev-btn export-ai" title="Guardar directamente en el servidor">☁️ GUARDAR EN LA NUBE</button></div></div>
         <div class="premium-dock" id="js-dock">
             <div class="dock-legend"><div class="legend-item"><div class="legend-dot dot-disp"></div><span class="legend-text">Disponible</span></div><div class="legend-item"><div class="legend-dot dot-res"></div><span class="legend-text">Reservado</span></div><div class="legend-item"><div class="legend-dot dot-vend"></div><span class="legend-text">Vendido</span></div><div class="legend-item"><div class="legend-dot dot-nodisp"></div><span class="legend-text">No Disp.</span></div></div>
@@ -388,24 +390,36 @@
         function buildFranjaPointsFromCorners(TL, TR, BR, BL, N, splits) {
             const ts = splits && splits.length === N + 1 ? splits : Array.from({ length: N + 1 }, (_, i) => i / N);
             const proj = getPanoramaScreenProjector();
-            if (!proj) return null;
-            const tlSc = proj.toScreen(TL[0], TL[1]), trSc = proj.toScreen(TR[0], TR[1]);
-            const brSc = proj.toScreen(BR[0], BR[1]), blSc = proj.toScreen(BL[0], BL[1]);
             const topPts = [], botPts = [];
-            if (tlSc && trSc && brSc && blSc) {
-                for (let i = 0; i <= N; i++) {
-                    const t = ts[i];
-                    const tp = proj.toPY(...proj.lerpSc(tlSc, trSc, t)), bp = proj.toPY(...proj.lerpSc(blSc, brSc, t));
-                    if (!tp || !bp) return null;
-                    topPts.push(tp); botPts.push(bp);
+            if (proj) {
+                const tlSc = proj.toScreen(TL[0], TL[1]), trSc = proj.toScreen(TR[0], TR[1]);
+                const brSc = proj.toScreen(BR[0], BR[1]), blSc = proj.toScreen(BL[0], BL[1]);
+                if (tlSc && trSc && brSc && blSc) {
+                    for (let i = 0; i <= N; i++) {
+                        const t = ts[i];
+                        const tp = proj.toPY(...proj.lerpSc(tlSc, trSc, t)), bp = proj.toPY(...proj.lerpSc(blSc, brSc, t));
+                        if (!tp || !bp) break;
+                        topPts.push(tp); botPts.push(bp);
+                    }
+                    if (topPts.length === N + 1) return { topPts, botPts };
+                    topPts.length = 0; botPts.length = 0;
                 }
-                return { topPts, botPts };
             }
             for (let i = 0; i <= N; i++) {
                 const t = ts[i];
                 topPts.push(lerpPY(TL, TR, t)); botPts.push(lerpPY(BL, BR, t));
             }
             return { topPts, botPts };
+        }
+        function syncMacroActiveClass() {
+            document.body.classList.toggle('auto-macro-active',
+                allDrawnLines.some(l => isMacroEdgeType(l.tipo) || l.tipo === 'area-invisible' || l.tipo === 'franja-grupo'));
+        }
+        function syncFranjaVisualsOnReady() {
+            migrateFranjaGroupsFromData();
+            allDrawnLines.filter(l => l.tipo === 'franja-grupo').forEach(g => rebuildFranjaGroup(g.id));
+            ensureFranjaIntegrity();
+            syncMacroActiveClass();
         }
         function ensureFranjaSplits(grp) {
             const N = grp.franjaCount || 2;
@@ -491,7 +505,7 @@
             const orphanEdges = allDrawnLines.filter(l => isMacroEdgeType(l.tipo) && !l.franjaGrupo);
             if (orphanEdges.length >= 3) promoteMacroEdgesToFranja(orphanEdges);
             ensureStitchedDivisorias();
-            document.body.classList.toggle('auto-macro-active', allDrawnLines.some(l => isMacroEdgeType(l.tipo) || l.tipo === 'area-invisible'));
+            syncMacroActiveClass();
         }
         function distPointToSegment2D(px, py, ax, ay, bx, by) {
             const dx = bx - ax, dy = by - ay, len2 = dx * dx + dy * dy;
@@ -906,11 +920,10 @@
         }
         function initAutoMacroFromData() {
             migrateFranjaGroupsFromData();
-            allDrawnLines.filter(l => l.tipo === 'franja-grupo').forEach(g => rebuildFranjaGroup(g.id));
             const fills = allDrawnLines.filter(l => isAutoMacroLotePoly(l) && l.tipo !== 'franja-grupo');
             const hasMacroEdges = allDrawnLines.some(l => isMacroEdgeType(l.tipo));
             if (fills.length >= 2 && !hasMacroEdges) { runAutoMacroTransform(fills); finalizeAutoMacroSession(); }
-            else ensureFranjaIntegrity();
+            else syncFranjaVisualsOnReady();
         }
         function clearFranjaDraft() {
             franjaCornerA = null; franjaPreviewQuad = null; franjaPreviewDivs = [];
@@ -936,6 +949,9 @@
         }
         function rectsSameWidth(a, b, px) {
             return Math.abs(a.left - b.left) < px && Math.abs(a.right - b.right) < px;
+        }
+        function rectsSameHeight(a, b, px) {
+            return Math.abs(a.top - b.top) < px && Math.abs(a.bottom - b.bottom) < px;
         }
         function getAllStripSnapTargets() {
             const targets = getFranjaGrupoScreenRects();
@@ -964,65 +980,131 @@
             promoteClusterToFranja([...target.fills]);
             return allDrawnLines.filter(l => l.tipo === 'franja-grupo').slice(-1)[0]?.id || null;
         }
-        function snapFranjaScreenRect(ax, ay, bx, by) {
+        function snapFranjaScreenRect(ax, ay, bx, by, opts) {
+            const forceExtend = opts?.forceExtend === true;
             const SNAP = 52;
             let x1 = Math.min(ax, bx), x2 = Math.max(ax, bx), y1 = Math.min(ay, by), y2 = Math.max(ay, by);
             const cx = (x1 + x2) / 2, cy = (y1 + y2) / 2;
             const targets = getAllStripSnapTargets();
-            if (!targets.length) return { x1, x2, y1, y2, gapFill: false };
-            let bestCol = null, bestColD = SNAP * 3;
-            targets.forEach(t => {
-                const d = Math.abs(x1 - t.left) + Math.abs(x2 - t.right);
-                const dc = Math.abs(cx - (t.left + t.right) / 2);
-                if (dc < bestColD) { bestColD = dc; bestCol = t; }
-            });
-            if (bestCol && bestColD < SNAP * 3) { x1 = bestCol.left; x2 = bestCol.right; }
-            const colTargets = targets.filter(t => rectsSameWidth({ left: x1, right: x2 }, t, SNAP * 2));
-            let upper = null, lower = null;
-            let gapFill = false, upperGid = null, lowerGid = null;
-            const sortedCol = [...colTargets].sort((a, b) => a.top - b.top);
-            for (let i = 0; i < sortedCol.length - 1; i++) {
-                const u = sortedCol[i], l = sortedCol[i + 1];
-                if (u.gid === l.gid) continue;
-                const gapH = l.top - u.bottom;
-                if (gapH <= 3 || gapH >= 600) continue;
-                const centerInGap = cy >= u.bottom - SNAP && cy <= l.top + SNAP;
-                const crossesGap = y1 <= u.bottom + SNAP * 1.5 && y2 >= l.top - SNAP * 1.5;
+            if (!targets.length) return { x1, x2, y1, y2, gapFill: false, gapFillH: false };
+            let gapFillH = false, leftGid = null, rightGid = null, leftTarget = null, rightTarget = null;
+            const sortedRow = [...targets].sort((a, b) => a.left - b.left);
+            const rowAligned = (strip) => rectsSameHeight({ top: y1, bottom: y2 }, strip, SNAP * 2.5)
+                || (y1 <= strip.top + SNAP * 2 && y2 >= strip.bottom - SNAP * 2)
+                || Math.abs(cy - (strip.top + strip.bottom) / 2) < (strip.bottom - strip.top) * 0.45;
+            for (let i = 0; i < sortedRow.length - 1; i++) {
+                const left = sortedRow[i], right = sortedRow[i + 1];
+                if (left.gid === right.gid) continue;
+                const gapW = right.left - left.right;
+                if (gapW <= 3 || gapW >= 600) continue;
+                if (!rectsSameHeight(left, right, SNAP * 2) || !rowAligned(left)) continue;
+                const centerInGap = cx >= left.right - SNAP && cx <= right.left + SNAP;
+                const crossesGap = x1 <= left.right + SNAP * 1.5 && x2 >= right.left - SNAP * 1.5;
                 if (centerInGap || crossesGap) {
-                    upper = u; lower = l;
-                    y1 = u.bottom; y2 = l.top; x1 = u.left; x2 = u.right;
-                    gapFill = true;
-                    upperGid = u.gid === '__orphan_macro__' ? null : u.gid;
-                    lowerGid = l.gid === '__orphan_macro__' ? null : l.gid;
+                    y1 = left.top; y2 = left.bottom; x1 = left.right; x2 = right.left;
+                    gapFillH = true;
+                    leftTarget = left; rightTarget = right;
+                    leftGid = left.gid === '__orphan_macro__' ? null : left.gid;
+                    rightGid = right.gid === '__orphan_macro__' ? null : right.gid;
                     break;
                 }
             }
-            if (!gapFill) {
-                colTargets.forEach(t => {
-                    if (t.bottom <= cy + SNAP * 1.5 && (!upper || t.bottom > upper.bottom)) upper = t;
-                    if (t.top >= cy - SNAP * 1.5 && (!lower || t.top < lower.top)) lower = t;
-                });
+            if (!gapFillH) {
+                for (const strip of sortedRow) {
+                    if (!rowAligned(strip)) continue;
+                    const drawsRight = x2 > strip.right + 2 && (x1 >= strip.right - SNAP * 3 || forceExtend);
+                    const centerOnStrip = cx >= strip.left && cx <= strip.right + 500;
+                    if (!drawsRight && !(forceExtend && centerOnStrip)) continue;
+                    const rawX2 = Math.max(x2, ax, bx);
+                    const lotN = strip.grp?.franjaCount || strip.fills?.length || 9;
+                    const lotW = (strip.right - strip.left) / Math.max(1, lotN);
+                    y1 = strip.top; y2 = strip.bottom; x1 = strip.right;
+                    x2 = rawX2 > x1 + 8 ? rawX2 : x1 + lotW * 1.4;
+                    gapFillH = true;
+                    leftTarget = strip;
+                    leftGid = strip.gid === '__orphan_macro__' ? null : strip.gid;
+                    break;
+                }
             }
-            if (!gapFill) {
-                const near = (v, t) => Math.abs(v - t) < SNAP;
-                const snapVal = (v, edges) => {
-                    let best = v, bd = SNAP;
-                    edges.forEach(e => { const d = Math.abs(v - e); if (d < bd) { bd = d; best = e; } });
-                    return best;
-                };
-                const allX = [], allY = [];
-                colTargets.forEach(r => { allX.push(r.left, r.right); allY.push(r.top, r.bottom); });
-                x1 = snapVal(x1, allX); x2 = snapVal(x2, allX); y1 = snapVal(y1, allY); y2 = snapVal(y2, allY);
-                colTargets.forEach(r => {
-                    if (near(x1, r.left) && near(x2, r.right)) { x1 = r.left; x2 = r.right; }
-                    if (near(y1, r.bottom)) { y1 = r.bottom; if (r.gid !== '__orphan_macro__') upperGid = r.gid; }
-                    if (near(y2, r.top)) { y2 = r.top; if (r.gid !== '__orphan_macro__') lowerGid = r.gid; }
+            let gapFill = false, upperGid = null, lowerGid = null, upper = null, lower = null;
+            if (!gapFillH) {
+                let bestCol = null, bestColD = SNAP * 3;
+                targets.forEach(t => {
+                    const dc = Math.abs(cx - (t.left + t.right) / 2);
+                    if (dc < bestColD) { bestColD = dc; bestCol = t; }
                 });
+                if (bestCol && bestColD < SNAP * 3) { x1 = bestCol.left; x2 = bestCol.right; }
+                const colTargets = targets.filter(t => rectsSameWidth({ left: x1, right: x2 }, t, SNAP * 2));
+                const sortedCol = [...colTargets].sort((a, b) => a.top - b.top);
+                for (let i = 0; i < sortedCol.length - 1; i++) {
+                    const u = sortedCol[i], l = sortedCol[i + 1];
+                    if (u.gid === l.gid) continue;
+                    const gapH = l.top - u.bottom;
+                    if (gapH <= 3 || gapH >= 600) continue;
+                    const centerInGap = cy >= u.bottom - SNAP && cy <= l.top + SNAP;
+                    const crossesGap = y1 <= u.bottom + SNAP * 1.5 && y2 >= l.top - SNAP * 1.5;
+                    if (centerInGap || crossesGap) {
+                        upper = u; lower = l;
+                        y1 = u.bottom; y2 = l.top; x1 = u.left; x2 = u.right;
+                        gapFill = true;
+                        upperGid = u.gid === '__orphan_macro__' ? null : u.gid;
+                        lowerGid = l.gid === '__orphan_macro__' ? null : l.gid;
+                        break;
+                    }
+                }
+                if (!gapFill) {
+                    colTargets.forEach(t => {
+                        if (t.bottom <= cy + SNAP * 1.5 && (!upper || t.bottom > upper.bottom)) upper = t;
+                        if (t.top >= cy - SNAP * 1.5 && (!lower || t.top < lower.top)) lower = t;
+                    });
+                }
+                if (!gapFill) {
+                    const near = (v, t) => Math.abs(v - t) < SNAP;
+                    const snapVal = (v, edges) => {
+                        let best = v, bd = SNAP;
+                        edges.forEach(e => { const d = Math.abs(v - e); if (d < bd) { bd = d; best = e; } });
+                        return best;
+                    };
+                    const allX = [], allY = [];
+                    colTargets.forEach(r => { allX.push(r.left, r.right); allY.push(r.top, r.bottom); });
+                    x1 = snapVal(x1, allX); x2 = snapVal(x2, allX); y1 = snapVal(y1, allY); y2 = snapVal(y2, allY);
+                    colTargets.forEach(r => {
+                        if (near(x1, r.left) && near(x2, r.right)) { x1 = r.left; x2 = r.right; }
+                        if (near(y1, r.bottom)) { y1 = r.bottom; if (r.gid !== '__orphan_macro__') upperGid = r.gid; }
+                        if (near(y2, r.top)) { y2 = r.top; if (r.gid !== '__orphan_macro__') lowerGid = r.gid; }
+                    });
+                }
             }
-            return { x1, x2, y1, y2, gapFill, upperGid, lowerGid, upperTarget: upper, lowerTarget: lower };
+            return { x1, x2, y1, y2, gapFill, gapFillH, upperGid, lowerGid, leftGid, rightGid, upperTarget: upper, lowerTarget: lower, leftTarget, rightTarget };
         }
-        function buildFranjaScreenPointsSnapped(ax, ay, bx, by, N) {
-            const s = snapFranjaScreenRect(ax, ay, bx, by);
+        function forceHorizontalExtendSnap(ax, ay, bx, by) {
+            const targets = getAllStripSnapTargets();
+            if (!targets.length) return null;
+            let x1 = Math.min(ax, bx), x2 = Math.max(ax, bx), y1 = Math.min(ay, by), y2 = Math.max(ay, by);
+            const cy = (y1 + y2) / 2;
+            let best = null, bestD = 9999;
+            targets.forEach(t => {
+                if (cy < t.top - 100 || cy > t.bottom + 100) return;
+                const d = Math.abs(x1 - t.right) + Math.abs(cy - (t.top + t.bottom) / 2) * 0.5;
+                if (d < bestD) { bestD = d; best = t; }
+            });
+            if (!best || bestD > 280) return null;
+            const lotN = best.grp?.franjaCount || best.fills?.length || 9;
+            const lotW = (best.right - best.left) / Math.max(1, lotN);
+            return {
+                x1: best.right, x2: Math.max(x2, best.right + lotW * 1.4),
+                y1: best.top, y2: best.bottom, gapFillH: true,
+                leftGid: best.gid === '__orphan_macro__' ? null : best.gid, leftTarget: best
+            };
+        }
+        function buildFranjaScreenPointsSnapped(ax, ay, bx, by, N, opts) {
+            const s = snapFranjaScreenRect(ax, ay, bx, by, opts);
+            if (s.gapFillH) {
+                const tl = screenPointToPanorama(s.x1, s.y1), tr = screenPointToPanorama(s.x2, s.y1);
+                const br = screenPointToPanorama(s.x2, s.y2), bl = screenPointToPanorama(s.x1, s.y2);
+                if (!tl || !tr || !br || !bl) return null;
+                return { topPts: [tl, tr], botPts: [bl, br], snap: s, extendQuad: [tl, tr, br, bl] };
+            }
             const topPts = [], botPts = [];
             for (let i = 0; i <= N; i++) {
                 const sx = s.x1 + (s.x2 - s.x1) * (i / N);
@@ -1195,6 +1277,53 @@
                 }
             });
         }
+        function extendFranjaHorizontal(stripGid, snap) {
+            const grp = allDrawnLines.find(l => l.id === stripGid && l.tipo === 'franja-grupo');
+            const proj = getPanoramaScreenProjector();
+            if (!grp || !proj || !snap?.gapFillH || snap.rightTarget) return false;
+            const [TL, TR, BR, BL] = grp.puntos;
+            const tlSc = proj.toScreen(TL[0], TL[1]), trSc = proj.toScreen(TR[0], TR[1]);
+            if (!tlSc || !trSc) return false;
+            const oldTopLen = Math.hypot(trSc[0] - tlSc[0], trSc[1] - tlSc[1]);
+            const newTR = proj.toPY(snap.x2, snap.y1), newBR = proj.toPY(snap.x2, snap.y2);
+            const newTRsc = newTR && proj.toScreen(newTR[0], newTR[1]);
+            if (!newTR || !newBR || !newTRsc) return false;
+            const newTopLen = Math.hypot(newTRsc[0] - tlSc[0], newTRsc[1] - tlSc[1]);
+            if (newTopLen <= oldTopLen + 0.001) return false;
+            const tSplit = Math.min(0.985, Math.max(0.015, oldTopLen / newTopLen));
+            const splits = [...ensureFranjaSplits(grp)];
+            splits[splits.length - 1] = tSplit;
+            splits.push(1);
+            grp.puntos = [TL.map(v => v), newTR.map(v => v), newBR.map(v => v), BL.map(v => v)];
+            grp.franjaCount = (grp.franjaCount || splits.length - 2) + 1;
+            grp.franjaSplits = splits;
+            rebuildFranjaGroup(stripGid);
+            return true;
+        }
+        function finalizeExtendFranja(snap) {
+            if (!snap?.gapFillH) return null;
+            let stripGid = snap.leftGid;
+            if (snap.leftTarget?.orphan) stripGid = resolveOrphanToFranjaGid(snap.leftTarget) || stripGid;
+            if (snap.rightTarget) {
+                if (snap.rightTarget.orphan) resolveOrphanToFranjaGid(snap.rightTarget);
+                const tl = screenPointToPanorama(snap.x1, snap.y1), tr = screenPointToPanorama(snap.x2, snap.y1);
+                const br = screenPointToPanorama(snap.x2, snap.y2), bl = screenPointToPanorama(snap.x1, snap.y2);
+                if (!tl || !tr || !br || !bl) return null;
+                const gid = finalizeNewFranja([tl, tr], [bl, br], 1, snap);
+                if (!gid || !stripGid) return gid;
+                const newG = allDrawnLines.find(l => l.id === gid);
+                if (newG && tryMergeFranjaHorizontal(newG.id)) return gid;
+                if (mergeFranjasHorizontal(stripGid, gid, false)) return stripGid;
+                return gid;
+            }
+            if (!stripGid) return null;
+            if (extendFranjaHorizontal(stripGid, snap)) {
+                ensureStitchedDivisorias();
+                document.body.classList.add('auto-macro-active');
+                return stripGid;
+            }
+            return null;
+        }
         function finalizeNewFranja(topPts, botPts, N, snap) {
             if (snap?.gapFill && snap.upperTarget?.orphan) snap.upperGid = resolveOrphanToFranjaGid(snap.upperTarget) || snap.upperGid;
             if (snap?.gapFill && snap.lowerTarget?.orphan) snap.lowerGid = resolveOrphanToFranjaGid(snap.lowerTarget) || snap.lowerGid;
@@ -1216,10 +1345,18 @@
         }
         function updateFranjaPreview(bx, by) {
             if (!franjaCornerA) { franjaPreviewQuad = null; franjaPreviewDivs = []; return; }
-            const raw = buildFranjaScreenPointsSnapped(franjaCornerA.sx, franjaCornerA.sy, bx, by, Math.max(1, franjaDraftCount));
+            const snapOpts = currentLineType === 'franja-extend' ? { forceExtend: true } : null;
+            const raw = buildFranjaScreenPointsSnapped(franjaCornerA.sx, franjaCornerA.sy, bx, by, Math.max(1, franjaDraftCount), snapOpts);
             if (!raw) { franjaPreviewQuad = null; franjaPreviewDivs = []; return; }
+            if (raw.snap?.gapFillH && raw.extendQuad) {
+                franjaPreviewQuad = raw.extendQuad;
+                const midT = screenPointToPanorama(raw.snap.x1, raw.snap.y1);
+                const midB = screenPointToPanorama(raw.snap.x1, raw.snap.y2);
+                franjaPreviewDivs = midT && midB ? [{ id: 'franja_preview_stitch', tipo: 'franja-preview-div', puntos: [midT, midB] }] : [];
+                return;
+            }
             const N = raw.snap?.gapFill ? 1 : Math.max(1, franjaDraftCount);
-            const built = buildFranjaScreenPointsSnapped(franjaCornerA.sx, franjaCornerA.sy, bx, by, N);
+            const built = buildFranjaScreenPointsSnapped(franjaCornerA.sx, franjaCornerA.sy, bx, by, N, snapOpts);
             if (!built) { franjaPreviewQuad = null; franjaPreviewDivs = []; return; }
             franjaPreviewQuad = [built.topPts[0], built.topPts[N], built.botPts[N], built.botPts[0]];
             franjaPreviewDivs = [];
@@ -1419,7 +1556,13 @@
                 if(renderer) { SmartGpuProfile.patchRenderer(renderer); const canvas = typeof renderer.getCanvas === 'function' ? renderer.getCanvas() : null; SmartGpuProfile.bindContextRecovery(canvas, () => retryPannellumSmart(panoramaBase, true) ); }
                 const pnlmUi = document.querySelector('.pnlm-ui'); const svg = document.getElementById('loteo-svg'); 
                 if (pnlmUi && svg && svg.parentNode !== pnlmUi) pnlmUi.insertBefore(svg, pnlmUi.firstChild); 
-                if (!isIntroAnimating) { if(renderer) hookRendererOverlay(renderer); syncSVGElements(); if (svg) svg.style.opacity = '1'; } 
+                syncFranjaVisualsOnReady();
+                if (!isIntroAnimating) {
+                    if(renderer) hookRendererOverlay(renderer);
+                    refreshAllHotspots(true);
+                    syncSVGElements();
+                    if (svg) svg.style.opacity = '1';
+                }
             };
             visor360.on('error', () => { isWebGLSupported = false; viewerGpuReady = false; const spText = document.getElementById('splash-loading-text'); if (spText) spText.innerText = 'REINTENTO CON MODO LITE GPU...'; setTimeout(() => retryPannellumSmart(panoramaBase, true), 600); });
             visor360.on('load', handleLoad);
@@ -1446,7 +1589,7 @@
                         if (targetLoteId) { const searchStr = targetLoteId.toLowerCase().replace(/\s/g, ''); const targetPin = BaseDatosLotes.find( (l) => (l.titulo || '').toLowerCase().replace(/\s/g, '').includes(searchStr) || (l.numero || '') === targetLoteId, ); if (targetPin) visor360.lookAt(targetPin.pitch, targetPin.yaw, 70, 3000); else visor360.lookAt(5, 15, 100, 3000); } else { visor360.lookAt(5, 15, 100, 3000); }
                         setTimeout(() => {
                             if (!targetLoteId) visor360.lookAt(-89, 65, 115, 3000);
-                            setTimeout(() => { isIntroAnimating = false; if (svg && isSvgRenderAllowed()) svg.style.opacity = '1'; syncSVGElements(); if (visor360 && visor360.getRenderer) { const renderer = visor360.getRenderer(); if(renderer) hookRendererOverlay(renderer); } }, targetLoteId ? 0 : 3000);
+                            setTimeout(() => { isIntroAnimating = false; syncFranjaVisualsOnReady(); if (svg && isSvgRenderAllowed()) svg.style.opacity = '1'; refreshAllHotspots(true); syncSVGElements(); if (visor360 && visor360.getRenderer) { const renderer = visor360.getRenderer(); if(renderer) hookRendererOverlay(renderer); } }, targetLoteId ? 0 : 3000);
                         }, 3000);
                     }, 1500);
                 }, 1000);
@@ -1481,29 +1624,44 @@
                 if (isDevModePinsActive && pickedPin) { const coords = visor360.mouseEventToCoords(mock); if (coords && !isNaN(coords[0])) { pickedPin.pitch = parseFloat(coords[0].toFixed(2)); pickedPin.yaw = parseFloat(coords[1].toFixed(2)); } pickedPin = null; document.getElementById('ghost-pin').classList.remove('active'); refreshAllHotspots(); saveToLocal(); return; }
                 const timeDiff = Date.now() - startTime; const moveDist = Math.sqrt( Math.pow(mock.clientX - startX, 2) + Math.pow(mock.clientY - startY, 2) );
                 if (timeDiff < 500 && moveDist < 10) {
-                    if (Date.now() - lastClickTime < 300 && isDevModeDrawActive && currentLineType !== 'franja') { anclarTrazoActivo(); lastClickTime = 0; return; }
+                    if (Date.now() - lastClickTime < 300 && isDevModeDrawActive && currentLineType !== 'franja' && currentLineType !== 'franja-extend') { anclarTrazoActivo(); lastClickTime = 0; return; }
                     lastClickTime = Date.now();
                     if (isDevModeDrawActive && currentLineType === 'eraser') { runEraserAtEvent(mock); return; }
-                    if (isDevModeDrawActive && currentLineType === 'franja') {
+                    if (isDevModeDrawActive && (currentLineType === 'franja' || currentLineType === 'franja-extend')) {
+                        const snapOpts = currentLineType === 'franja-extend' ? { forceExtend: true } : null;
                         if (!franjaCornerA) {
                             const coords = visor360.mouseEventToCoords(mock); if (!coords) return;
-                            const snapA = snapFranjaScreenRect(mock.clientX, mock.clientY, mock.clientX, mock.clientY);
+                            const forced = currentLineType === 'franja-extend' ? forceHorizontalExtendSnap(mock.clientX, mock.clientY, mock.clientX + 2, mock.clientY) : null;
+                            const snapA = forced || snapFranjaScreenRect(mock.clientX, mock.clientY, mock.clientX, mock.clientY, snapOpts);
                             franjaCornerA = { sx: snapA.x1, sy: snapA.y1, pitch: parseFloat(coords[0].toFixed(3)), yaw: parseFloat(coords[1].toFixed(3)) };
                             try { visor360.addHotSpot({ id: 'franja_preview_a', pitch: franjaCornerA.pitch, yaw: franjaCornerA.yaw, createTooltipFunc: (div) => { div.classList.add('vertex-marker','franja-corner-marker','drawing-node'); div.id = 'franja_preview_a'; }, createTooltipArgs: {} }); } catch(e) {}
                         } else {
-                            const built = buildFranjaScreenPointsSnapped(franjaCornerA.sx, franjaCornerA.sy, mock.clientX, mock.clientY, Math.max(1, franjaDraftCount));
+                            const built = buildFranjaScreenPointsSnapped(franjaCornerA.sx, franjaCornerA.sy, mock.clientX, mock.clientY, Math.max(1, franjaDraftCount), snapOpts);
                             if (!built) { clearFranjaDraft(); alert('⚠️ No se pudo proyectar la franja. Ajusta la vista para que el área quede visible en pantalla.'); return; }
+                            let snap = built.snap;
+                            if (currentLineType === 'franja-extend' && !snap?.gapFillH) {
+                                snap = forceHorizontalExtendSnap(franjaCornerA.sx, franjaCornerA.sy, mock.clientX, mock.clientY) || snap;
+                            }
+                            clearFranjaDraft();
+                            if (snap?.gapFillH || currentLineType === 'franja-extend') {
+                                if (!finalizeExtendFranja(snap)) {
+                                    alert('⚠️ No se pudo anexar el lote.\n\n• 1er clic: borde derecho del lote 9 (sobre la hilera)\n• 2do clic: arrastra hacia la derecha — más ancho = más m² (ej. 7000 vs 5000 ≈ 40% más ancho)');
+                                    refreshAllHotspots();
+                                    return;
+                                }
+                                refreshAllHotspots(); saveToLocal(); flashScreenSuccess();
+                                return;
+                            }
                             let N = Math.max(1, franjaDraftCount);
                             if (built.snap?.gapFill) {
                                 N = 1;
                             } else {
                                 const divStr = prompt('🏘️ FRANJA DE LOTES\n\n¿Cuántos lotes quieres crear?\n(Mínimo 1 — usa 1 para rellenar un hueco)', String(franjaDraftCount));
-                                if (divStr === null) { clearFranjaDraft(); refreshAllHotspots(); return; }
+                                if (divStr === null) { refreshAllHotspots(); return; }
                                 N = Math.max(1, Math.min(40, parseInt(divStr, 10) || franjaDraftCount));
                             }
                             franjaDraftCount = N;
-                            const finalBuilt = buildFranjaScreenPointsSnapped(franjaCornerA.sx, franjaCornerA.sy, mock.clientX, mock.clientY, N);
-                            clearFranjaDraft();
+                            const finalBuilt = buildFranjaScreenPointsSnapped(franjaCornerA.sx, franjaCornerA.sy, mock.clientX, mock.clientY, N, snapOpts);
                             if (!finalBuilt) { alert('⚠️ No se pudo proyectar la franja. Ajusta la vista para que el área quede visible en pantalla.'); return; }
                             finalizeNewFranja(finalBuilt.topPts, finalBuilt.botPts, N, finalBuilt.snap);
                             refreshAllHotspots(); saveToLocal(); flashScreenSuccess();
@@ -1569,7 +1727,7 @@
                     return;
                 }
                 if (isDevModePinsActive && pickedPin) { if (e.cancelable) e.preventDefault(); const gPin = document.getElementById('ghost-pin'); gPin.classList.add('active'); gPin.style.left = mock.clientX + 'px'; gPin.style.top = mock.clientY + 'px'; return; }
-                if (isDevModeDrawActive && currentLineType === 'franja' && franjaCornerA) {
+                if (isDevModeDrawActive && (currentLineType === 'franja' || currentLineType === 'franja-extend') && franjaCornerA) {
                     window.lastMouseX = mock.clientX; window.lastMouseY = mock.clientY;
                     updateFranjaPreview(mock.clientX, mock.clientY);
                     syncSVGElements(); updateSVGPaths();
@@ -1592,7 +1750,7 @@
             const viewerConfig = { type: 'equirectangular', panorama: panoramaUrl, autoLoad: true, compass: false, hfov: 130, pitch: 60, yaw: -45, hotSpots: getHotspotsConfig(), fallback: 'loteo360.jpg', };
             if (touchDev) { viewerConfig.touchPanSpeedCoeffFactor = 1.35; viewerConfig.friction = 0.12; viewerConfig.showZoomCtrl = false; }
             visor360 = pannellum.viewer('panorama-container', viewerConfig);
-            if (touchDev) attachSmartViewerHandlers('loteo360.jpg');
+            attachSmartViewerHandlers('loteo360.jpg');
             if (!pannellumIntroBootstrapped) { pannellumIntroBootstrapped = true; runPannellumIntroBootstrap(); }
             if (!panoramaEventsBound) { panoramaEventsBound = true; bindPanoramaPointerEvents(); }
         }
@@ -1712,10 +1870,11 @@
             document.getElementById('btn-draw-cut')?.addEventListener('click', (e) => { setDrawMode('cortar', e.target); });
             document.getElementById('btn-draw-divisoria')?.addEventListener('click', (e) => { clearFranjaDraft(); setDrawMode('divisoria', e.target); });
             document.getElementById('btn-draw-franja')?.addEventListener('click', (e) => { clearFranjaDraft(); setDrawMode('franja', e.target); });
+            document.getElementById('btn-extend-lote')?.addEventListener('click', (e) => { clearFranjaDraft(); setDrawMode('franja-extend', e.target); });
             document.getElementById('btn-straighten-franja')?.addEventListener('click', enderezarFranjas);
             document.getElementById('btn-eraser')?.addEventListener('click', (e) => { setDrawMode('eraser', e.target); });
             
-            function setDrawMode(mode, targetBtn) { if (mode !== 'franja') clearFranjaDraft(); currentLineType = mode; document.body.classList.toggle('eraser-mode-active', mode === 'eraser'); document.querySelectorAll('#dev-toolbar-draw .dev-btn:not(.action):not(.export):not(.export-ai):not(.nuke)').forEach(b => b.classList.remove('active')); if(targetBtn) targetBtn.classList.add('active'); }
+            function setDrawMode(mode, targetBtn) { if (mode !== 'franja' && mode !== 'franja-extend') clearFranjaDraft(); currentLineType = mode; document.body.classList.toggle('eraser-mode-active', mode === 'eraser'); document.querySelectorAll('#dev-toolbar-draw .dev-btn:not(.action):not(.export):not(.export-ai):not(.nuke)').forEach(b => b.classList.remove('active')); if(targetBtn) targetBtn.classList.add('active'); }
             
             document.getElementById('btn-undo-point')?.addEventListener('click', () => { if (currentLinePoints.length > 0) { currentLinePoints.pop(); refreshAllHotspots(); } });
 
