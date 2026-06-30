@@ -203,7 +203,7 @@
             <div class="filter-group"><button class="filter-btn active" data-status="todos">Todos</button><button class="filter-btn" data-status="favoritos">❤️ Favs</button><button class="filter-btn" data-status="disponible">Disp.</button><button class="filter-btn" data-status="reservado">Reser.</button><button class="filter-btn" data-status="vendido">Vend.</button><button class="filter-btn" data-status="no_disponible">No Disp.</button></div>
             <div class="lotes-list" id="js-lotes-list"></div>
         </div>
-        <div id="dev-toolbar-draw" class="dev-toolbar"><div class="macos-header"><div class="macos-dots"><i></i><i></i><i></i></div><div class="dev-toolbar-title">MODO ARQUITECTO (DIBUJO LIBRE)</div><div style="width: 42px;"></div></div><div class="dev-tools-row"><button class="dev-btn active" id="btn-draw-solid">Sólida</button><button class="dev-btn" id="btn-draw-dash">Punteada</button><button class="dev-btn" id="btn-draw-street" title="Dibuja la ruta, las calles se fusionarán al unirse">🛣️ Calle</button><button class="dev-btn" id="btn-draw-cut" style="color: #f59e0b;" title="Apunta hacia donde quieres cortar">✂️ Subdividir</button><button class="dev-btn" id="btn-draw-divisoria" title="Dibuja una línea punteada interna (no se cierra automáticamente)">📏 Divisoria</button><button class="dev-btn btn-franja-lotes" id="btn-draw-franja" style="color: #10b981; font-weight: 800;" title="2 clics: rectángulo calcado al suelo → elige cuántos lotes. Bordes finos + divisiones punteadas premium.">Franja Lotes</button><div style="width: 1px; height: 20px; background: rgba(255,255,255,0.2); margin: 0 5px;"></div><button class="dev-btn" id="btn-auto-macro" style="color: #a855f7; font-weight: 800;" title="Convierte lotes adyacentes en un Macro-Lote">✨ AUTO-MACRO</button><button class="dev-btn" id="btn-eraser" style="color: #fca5a5;">🧹 Goma</button><div style="width: 1px; height: 20px; background: rgba(255,255,255,0.2); margin: 0 5px;"></div><button class="dev-btn action" id="btn-undo-point" title="Borrar último vértice trazado">Deshacer Punto</button><button class="dev-btn nuke" id="btn-nuke">🗑️ Limpiar Todo</button><button class="dev-btn export-ai" title="Guardar directamente en el servidor">☁️ GUARDAR EN LA NUBE</button></div></div>
+        <div id="dev-toolbar-draw" class="dev-toolbar"><div class="macos-header"><div class="macos-dots"><i></i><i></i><i></i></div><div class="dev-toolbar-title">MODO ARQUITECTO (DIBUJO LIBRE)</div><div style="width: 42px;"></div></div><div class="dev-tools-row"><button class="dev-btn active" id="btn-draw-solid">Sólida</button><button class="dev-btn" id="btn-draw-dash">Punteada</button><button class="dev-btn" id="btn-draw-street" title="Dibuja la ruta, las calles se fusionarán al unirse">🛣️ Calle</button><button class="dev-btn" id="btn-draw-cut" style="color: #f59e0b;" title="Apunta hacia donde quieres cortar">✂️ Subdividir</button><button class="dev-btn" id="btn-draw-divisoria" title="Dibuja una línea punteada interna (no se cierra automáticamente)">📏 Divisoria</button><button class="dev-btn btn-franja-lotes" id="btn-draw-franja" style="color: #10b981; font-weight: 800;" title="2 clics: rectángulo calcado al suelo → elige cuántos lotes. Bordes finos + divisiones punteadas premium.">Franja Lotes</button><button class="dev-btn" id="btn-straighten-franja" style="color: #f59e0b; font-weight: 800;" title="Endereza franja(s): bordes y divisiones en líneas rectas para levantamiento">📏 Enderezar</button><div style="width: 1px; height: 20px; background: rgba(255,255,255,0.2); margin: 0 5px;"></div><button class="dev-btn" id="btn-auto-macro" style="color: #a855f7; font-weight: 800;" title="Convierte lotes adyacentes en un Macro-Lote">✨ AUTO-MACRO</button><button class="dev-btn" id="btn-eraser" style="color: #fca5a5;">🧹 Goma</button><div style="width: 1px; height: 20px; background: rgba(255,255,255,0.2); margin: 0 5px;"></div><button class="dev-btn action" id="btn-undo-point" title="Borrar último vértice trazado">Deshacer Punto</button><button class="dev-btn nuke" id="btn-nuke">🗑️ Limpiar Todo</button><button class="dev-btn export-ai" title="Guardar directamente en el servidor">☁️ GUARDAR EN LA NUBE</button></div></div>
         <div id="dev-toolbar-pins" class="dev-toolbar"><div class="macos-header"><div class="macos-dots"><i></i><i></i><i></i></div><div class="dev-toolbar-title">MODO PINES (MAPEO)</div><div style="width: 42px;"></div></div><div class="dev-tools-row"><button class="dev-btn active btn-pin-disp" data-pintype="disponible">Disp.</button><button class="dev-btn btn-pin-res" data-pintype="reservado">Res.</button><button class="dev-btn btn-pin-vend" data-pintype="vendido">Vend.</button><button class="dev-btn btn-pin-nodisp" data-pintype="no_disponible">No Disp.</button><div style="width: 1px; height: 20px; background: rgba(255,255,255,0.2); margin: 0 5px;"></div><button class="dev-btn btn-pin-360" data-pintype="vista360">Pin 360</button><button class="dev-btn btn-pin-casa" data-pintype="casa360">Casa 360</button><button class="dev-btn btn-pin-hor" data-pintype="horizonte">Horizonte</button><button class="dev-btn btn-pin-ruta" data-pintype="ruta">Ruta</button><button class="dev-btn" id="btn-set-drone" style="color: #f59e0b;" title="Establecer Coordenadas Base (Lat, Lng)">📍 Origen Drone</button><button class="dev-btn" id="btn-set-north" style="color: #34d399;" title="Fijar la vista actual como el Norte Magnético">🧭 Fijar Norte</button><div style="width: 1px; height: 20px; background: rgba(255,255,255,0.2); margin: 0 5px;"></div><button class="dev-btn action" id="btn-heatmap" title="Activa Telemetría Visual">🔥 Mapa Calor</button><button class="dev-btn" id="btn-edit-titles" style="color: #cbd5e1;" title="Editar Título y Subtítulo Central">📝 Títulos</button><button class="dev-btn nuke" id="btn-nuke-pins">🗑️ Limpiar Todo</button><button class="dev-btn export-ai" title="Guardar directamente en el servidor">☁️ GUARDAR EN LA NUBE</button></div></div>
         <div class="premium-dock" id="js-dock">
             <div class="dock-legend"><div class="legend-item"><div class="legend-dot dot-disp"></div><span class="legend-text">Disponible</span></div><div class="legend-item"><div class="legend-dot dot-res"></div><span class="legend-text">Reservado</span></div><div class="legend-item"><div class="legend-dot dot-vend"></div><span class="legend-text">Vendido</span></div><div class="legend-item"><div class="legend-dot dot-nodisp"></div><span class="legend-text">No Disp.</span></div></div>
@@ -355,6 +355,75 @@
         }
         function isMacroEdgeType(tipo) { return tipo === 'divisoria' || tipo === 'borde-macro' || tipo === 'arista_solida' || tipo === 'arista_punteada'; }
         function lerpPY(a, b, t) { return [a[0] + (b[0]-a[0])*t, a[1] + (b[1]-a[1])*t]; }
+        function getPanoramaScreenProjector() {
+            if (!visor360) return null;
+            const ctnr = document.getElementById('panorama-container');
+            const W = DOMCache.viewport.w || ctnr?.clientWidth || 0;
+            const H = DOMCache.viewport.h || ctnr?.clientHeight || 0;
+            const camP = visor360.getPitch() * Math.PI / 180, camYw = visor360.getYaw() * Math.PI / 180, hfov = visor360.getHfov();
+            const scp = Math.sin(camP), ccp = Math.cos(camP), fc = 0.5 * W / Math.tan(hfov * Math.PI / 360), cxW = W / 2, cyH = H / 2;
+            return {
+                toScreen(pitch, yaw) {
+                    const p = pitch * Math.PI / 180, y = yaw * Math.PI / 180, sp = Math.sin(p), cp2 = Math.cos(p);
+                    let yd = y - camYw; while (yd > Math.PI) yd -= 2 * Math.PI; while (yd < -Math.PI) yd += 2 * Math.PI;
+                    const sy = Math.sin(yd), cy2 = Math.cos(yd), z = sp * scp + cp2 * cy2 * ccp;
+                    return z > 0.0001 ? [cxW + (cp2 * sy / z) * fc, cyH - ((sp * ccp - cp2 * cy2 * scp) / z) * fc] : null;
+                },
+                toPY(sx, sy) {
+                    return screenPointToPanorama(DOMCache.viewport.left + sx, DOMCache.viewport.top + sy);
+                },
+                lerpSc(a, b, t) { return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]; }
+            };
+        }
+        function buildFranjaPointsFromCorners(TL, TR, BR, BL, N) {
+            const proj = getPanoramaScreenProjector();
+            if (!proj) return null;
+            const tlSc = proj.toScreen(TL[0], TL[1]), trSc = proj.toScreen(TR[0], TR[1]);
+            const brSc = proj.toScreen(BR[0], BR[1]), blSc = proj.toScreen(BL[0], BL[1]);
+            const topPts = [], botPts = [];
+            if (tlSc && trSc && brSc && blSc) {
+                for (let i = 0; i <= N; i++) {
+                    const t = i / N;
+                    const tp = proj.toPY(...proj.lerpSc(tlSc, trSc, t)), bp = proj.toPY(...proj.lerpSc(blSc, brSc, t));
+                    if (!tp || !bp) return null;
+                    topPts.push(tp); botPts.push(bp);
+                }
+                return { topPts, botPts };
+            }
+            for (let i = 0; i <= N; i++) {
+                const t = i / N;
+                topPts.push(lerpPY(TL, TR, t)); botPts.push(lerpPY(BL, BR, t));
+            }
+            return { topPts, botPts };
+        }
+        function straightenFranjaGroup(gid) {
+            const grp = allDrawnLines.find(l => l.id === gid && l.tipo === 'franja-grupo');
+            if (!grp || grp.puntos.length < 4) return false;
+            const proj = getPanoramaScreenProjector();
+            if (!proj) return false;
+            const scPts = grp.puntos.map(py => ({ sc: proj.toScreen(py[0], py[1]) })).filter(p => p.sc);
+            if (scPts.length < 4) return false;
+            const TLsc = scPts.reduce((m, p) => p.sc[0] + p.sc[1] < m.sc[0] + m.sc[1] ? p : m).sc;
+            const TRsc = scPts.reduce((m, p) => p.sc[0] - p.sc[1] > m.sc[0] - m.sc[1] ? p : m).sc;
+            const BRsc = scPts.reduce((m, p) => p.sc[0] + p.sc[1] > m.sc[0] + m.sc[1] ? p : m).sc;
+            const BLsc = scPts.reduce((m, p) => p.sc[0] - p.sc[1] < m.sc[0] - m.sc[1] ? p : m).sc;
+            const nTL = proj.toPY(TLsc[0], TLsc[1]), nTR = proj.toPY(TRsc[0], TRsc[1]);
+            const nBR = proj.toPY(BRsc[0], BRsc[1]), nBL = proj.toPY(BLsc[0], BLsc[1]);
+            if (!nTL || !nTR || !nBR || !nBL) return false;
+            grp.puntos = [nTL, nTR, nBR, nBL];
+            rebuildFranjaGroup(gid);
+            return true;
+        }
+        function enderezarFranjas() {
+            migrateFranjaGroupsFromData();
+            const grupos = allDrawnLines.filter(l => l.tipo === 'franja-grupo');
+            if (!grupos.length) return alert('No hay franjas de lotes.\n\nUsa 🏘️ Franja Lotes o ✨ AUTO-MACRO sobre un recuadro primero.');
+            if (!confirm(`📏 ENDEREZAR ${grupos.length} franja(s)\n\n• Bordes superiores/inferiores rectos\n• Divisiones verticales alineadas\n• Estilo levantamiento topográfico\n\n¿Continuar?`)) return;
+            let ok = 0;
+            grupos.forEach(g => { if (straightenFranjaGroup(g.id)) ok++; });
+            if (ok) { refreshAllHotspots(); saveToLocal(); flashScreenSuccess(); }
+            else alert('⚠️ Enderezado incompleto. Centra la vista para ver toda la franja en pantalla.');
+        }
         function getFranjaChildLines(gid) {
             return allDrawnLines.filter(l => l.franjaGrupo === gid && l.tipo === 'area-invisible');
         }
@@ -372,12 +441,9 @@
             const [TL, TR, BR, BL] = grp.puntos;
             const N = grp.franjaCount || 2;
             allDrawnLines = allDrawnLines.filter(l => l.franjaGrupo !== gid);
-            const topPts = [], botPts = [];
-            for (let i = 0; i <= N; i++) {
-                const t = i / N;
-                topPts.push(lerpPY(TL, TR, t));
-                botPts.push(lerpPY(BL, BR, t));
-            }
+            const built = buildFranjaPointsFromCorners(TL, TR, BR, BL, N);
+            if (!built) return;
+            const { topPts, botPts } = built;
             const draftPolys = [];
             for (let i = 0; i < N; i++) {
                 draftPolys.push({
@@ -641,7 +707,7 @@
                         linea.puntos.forEach((coord, pIdx) => {
                             hotspots.push({ "id": "vert_franja_corner_" + linea.id + "_" + pIdx, "pitch": coord[0], "yaw": coord[1], "createTooltipFunc": renderHiddenVertex, "createTooltipArgs": { lineId: linea.id, type: linea.tipo, isGuide: true, isFranjaCorner: true, idx: pIdx, hsId: "vert_franja_corner_" + linea.id + "_" + pIdx } });
                         });
-                    } else if (linea.tipo !== 'divisoria' && linea.tipo !== 'borde-macro') {
+                    } else if (linea.tipo !== 'divisoria' && linea.tipo !== 'borde-macro' && !linea.franjaGrupo) {
                         linea.puntos.forEach((coord, pIdx) => {
                             hotspots.push({ "id": "vert_base_" + linea.id + "_" + pIdx, "pitch": coord[0], "yaw": coord[1], "createTooltipFunc": renderHiddenVertex, "createTooltipArgs": { lineId: linea.id, type: linea.tipo, isGuide: isDevModeDrawActive, idx: pIdx, hsId: "vert_base_" + linea.id + "_" + pIdx } });
                         });
@@ -1031,6 +1097,7 @@
             document.getElementById('btn-draw-cut')?.addEventListener('click', (e) => { setDrawMode('cortar', e.target); });
             document.getElementById('btn-draw-divisoria')?.addEventListener('click', (e) => { clearFranjaDraft(); setDrawMode('divisoria', e.target); });
             document.getElementById('btn-draw-franja')?.addEventListener('click', (e) => { clearFranjaDraft(); setDrawMode('franja', e.target); });
+            document.getElementById('btn-straighten-franja')?.addEventListener('click', enderezarFranjas);
             document.getElementById('btn-eraser')?.addEventListener('click', (e) => { setDrawMode('eraser', e.target); });
             
             function setDrawMode(mode, targetBtn) { if (mode !== 'franja') clearFranjaDraft(); currentLineType = mode; document.querySelectorAll('#dev-toolbar-draw .dev-btn:not(.action):not(.export):not(.export-ai):not(.nuke)').forEach(b => b.classList.remove('active')); if(targetBtn) targetBtn.classList.add('active'); }
