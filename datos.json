@@ -10,130 +10,281 @@
       "yaw": -178.5,
       "tipo": "lote",
       "status": "disponible",
-      "titulo": "Lote 01 (7-A)",
+      "titulo": "Lote 01",
       "superficie": "0,5011 HÁ",
       "precio": "UF 0",
-      "imagen": "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&q=80",
+      "imagen": "https://raw.githubusercontent.com/iLyCoNs/fresia360/refs/heads/main/arboles.png",
       "id": "nuevo_1782705833541",
       "numero": "01",
-      "terreno": "Plano"
+      "terreno": "Plano",
+      "tituloPlano": "7-A",
+      "tituloColor": "#1d1d1f",
+      "tituloPlanoColor": "#0066cc",
+      "cardVis": {
+        "titulo": true,
+        "tituloPlano": true,
+        "precio": true,
+        "precioCLP": true,
+        "imagen": true,
+        "statusPill": true,
+        "superficie": true,
+        "terreno": true,
+        "favorito": true,
+        "acciones": true
+      }
     },
     {
       "pitch": -64.68,
       "yaw": -177.25,
       "tipo": "lote",
       "status": "disponible",
-      "titulo": "Lote 02 (7-B)",
+      "titulo": "Lote 02",
       "superficie": "0,5019 HÁ",
       "precio": "UF 0",
-      "imagen": "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&q=80",
+      "imagen": "https://raw.githubusercontent.com/iLyCoNs/fresia360/refs/heads/main/arboles.png",
       "id": "nuevo_1782705866709",
       "numero": "02",
-      "terreno": "Plano"
+      "terreno": "Plano",
+      "videoUrl": "https://ilycons.github.io/fresia360/suelo.html",
+      "tituloPlano": "7-B",
+      "tituloColor": "#1d1d1f",
+      "tituloPlanoColor": "#0066cc",
+      "cardVis": {
+        "titulo": true,
+        "tituloPlano": true,
+        "precio": true,
+        "precioCLP": true,
+        "imagen": true,
+        "statusPill": true,
+        "superficie": true,
+        "terreno": true,
+        "favorito": true,
+        "acciones": true
+      }
     },
     {
       "pitch": -71.5,
       "yaw": -175.12,
       "tipo": "lote",
       "status": "disponible",
-      "titulo": "Lote 03 (7-C)",
+      "titulo": "Lote 03",
       "superficie": "0,5019 HÁ",
       "precio": "UF 0",
-      "imagen": "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&q=80",
+      "imagen": "https://raw.githubusercontent.com/iLyCoNs/fresia360/refs/heads/main/arboles.png",
       "id": "nuevo_1782705943333",
       "numero": "03",
-      "terreno": "Plano"
+      "terreno": "Plano",
+      "tituloPlano": "7-C",
+      "tituloColor": "#1d1d1f",
+      "tituloPlanoColor": "#0066cc",
+      "cardVis": {
+        "titulo": true,
+        "tituloPlano": true,
+        "precio": true,
+        "precioCLP": true,
+        "imagen": true,
+        "statusPill": true,
+        "superficie": true,
+        "terreno": true,
+        "favorito": true,
+        "acciones": true
+      }
     },
     {
       "pitch": -78.9,
       "yaw": -169.95,
       "tipo": "lote",
       "status": "disponible",
-      "titulo": "Lote 04 (7-D)",
+      "titulo": "Lote 04",
       "superficie": "0,5005 HÁ",
       "precio": "UF 0",
-      "imagen": "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&q=80",
+      "imagen": "https://raw.githubusercontent.com/iLyCoNs/fresia360/refs/heads/main/arboles.png",
       "id": "nuevo_1782705961579",
       "numero": "04",
-      "terreno": "Plano"
+      "terreno": "Plano",
+      "tituloPlano": "7-D",
+      "tituloColor": "#1d1d1f",
+      "tituloPlanoColor": "#0066cc",
+      "cardVis": {
+        "titulo": true,
+        "tituloPlano": true,
+        "precio": true,
+        "precioCLP": true,
+        "imagen": true,
+        "statusPill": true,
+        "superficie": true,
+        "terreno": true,
+        "favorito": true,
+        "acciones": true
+      }
     },
     {
       "pitch": -86.24,
       "yaw": -142.47,
       "tipo": "lote",
       "status": "disponible",
-      "titulo": "Lote 05 (7-E)",
+      "titulo": "Lote 05",
       "superficie": "0,5012 HÁ",
       "precio": "UF 0",
-      "imagen": "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&q=80",
+      "imagen": "https://raw.githubusercontent.com/iLyCoNs/fresia360/refs/heads/main/arboles.png",
       "id": "nuevo_1782705986044",
       "numero": "05",
-      "terreno": "Plano"
+      "terreno": "Plano",
+      "tituloPlano": "7-E",
+      "tituloColor": "#1d1d1f",
+      "tituloPlanoColor": "#0066cc",
+      "cardVis": {
+        "titulo": true,
+        "tituloPlano": true,
+        "precio": true,
+        "precioCLP": true,
+        "imagen": true,
+        "statusPill": true,
+        "superficie": true,
+        "terreno": true,
+        "favorito": true,
+        "acciones": true
+      }
     },
     {
       "pitch": -84.24,
       "yaw": -27.1,
       "tipo": "lote",
       "status": "disponible",
-      "titulo": "Lote 06 (7-F)",
+      "titulo": "Lote 06",
       "superficie": "0,5012 HÁ",
       "precio": "UF 0",
-      "imagen": "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&q=80",
+      "imagen": "https://raw.githubusercontent.com/iLyCoNs/fresia360/refs/heads/main/arboles.png",
       "id": "nuevo_1782706025862",
       "numero": "06",
-      "terreno": "Plano"
+      "terreno": "Plano",
+      "tituloPlano": "7-F",
+      "tituloColor": "#1d1d1f",
+      "tituloPlanoColor": "#0066cc",
+      "cardVis": {
+        "titulo": true,
+        "tituloPlano": true,
+        "precio": true,
+        "precioCLP": true,
+        "imagen": true,
+        "statusPill": true,
+        "superficie": true,
+        "terreno": true,
+        "favorito": true,
+        "acciones": true
+      }
     },
     {
       "pitch": -76.59,
       "yaw": -12.56,
       "tipo": "lote",
       "status": "disponible",
-      "titulo": "Lote 07 (7-G)",
+      "titulo": "Lote 07",
       "superficie": "0,5004 HÁ",
       "precio": "UF 0",
-      "imagen": "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&q=80",
+      "imagen": "https://raw.githubusercontent.com/iLyCoNs/fresia360/refs/heads/main/arboles.png",
       "id": "nuevo_1782706042408",
       "numero": "07",
-      "terreno": "Plano"
+      "terreno": "Plano",
+      "tituloPlano": "7-G",
+      "tituloColor": "#1d1d1f",
+      "tituloPlanoColor": "#0066cc",
+      "cardVis": {
+        "titulo": true,
+        "tituloPlano": true,
+        "precio": true,
+        "precioCLP": true,
+        "imagen": true,
+        "statusPill": true,
+        "superficie": true,
+        "terreno": true,
+        "favorito": true,
+        "acciones": true
+      }
     },
     {
       "pitch": -70.05,
       "yaw": -8.63,
       "tipo": "lote",
       "status": "disponible",
-      "titulo": "Lote 08 (7-H)",
+      "titulo": "Lote 08",
       "superficie": "0,5007 HÁ",
       "precio": "UF 0",
-      "imagen": "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&q=80",
+      "imagen": "https://raw.githubusercontent.com/iLyCoNs/fresia360/refs/heads/main/arboles.png",
       "id": "nuevo_1782706088082",
       "numero": "08",
-      "terreno": "Plano"
+      "terreno": "Plano",
+      "tituloPlano": "7-H",
+      "tituloColor": "#1d1d1f",
+      "tituloPlanoColor": "#0066cc",
+      "cardVis": {
+        "titulo": true,
+        "tituloPlano": true,
+        "precio": true,
+        "precioCLP": true,
+        "imagen": true,
+        "statusPill": true,
+        "superficie": true,
+        "terreno": true,
+        "favorito": true,
+        "acciones": true
+      }
     },
     {
       "pitch": -63.01,
       "yaw": -7.11,
       "tipo": "lote",
       "status": "disponible",
-      "titulo": "Lote 09 (7-I)",
+      "titulo": "Lote 09",
       "superficie": "0,5110 HÁ",
       "precio": "UF 0",
-      "imagen": "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&q=80",
+      "imagen": "https://raw.githubusercontent.com/iLyCoNs/fresia360/refs/heads/main/arboles.png",
       "id": "nuevo_1782706122019",
       "numero": "09",
-      "terreno": "Plano"
+      "terreno": "Plano",
+      "tituloPlano": "7-I",
+      "tituloColor": "#1d1d1f",
+      "tituloPlanoColor": "#0066cc",
+      "cardVis": {
+        "titulo": true,
+        "tituloPlano": true,
+        "precio": true,
+        "precioCLP": true,
+        "imagen": true,
+        "statusPill": true,
+        "superficie": true,
+        "terreno": true,
+        "favorito": true,
+        "acciones": true
+      }
     },
     {
       "pitch": -56.53,
       "yaw": -5.79,
       "tipo": "lote",
       "status": "disponible",
-      "titulo": "Lote 10 (7-J)",
+      "titulo": "Lote 10",
       "superficie": "0,7101 HÁ",
       "precio": "UF 0",
-      "imagen": "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&q=80",
+      "imagen": "https://raw.githubusercontent.com/iLyCoNs/fresia360/refs/heads/main/arboles.png",
       "id": "nuevo_1782706140803",
       "numero": "10",
-      "terreno": "Plano"
+      "terreno": "Plano",
+      "tituloPlano": "7-J",
+      "tituloColor": "#1d1d1f",
+      "tituloPlanoColor": "#0066cc",
+      "cardVis": {
+        "titulo": true,
+        "tituloPlano": true,
+        "precio": true,
+        "precioCLP": true,
+        "imagen": true,
+        "statusPill": true,
+        "superficie": true,
+        "terreno": true,
+        "favorito": true,
+        "acciones": true
+      }
     }
   ],
   "horizontes": [
@@ -225,7 +376,7 @@
       "rutaFactorTrafico": 1.48,
       "rutaEtiquetaTrafico": "Hora punta tarde",
       "rutaFuente": "osrm",
-      "rutaCalculadaEn": 1782856967684,
+      "rutaCalculadaEn": 1782860364741,
       "rutaEscenarioTrafico": "auto"
     },
     {
@@ -242,7 +393,7 @@
       "rutaFactorTrafico": 1.48,
       "rutaEtiquetaTrafico": "Hora punta tarde",
       "rutaFuente": "osrm",
-      "rutaCalculadaEn": 1782856968132,
+      "rutaCalculadaEn": 1782860365190,
       "rutaEscenarioTrafico": "auto"
     },
     {
@@ -546,7 +697,7 @@
       ]
     },
     {
-      "id": "brd_auto_1782856978468_0",
+      "id": "brd_auto_1782860374577_0",
       "tipo": "borde-macro",
       "puntos": [
         [
@@ -561,7 +712,7 @@
       "franjaGrupo": "franja_1782846267891"
     },
     {
-      "id": "div_auto_1782856978468_1",
+      "id": "div_auto_1782860374577_1",
       "tipo": "divisoria",
       "puntos": [
         [
@@ -576,7 +727,7 @@
       "franjaGrupo": "franja_1782846267891"
     },
     {
-      "id": "brd_auto_1782856978468_2",
+      "id": "brd_auto_1782860374577_2",
       "tipo": "borde-macro",
       "puntos": [
         [
@@ -591,7 +742,7 @@
       "franjaGrupo": "franja_1782846267891"
     },
     {
-      "id": "brd_auto_1782856978468_3",
+      "id": "brd_auto_1782860374577_3",
       "tipo": "borde-macro",
       "puntos": [
         [
@@ -606,7 +757,7 @@
       "franjaGrupo": "franja_1782846267891"
     },
     {
-      "id": "brd_auto_1782856978468_4",
+      "id": "brd_auto_1782860374577_4",
       "tipo": "borde-macro",
       "puntos": [
         [
@@ -621,7 +772,7 @@
       "franjaGrupo": "franja_1782846267891"
     },
     {
-      "id": "div_auto_1782856978468_5",
+      "id": "div_auto_1782860374577_5",
       "tipo": "divisoria",
       "puntos": [
         [
@@ -636,7 +787,7 @@
       "franjaGrupo": "franja_1782846267891"
     },
     {
-      "id": "brd_auto_1782856978468_6",
+      "id": "brd_auto_1782860374577_6",
       "tipo": "borde-macro",
       "puntos": [
         [
@@ -651,7 +802,7 @@
       "franjaGrupo": "franja_1782846267891"
     },
     {
-      "id": "brd_auto_1782856978468_7",
+      "id": "brd_auto_1782860374577_7",
       "tipo": "borde-macro",
       "puntos": [
         [
@@ -666,7 +817,7 @@
       "franjaGrupo": "franja_1782846267891"
     },
     {
-      "id": "div_auto_1782856978468_8",
+      "id": "div_auto_1782860374577_8",
       "tipo": "divisoria",
       "puntos": [
         [
@@ -681,7 +832,7 @@
       "franjaGrupo": "franja_1782846267891"
     },
     {
-      "id": "brd_auto_1782856978468_9",
+      "id": "brd_auto_1782860374577_9",
       "tipo": "borde-macro",
       "puntos": [
         [
@@ -696,7 +847,7 @@
       "franjaGrupo": "franja_1782846267891"
     },
     {
-      "id": "brd_auto_1782856978468_10",
+      "id": "brd_auto_1782860374577_10",
       "tipo": "borde-macro",
       "puntos": [
         [
@@ -711,7 +862,7 @@
       "franjaGrupo": "franja_1782846267891"
     },
     {
-      "id": "div_auto_1782856978468_11",
+      "id": "div_auto_1782860374577_11",
       "tipo": "divisoria",
       "puntos": [
         [
@@ -726,7 +877,7 @@
       "franjaGrupo": "franja_1782846267891"
     },
     {
-      "id": "brd_auto_1782856978468_12",
+      "id": "brd_auto_1782860374577_12",
       "tipo": "borde-macro",
       "puntos": [
         [
@@ -741,7 +892,7 @@
       "franjaGrupo": "franja_1782846267891"
     },
     {
-      "id": "brd_auto_1782856978468_13",
+      "id": "brd_auto_1782860374577_13",
       "tipo": "borde-macro",
       "puntos": [
         [
@@ -756,7 +907,7 @@
       "franjaGrupo": "franja_1782846267891"
     },
     {
-      "id": "div_auto_1782856978468_14",
+      "id": "div_auto_1782860374577_14",
       "tipo": "divisoria",
       "puntos": [
         [
@@ -771,7 +922,7 @@
       "franjaGrupo": "franja_1782846267891"
     },
     {
-      "id": "brd_auto_1782856978468_15",
+      "id": "brd_auto_1782860374577_15",
       "tipo": "borde-macro",
       "puntos": [
         [
@@ -786,7 +937,7 @@
       "franjaGrupo": "franja_1782846267891"
     },
     {
-      "id": "brd_auto_1782856978468_16",
+      "id": "brd_auto_1782860374577_16",
       "tipo": "borde-macro",
       "puntos": [
         [
@@ -801,7 +952,7 @@
       "franjaGrupo": "franja_1782846267891"
     },
     {
-      "id": "div_auto_1782856978468_17",
+      "id": "div_auto_1782860374577_17",
       "tipo": "divisoria",
       "puntos": [
         [
@@ -816,7 +967,7 @@
       "franjaGrupo": "franja_1782846267891"
     },
     {
-      "id": "brd_auto_1782856978468_18",
+      "id": "brd_auto_1782860374577_18",
       "tipo": "borde-macro",
       "puntos": [
         [
@@ -831,7 +982,7 @@
       "franjaGrupo": "franja_1782846267891"
     },
     {
-      "id": "brd_auto_1782856978468_19",
+      "id": "brd_auto_1782860374577_19",
       "tipo": "borde-macro",
       "puntos": [
         [
@@ -846,7 +997,7 @@
       "franjaGrupo": "franja_1782846267891"
     },
     {
-      "id": "div_auto_1782856978468_20",
+      "id": "div_auto_1782860374577_20",
       "tipo": "divisoria",
       "puntos": [
         [
@@ -861,7 +1012,7 @@
       "franjaGrupo": "franja_1782846267891"
     },
     {
-      "id": "brd_auto_1782856978468_21",
+      "id": "brd_auto_1782860374577_21",
       "tipo": "borde-macro",
       "puntos": [
         [
@@ -876,7 +1027,7 @@
       "franjaGrupo": "franja_1782846267891"
     },
     {
-      "id": "brd_auto_1782856978468_22",
+      "id": "brd_auto_1782860374577_22",
       "tipo": "borde-macro",
       "puntos": [
         [
@@ -891,7 +1042,7 @@
       "franjaGrupo": "franja_1782846267891"
     },
     {
-      "id": "div_auto_1782856978468_23",
+      "id": "div_auto_1782860374577_23",
       "tipo": "divisoria",
       "puntos": [
         [
@@ -906,7 +1057,7 @@
       "franjaGrupo": "franja_1782846267891"
     },
     {
-      "id": "brd_auto_1782856978468_24",
+      "id": "brd_auto_1782860374577_24",
       "tipo": "borde-macro",
       "puntos": [
         [
@@ -921,7 +1072,7 @@
       "franjaGrupo": "franja_1782846267891"
     },
     {
-      "id": "brd_auto_1782856978468_25",
+      "id": "brd_auto_1782860374577_25",
       "tipo": "borde-macro",
       "puntos": [
         [
@@ -936,7 +1087,7 @@
       "franjaGrupo": "franja_1782846267891"
     },
     {
-      "id": "div_auto_1782856978468_26",
+      "id": "div_auto_1782860374577_26",
       "tipo": "divisoria",
       "puntos": [
         [
@@ -951,7 +1102,7 @@
       "franjaGrupo": "franja_1782846267891"
     },
     {
-      "id": "brd_auto_1782856978468_27",
+      "id": "brd_auto_1782860374577_27",
       "tipo": "borde-macro",
       "puntos": [
         [
@@ -966,7 +1117,7 @@
       "franjaGrupo": "franja_1782846267891"
     },
     {
-      "id": "brd_auto_1782856978468_28",
+      "id": "brd_auto_1782860374577_28",
       "tipo": "borde-macro",
       "puntos": [
         [
@@ -981,7 +1132,7 @@
       "franjaGrupo": "franja_1782846267891"
     },
     {
-      "id": "brd_auto_1782856978468_29",
+      "id": "brd_auto_1782860374577_29",
       "tipo": "borde-macro",
       "puntos": [
         [
@@ -996,7 +1147,7 @@
       "franjaGrupo": "franja_1782846267891"
     },
     {
-      "id": "brd_auto_1782856978468_30",
+      "id": "brd_auto_1782860374577_30",
       "tipo": "borde-macro",
       "puntos": [
         [
