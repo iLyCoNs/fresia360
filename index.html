@@ -279,10 +279,22 @@
         let ConfigProyecto = { titulo: "PROYECTO INMOBILIARIO", subtitulo: "Masterplan Interactivo 360°" };
         let OrigenDrone = null, NorteOffset = 0, BaseDatosLotes = [], PuntosHorizonte = [], allDrawnLines = [], UF_Online = 0;
         const DOMCache = { paths: {}, markers: {}, viewport: { w: window.innerWidth, h: window.innerHeight, left: 0, top: 0 } }; 
-        let isHeatmapActive = false, isWebGLSupported = true, viewerGpuReady = true, smartInitAttempts = 0, panoramaEventsBound = false, pannellumIntroBootstrapped = false, svgFrameCounter = 0, svgViewSyncBound = false;
+        let isHeatmapActive = false, isWebGLSupported = true, viewerGpuReady = true, smartInitAttempts = 0, panoramaEventsBound = false, pannellumIntroBootstrapped = false, svgViewSyncBound = false, lastRenderView = null;
         function isTouchDevice() { return (navigator.maxTouchPoints || 0) > 0 || ('ontouchstart' in window); }
         function isSvgRenderAllowed() { return (!isWebGLSupported) ? false : (isTouchDevice() ? viewerGpuReady && !!visor360 : true); }
-        function shouldUpdateSVGThisFrame() { if (document.body.classList.contains('is-embedded')) { svgFrameCounter++; return svgFrameCounter % 2 === 0; } return true; }
+        function getSvgViewportSize() {
+            const renderer = visor360 && visor360.getRenderer ? visor360.getRenderer() : null;
+            const canvas = renderer && typeof renderer.getCanvas === 'function' ? renderer.getCanvas() : null;
+            if (canvas && canvas.clientWidth > 0) return { w: canvas.clientWidth, h: canvas.clientHeight };
+            const container = document.getElementById('panorama-container');
+            return container && container.clientWidth > 0 ? { w: container.clientWidth, h: container.clientHeight } : null;
+        }
+        function resolveViewState(viewState) {
+            if (viewState) return viewState;
+            if (lastRenderView) return lastRenderView;
+            if (!visor360) return null;
+            return { pitch: visor360.getPitch(), yaw: visor360.getYaw(), hfov: visor360.getHfov(), roll: 0 };
+        }
         function fitPremiumHeaderDock() {
             const header = document.querySelector('.premium-header'); const h1 = document.getElementById('ui-main-title'); const sub = document.getElementById('ui-subtitle');
             if (!header || !h1 || header.style.display === 'none') return;
@@ -439,13 +451,9 @@
             if (renderer && !renderer._isHooked) hookRendererOverlay(renderer);
             if (!svgViewSyncBound) {
                 svgViewSyncBound = true;
-                const syncSvgOnView = () => { if ((!isIntroAnimating || isDevModeDrawActive) && isSvgRenderAllowed()) updateSVGPaths(); };
+                const syncSvgOnView = () => { if ((!isIntroAnimating || isDevModeDrawActive) && isSvgRenderAllowed()) updateSVGPaths(lastRenderView); };
                 visor360.on('animatefinished', syncSvgOnView);
                 visor360.on('zoomchange', syncSvgOnView);
-                visor360.on('mousedown', syncSvgOnView);
-                visor360.on('mouseup', syncSvgOnView);
-                visor360.on('touchstart', syncSvgOnView);
-                visor360.on('touchend', syncSvgOnView);
             }
             syncSVGElements();
             updateSVGPaths();
@@ -582,12 +590,26 @@
             if ((!isIntroAnimating || isDevModeDrawActive) && visor360 && isSvgRenderAllowed()) updateSVGPaths();
         }
 
-        function updateSVGPaths() {
+        function updateSVGPaths(viewState) {
             if ((isIntroAnimating && !isDevModeDrawActive) || !visor360 || !isSvgRenderAllowed()) return;
-            const container = document.getElementById('panorama-container'); if(!container) return;
-            const w = container.clientWidth, h = container.clientHeight, cp = visor360.getPitch() * Math.PI / 180, cy = visor360.getYaw() * Math.PI / 180, hfov = visor360.getHfov();
-            const sin_cp = Math.sin(cp), cos_cp = Math.cos(cp), f = 0.5 * w / Math.tan(hfov * Math.PI / 360), cx = w / 2, cy_screen = h / 2;
-            function getCam(pitch, yaw) { const p = pitch * Math.PI / 180, y = yaw * Math.PI / 180, sin_p = Math.sin(p), cos_p = Math.cos(p); let y_diff = y - cy; while (y_diff > Math.PI) y_diff -= 2 * Math.PI; while (y_diff < -Math.PI) y_diff += 2 * Math.PI; const sin_yd = Math.sin(y_diff), cos_yd = Math.cos(y_diff); return { x: cos_p * sin_yd, y: sin_p * cos_cp - cos_p * cos_yd * sin_cp, z: sin_p * sin_cp + cos_p * cos_yd * cos_cp }; }
+            const vp = getSvgViewportSize(); if (!vp) return;
+            const vs = resolveViewState(viewState); if (!vs) return;
+            const w = vp.w, h = vp.h, camPitch = vs.pitch, camYaw = vs.yaw, camHfov = vs.hfov, camRoll = vs.roll || 0;
+            const sin_cp = Math.sin(camPitch * Math.PI / 180), cos_cp = Math.cos(camPitch * Math.PI / 180);
+            const f = 0.5 * w / Math.tan(camHfov * Math.PI / 360), cx = w / 2, cy_screen = h / 2;
+            const sinRoll = Math.sin(camRoll * Math.PI / 180), cosRoll = Math.cos(camRoll * Math.PI / 180);
+            const snapPx = (v) => Math.round(v * 100) / 100;
+            function toScreen(c) {
+                let sx = (c.x / c.z) * f, sy = -(c.y / c.z) * f;
+                if (camRoll) { const rx = sx * cosRoll - sy * sinRoll, ry = sx * sinRoll + sy * cosRoll; sx = rx; sy = ry; }
+                return { x: snapPx(cx + sx), y: snapPx(cy_screen + sy) };
+            }
+            function getCam(pitch, yaw) {
+                const sin_p = Math.sin(pitch * Math.PI / 180), cos_p = Math.cos(pitch * Math.PI / 180);
+                const yawDiff = (-yaw + camYaw) * Math.PI / 180;
+                const sin_yd = Math.sin(yawDiff), cos_yd = Math.cos(yawDiff);
+                return { x: cos_p * sin_yd, y: sin_p * cos_cp - cos_p * cos_yd * sin_cp, z: sin_p * sin_cp + cos_p * cos_yd * cos_cp };
+            }
             Object.keys(DOMCache.paths).forEach(lineId => {
                 const cacheObj = DOMCache.paths[lineId]; if (!cacheObj) return;
                 let lineData = allDrawnLines.find(l => l.id === lineId); if (!lineData && lineId === currentTempLineId) lineData = { tipo: currentLineType, puntos: currentLinePoints }; if (!lineData) return;
@@ -597,14 +619,14 @@
                     let p1 = pts[i], p2 = pts[(i + 1) % pts.length];
                     if (!isClosed && i === pts.length - 1) break;
                     let c1 = getCam(p1[0], p1[1]), c2 = getCam(p2[0], p2[1]);
-                    let in1 = c1.z > 0.0001, in2 = c2.z > 0.0001; if (!in1 && !in2) continue; 
+                    let in1 = c1.z > 0.0001, in2 = c2.z > 0.0001; if (!in1 && !in2) continue;
                     let s1, s2;
-                    if (in1) { s1 = { x: cx + (c1.x / c1.z) * f, y: cy_screen - (c1.y / c1.z) * f }; hasVisiblePoints = true; } else { let t = c1.z / (c1.z - c2.z), ix = c1.x + t * (c2.x - c1.x), iy = c1.y + t * (c2.y - c1.y); s1 = { x: cx + (ix / 0.0001) * f, y: cy_screen - (iy / 0.0001) * f }; }
-                    if (in2) { s2 = { x: cx + (c2.x / c2.z) * f, y: cy_screen - (c2.y / c2.z) * f }; hasVisiblePoints = true; } else { let t = c2.z / (c2.z - c1.z), ix = c2.x + t * (c1.x - c2.x), iy = c2.y + t * (c1.y - c2.y); s2 = { x: cx + (ix / 0.0001) * f, y: cy_screen - (iy / 0.0001) * f }; }
-                    if(isNaN(s1.x) || isNaN(s2.x)) continue; 
+                    if (in1) { s1 = toScreen(c1); hasVisiblePoints = true; } else { let t = c1.z / (c1.z - c2.z), ix = c1.x + t * (c2.x - c1.x), iy = c1.y + t * (c2.y - c1.y); s1 = toScreen({ x: ix, y: iy, z: 0.0001 }); }
+                    if (in2) { s2 = toScreen(c2); hasVisiblePoints = true; } else { let t = c2.z / (c2.z - c1.z), ix = c2.x + t * (c1.x - c2.x), iy = c2.y + t * (c1.y - c2.y); s2 = toScreen({ x: ix, y: iy, z: 0.0001 }); }
+                    if(isNaN(s1.x) || isNaN(s2.x)) continue;
                     if (dBase === '') { dBase += `M ${s1.x},${s1.y} L ${s2.x},${s2.y} `; } else { if (!in1) dBase += `M ${s1.x},${s1.y} `; dBase += `L ${s2.x},${s2.y} `; }
                 }
-                if (!isClosed && lineId === currentTempLineId && window.lastMouseX !== undefined) { let mx = window.lastMouseX - DOMCache.viewport.left, my = window.lastMouseY - DOMCache.viewport.top; if(dBase === '' && pts.length > 0) { let c1 = getCam(pts[0][0], pts[0][1]); if(c1.z > 0) dBase += `M ${cx + (c1.x / c1.z) * f},${cy_screen - (c1.y / c1.z) * f} `; } dBase += `L ${mx},${my} `; hasVisiblePoints = true; }
+                if (!isClosed && lineId === currentTempLineId && window.lastMouseX !== undefined) { let mx = snapPx(window.lastMouseX - DOMCache.viewport.left), my = snapPx(window.lastMouseY - DOMCache.viewport.top); if(dBase === '' && pts.length > 0) { let c1 = getCam(pts[0][0], pts[0][1]); if(c1.z > 0) { const s0 = toScreen(c1); dBase += `M ${s0.x},${s0.y} `; } } dBase += `L ${mx},${my} `; hasVisiblePoints = true; }
                 if (isClosed && dBase.trim() !== '') dBase += ' Z'; if (!hasVisiblePoints && isClosed) dBase = 'M -999 -999';
                 if (cacheObj.base) { cacheObj.base.forEach(path => path.setAttribute("d", dBase.trim() !== '' ? dBase : 'M -999 -999')); }
             });
@@ -623,9 +645,17 @@
         function hookRendererOverlay(renderer) {
             if (renderer && typeof renderer.render === 'function' && !renderer._isHooked) {
                 renderer._isHooked = true; const originalRender = renderer.render.bind(renderer);
-                renderer.render = function () {
+                renderer.render = function (pitchRad, yawRad, hfovRad, opts) {
                     originalRender.apply(this, arguments);
-                    if (isSvgRenderAllowed() && shouldUpdateSVGThisFrame()) updateSVGPaths();
+                    if (isSvgRenderAllowed()) {
+                        lastRenderView = {
+                            pitch: pitchRad * 180 / Math.PI,
+                            yaw: yawRad * 180 / Math.PI,
+                            hfov: hfovRad * 180 / Math.PI,
+                            roll: (opts && opts.roll) ? opts.roll * 180 / Math.PI : 0
+                        };
+                        updateSVGPaths(lastRenderView);
+                    }
                     const compassDial = document.getElementById('js-compass'); if (compassDial) { compassDial.style.transform = `rotate(${-(visor360.getYaw() - NorteOffset)}deg)`; }
                     const isMobile = DOMCache.viewport.w <= 768; const currentHfov = visor360.getHfov();
                     let newScale = (isMobile ? 0.30 : 0.45) * (DEFAULT_HFOV / currentHfov); newScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, newScale));
