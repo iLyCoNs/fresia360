@@ -37,6 +37,10 @@
         body.dev-mode-active g.lote-interactivo[data-tipo="area-invisible"]:hover path, body.dev-mode-active g.lote-interactivo[data-tipo="area-invisible"].hovered path { fill: rgba(var(--c-disp), 0.28) !important; stroke: transparent !important; filter: none !important; }
         g[data-tipo="area-invisible"].lote-interactivo:hover path, g[data-tipo="area-invisible"].lote-interactivo.hovered path { stroke: transparent !important; }
         g.lote-interactivo path.linea-relleno-mp { fill: rgba(var(--c-disp), var(--o-disp)); stroke: none !important; pointer-events: auto; }
+        .linea-mp-perimetro { fill: none; stroke: rgba(255, 255, 255, 0.92); stroke-width: var(--stroke-dyn); pointer-events: none; }
+        .linea-mp-interna { fill: none; stroke: rgba(255, 255, 255, 0.78); stroke-width: calc(var(--stroke-dyn) * 0.88); stroke-dasharray: 5 7; pointer-events: none; }
+        body.masterplan-premium-active g.lote-interactivo path.linea-relleno-mp { stroke: none !important; }
+        body.masterplan-premium-active g.lote-interactivo.hovered path.linea-relleno-mp, body.masterplan-premium-active g.lote-interactivo:hover path.linea-relleno-mp { fill: transparent !important; stroke: #ffffff !important; stroke-width: var(--stroke-dyn-hover) !important; filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.9)); }
         g.lote-interactivo.hovered path.linea-relleno-mp, g.lote-interactivo:hover path.linea-relleno-mp { fill: transparent !important; stroke: #ffffff !important; stroke-width: var(--stroke-dyn-hover) !important; filter: drop-shadow(0 0 8px rgba(255,255,255,0.9)); }
         .linea-borde-macro { stroke: rgba(255,255,255,0.94) !important; stroke-width: calc(var(--stroke-dyn) * 0.48) !important; stroke-linejoin: round; stroke-linecap: round; filter: drop-shadow(0 0 1px rgba(255,255,255,0.35)); pointer-events: none; }
         body.auto-macro-active g[data-tipo="borde-macro"] path { stroke-width: calc(var(--stroke-dyn) * 0.44) !important; }
@@ -602,6 +606,16 @@
 
         function saveToLocal() { localStorage.setItem('masterplan360_autosave', JSON.stringify({ configProyecto: ConfigProyecto, origen: OrigenDrone, norte: NorteOffset, lotes: BaseDatosLotes, horizontes: PuntosHorizonte, trazos: allDrawnLines })); }
         function loadFromLocal() { const savedData = localStorage.getItem('masterplan360_autosave'); if (savedData) { try { const parsed = JSON.parse(savedData); if((parsed.lotes && parsed.lotes.length > 0) || (parsed.trazos && parsed.trazos.length > 0)) { ConfigProyecto = parsed.configProyecto || ConfigProyecto; OrigenDrone = parsed.origen || OrigenDrone; NorteOffset = parsed.norte || 0; BaseDatosLotes = parsed.lotes || BaseDatosLotes; PuntosHorizonte = parsed.horizontes || PuntosHorizonte; allDrawnLines = parsed.trazos || allDrawnLines; } } catch(e) {} } }
+        function getLocalTrazosFromStorage() { try { const savedData = localStorage.getItem('masterplan360_autosave'); if (!savedData) return []; const parsed = JSON.parse(savedData); return parsed.trazos || []; } catch(e) { return []; } }
+        function countValidMasterplanFills(trazos) { return (trazos || []).filter(t => t.tipo === 'masterplan_fill' && t.puntos && t.puntos.length >= 3).length; }
+        function pickBestTrazos(localTrazos, incomingTrazos) {
+            if (!incomingTrazos || !incomingTrazos.length) return localTrazos || [];
+            if (!localTrazos || !localTrazos.length) return incomingTrazos;
+            const localFills = countValidMasterplanFills(localTrazos), incomingFills = countValidMasterplanFills(incomingTrazos);
+            if (incomingFills > localFills) return incomingTrazos;
+            if (localFills > incomingFills) return localTrazos;
+            return incomingTrazos.length >= localTrazos.length ? incomingTrazos : localTrazos;
+        }
         async function fetchValorUFOnline() { try { const response = await fetch('https://mindicador.cl/api/uf'); if (response.ok) { const data = await response.json(); if(data && data.serie && data.serie.length > 0) { UF_Online = data.serie[0].valor; return; } } } catch (error) {} }
         async function fetchMasterData() {
             try {
@@ -613,7 +627,7 @@
                     NorteOffset = data.norte || 0;
                     BaseDatosLotes = data.lotes || [];
                     PuntosHorizonte = data.horizontes || [];
-                    allDrawnLines = data.trazos || [];
+                    allDrawnLines = pickBestTrazos(getLocalTrazosFromStorage(), data.trazos || []);
                 } else { loadFromLocal(); }
             } catch (e) { loadFromLocal(); }
             applyProjectConfig();
@@ -716,7 +730,7 @@
 
         function isAutoMacroLotePoly(line) {
             if (!line || !line.puntos || line.puntos.length < 3) return false;
-            const skip = new Set(['calle','cortar','divisoria','borde-macro','arista_solida','arista_punteada','neon','franja-preview','franja-preview-div','franja-grupo']);
+            const skip = new Set(['calle','cortar','divisoria','borde-macro','arista_solida','arista_punteada','neon','franja-preview','franja-preview-div','franja-grupo','masterplan_fill']);
             return !skip.has(line.tipo);
         }
         function isMacroEdgeType(tipo) { return tipo === 'divisoria' || tipo === 'borde-macro' || tipo === 'arista_solida' || tipo === 'arista_punteada'; }
@@ -1288,8 +1302,49 @@
             allDrawnLines.filter(l => l.tipo === 'franja-grupo').forEach(g => rebuildFranjaGroup(g.id));
             ensureFranjaIntegrity();
         }
+        function isMasterplanAristaType(tipo) { return tipo === 'arista_solida' || tipo === 'arista_punteada'; }
+        function masterplanEdgeKey(p1, p2) {
+            const a = `${p1[0].toFixed(2)},${p1[1].toFixed(2)}`, b = `${p2[0].toFixed(2)},${p2[1].toFixed(2)}`;
+            return a < b ? `${a}|${b}` : `${b}|${a}`;
+        }
+        function buildMasterplanAristas(fills) {
+            const edgeMap = new Map();
+            fills.forEach(poly => {
+                const pts = poly.puntos;
+                for (let i = 0; i < pts.length; i++) {
+                    const p1 = pts[i], p2 = pts[(i + 1) % pts.length];
+                    const key = masterplanEdgeKey(p1, p2);
+                    if (!edgeMap.has(key)) edgeMap.set(key, { p1: [...p1], p2: [...p2], count: 0 });
+                    edgeMap.get(key).count++;
+                }
+            });
+            const aristas = []; let idx = 0;
+            edgeMap.forEach(edge => {
+                aristas.push({ id: 'arista_mp_' + Date.now() + '_' + (idx++), tipo: edge.count === 1 ? 'arista_solida' : 'arista_punteada', puntos: [edge.p1, edge.p2] });
+            });
+            return aristas;
+        }
+        function refreshMasterplanAristas() {
+            if (!document.body.classList.contains('masterplan-premium-active')) return;
+            const others = allDrawnLines.filter(l => !isMasterplanAristaType(l.tipo) && l.tipo !== 'masterplan_fill');
+            const fills = allDrawnLines.filter(l => l.tipo === 'masterplan_fill');
+            if (!fills.length) { document.body.classList.remove('masterplan-premium-active'); allDrawnLines = others; return; }
+            allDrawnLines = [...others, ...fills, ...buildMasterplanAristas(fills)];
+        }
+        function initMasterplanPremiumFromData() {
+            const fills = allDrawnLines.filter(l => l.tipo === 'masterplan_fill');
+            if (!fills.length) return;
+            document.body.classList.remove('auto-macro-active');
+            document.body.classList.add('masterplan-premium-active');
+            if (!allDrawnLines.some(l => isMasterplanAristaType(l.tipo))) refreshMasterplanAristas();
+        }
         function initAutoMacroFromData() {
             migrateFranjaGroupsFromData();
+            if (allDrawnLines.some(l => l.tipo === 'masterplan_fill')) {
+                initMasterplanPremiumFromData();
+                syncFranjaVisualsOnReady();
+                return;
+            }
             const fills = allDrawnLines.filter(l => isAutoMacroLotePoly(l) && l.tipo !== 'franja-grupo');
             const hasMacroEdges = allDrawnLines.some(l => isMacroEdgeType(l.tipo));
             if (fills.length >= 2 && !hasMacroEdges) { runAutoMacroTransform(fills); finalizeAutoMacroSession(); }
@@ -1788,7 +1843,6 @@
             if (isTouchDevice()) { isWebGLSupported = true; viewerGpuReady = false; } else { isWebGLSupported = detectWebGL(); }
             loadFromLocal();
             applyProjectConfig();
-            initAutoMacroFromData();
             const splashBar = document.getElementById('js-progress-bar'); if (splashBar) splashBar.style.width = '35%';
             snapCursor = document.getElementById('snap-cursor'); ghostPin = document.getElementById('ghost-pin');
             const container = document.getElementById('panorama-container');
@@ -1889,6 +1943,10 @@
                         const pMacro = document.createElementNS("http://www.w3.org/2000/svg", "path");
                         pMacro.setAttribute("class", line.tipo === 'divisoria' ? 'linea-divisoria' : 'linea-borde-macro');
                         gMacro.appendChild(pMacro); bindSvgEraser(gMacro, line.id); bindSvgEraser(pMacro, line.id); lAristas.appendChild(gMacro); DOMCache.paths[line.id] = { base: [pMacro] };
+                    } else if (line.tipo === 'arista_solida' || line.tipo === 'arista_punteada') {
+                        const pEdge = document.createElementNS("http://www.w3.org/2000/svg", "path"); pEdge.dataset.lineId = line.id;
+                        pEdge.setAttribute("class", line.tipo === 'arista_solida' ? 'linea-mp-perimetro' : 'linea-mp-interna');
+                        lAristas.appendChild(pEdge); DOMCache.paths[line.id] = { base: [pEdge] };
                     } else if (line.tipo === 'franja-grupo') {
                         const gGrp = document.createElementNS("http://www.w3.org/2000/svg", "g"); gGrp.dataset.lineId = line.id; gGrp.dataset.tipo = 'franja-grupo';
                         const pGrp = document.createElementNS("http://www.w3.org/2000/svg", "path");
@@ -1933,7 +1991,7 @@
             Object.keys(DOMCache.paths).forEach(lineId => {
                 const cacheObj = DOMCache.paths[lineId]; if (!cacheObj) return;
                 let lineData = allDrawnLines.find(l => l.id === lineId); if (!lineData && lineId === currentTempLineId) lineData = { tipo: currentLineType, puntos: currentLinePoints }; if (!lineData && lineId === 'franja_preview_quad' && franjaPreviewQuad) lineData = { tipo: 'franja-preview', puntos: franjaPreviewQuad }; if (!lineData && lineId.startsWith('franja_preview_div_')) lineData = franjaPreviewDivs.find(d => d.id === lineId); if (!lineData) return;
-                let isClosed = (lineData.tipo !== 'calle' && lineData.tipo !== 'cortar' && lineData.tipo !== 'divisoria' && lineData.tipo !== 'borde-macro' && lineData.tipo !== 'franja-preview-div' && lineId !== currentTempLineId);
+                let isClosed = (lineData.tipo !== 'calle' && lineData.tipo !== 'cortar' && lineData.tipo !== 'divisoria' && lineData.tipo !== 'borde-macro' && lineData.tipo !== 'arista_solida' && lineData.tipo !== 'arista_punteada' && lineData.tipo !== 'franja-preview-div' && lineId !== currentTempLineId);
                 if (cacheObj.gNode && lineData.tipo !== 'calle' && lineData.tipo !== 'franja-grupo') { if (lineData.puntos && lineData.puntos.length > 0) { let polyStatus = 'disponible'; if (lineData.franjaNumero || lineData.tipo === 'area-invisible') polyStatus = 'disponible'; else { let cP = 0, cY = 0; lineData.puntos.forEach(pt => { cP += pt[0]; cY += pt[1]; }); cP /= lineData.puntos.length; cY /= lineData.puntos.length; let closestPin = null; let minDist = 30; BaseDatosLotes.forEach(pin => { if(pin.tipo === 'lote') { let dist = Math.pow(pin.pitch - cP, 2) + Math.pow(pin.yaw - cY, 2); if(dist < minDist) { minDist = dist; closestPin = pin; } } }); if (closestPin) polyStatus = closestPin.status; } cacheObj.gNode.setAttribute('data-status', polyStatus); } }
                 let dBase = '', pts = lineData.puntos, hasVisiblePoints = false;
                 for (let i = 0; i < pts.length; i++) {
@@ -2435,7 +2493,7 @@
             });
         }
         
-        function limpiarProyecto() { if(!confirm("⚠️ ¡ADVERTENCIA NUCLEAR! Vas a borrar TODOS los lotes, calles y pines.\n\n¿Estás seguro?")) return; clearFranjaDraft(); BaseDatosLotes = []; PuntosHorizonte = []; allDrawnLines = []; currentLinePoints = []; document.body.classList.remove('auto-macro-active'); refreshAllHotspots(); localStorage.removeItem('masterplan360_autosave'); }
+        function limpiarProyecto() { if(!confirm("⚠️ ¡ADVERTENCIA NUCLEAR! Vas a borrar TODOS los lotes, calles y pines.\n\n¿Estás seguro?")) return; clearFranjaDraft(); BaseDatosLotes = []; PuntosHorizonte = []; allDrawnLines = []; currentLinePoints = []; document.body.classList.remove('auto-macro-active'); document.body.classList.remove('masterplan-premium-active'); refreshAllHotspots(); localStorage.removeItem('masterplan360_autosave'); }
 
         function exportarDatosParaIA(event) {
             const dataToSave = { configProyecto: ConfigProyecto, origen: OrigenDrone, norte: NorteOffset, lotes: BaseDatosLotes, horizontes: PuntosHorizonte, trazos: allDrawnLines };
