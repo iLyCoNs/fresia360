@@ -125,6 +125,10 @@
         .ruta-line-down { width: 1px; height: 30px; background: linear-gradient(to bottom, rgba(255, 255, 255, 0.6), transparent); margin-top: 2px; }
         .ruta-target-dot { width: 5px; height: 5px; background: #FD9227; border-radius: 50%; box-shadow: 0 0 8px #FD9227, 0 0 0 1.5px rgba(15,23,42,0.5); margin-top: -2px; }
         .btn-pin-ruta::before { content:'🛣️'; display:inline-block; font-size:10px; margin-right: 4px; }
+        .btn-calc-route { width: 100%; padding: 10px 14px; border-radius: 10px; border: 1px solid rgba(16,185,129,0.45); background: rgba(16,185,129,0.12); color: #6ee7b7; font-size: 11px; font-weight: 700; cursor: pointer; transition: opacity 0.2s; }
+        .btn-calc-route:disabled { opacity: 0.55; cursor: wait; }
+        .pin-traffic-hint { color: #64748b; font-size: 10px; text-align: center; margin: 0; line-height: 1.45; }
+        .ruta-traffic-badge { font-size: 6px; color: #94a3b8; letter-spacing: 0.3px; margin-left: 2px; vertical-align: super; }
         /* --- PIN CASA 360 (TOUR/VIDEO) --- */
         .casa-hud-wrapper { position: absolute; top: 0; left: 0; transform: translate(-50%, -50%); z-index: 10; pointer-events: none; animation: fadeInHUD 1s ease-out forwards; opacity: 0; }
         .casa-hud-wrapper:hover { z-index: 999999; }
@@ -226,7 +230,7 @@
         </div>
         <div class="premium-compass-container" id="js-compass-container" title="Mantén presionado para abrir el Modo Arquitecto"><div class="compass-indicator"></div><div class="compass-dial" id="js-compass"><div class="compass-n">N</div><div class="compass-e">E</div><div class="compass-s">S</div><div class="compass-w">W</div><div class="compass-center"></div></div></div>
         <div id="inapp-modal"><div class="inapp-content" id="js-inapp-content"><iframe id="inapp-iframe-player" class="inapp-iframe" src="" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div><button class="btn-volver-360" id="js-close-inapp"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>Volver al 360</button></div>
-        <div id="pin-editor-modal"><div class="modal-content" id="modal-content-box"><h3 id="modal-title-text">Editar Pin</h3><input type="text" id="pin-title" placeholder="Título (ej: Lote 06)"><input type="text" id="pin-area" placeholder="Superficie (Ej: 0.5011 HA o 5000 m²)"><input type="text" id="pin-price" placeholder="Precio (ej: 1500)"><select id="pin-status"><option value="disponible">Disponible</option><option value="reservado">Reservado</option><option value="vendido">Vendido</option><option value="no_disponible">No Disponible</option></select><input type="text" id="pin-img" placeholder="URL Imagen (Dejar vacío para default)"><input type="text" id="pin-video" placeholder="URL Video YouTube/Tour 360 (Opcional)"><div class="modal-btns"><button class="btn-cancel" id="btn-cancel-pin">Cancelar</button><button class="btn-save" id="btn-save-pin">Guardar</button></div></div></div>
+        <div id="pin-editor-modal"><div class="modal-content" id="modal-content-box"><h3 id="modal-title-text">Editar Pin</h3><input type="text" id="pin-title" placeholder="Título (ej: Lote 06)"><input type="text" id="pin-coords" placeholder="Coordenadas destino (Lat, Lng)" style="display:none"><button type="button" id="pin-calc-route" class="btn-calc-route" style="display:none">🛣️ Calcular desde Origen Drone</button><p id="pin-traffic-hint" class="pin-traffic-hint" style="display:none">Distancia por carretera + factor tráfico Chile (hora punta, fin de semana y temporada).</p><input type="text" id="pin-area" placeholder="Superficie (Ej: 0.5011 HA o 5000 m²)"><input type="text" id="pin-price" placeholder="Precio (ej: 1500)"><select id="pin-status"><option value="disponible">Disponible</option><option value="reservado">Reservado</option><option value="vendido">Vendido</option><option value="no_disponible">No Disponible</option></select><input type="text" id="pin-img" placeholder="URL Imagen (Dejar vacío para default)"><input type="text" id="pin-video" placeholder="URL Video YouTube/Tour 360 (Opcional)"><div class="modal-btns"><button class="btn-cancel" id="btn-cancel-pin">Cancelar</button><button class="btn-save" id="btn-save-pin">Guardar</button></div></div></div>
         <div id="franja-lotes-modal"><div class="modal-content franja-modal-box"><h3>🏘️ Franja de Lotes</h3><p class="franja-modal-hint">Indica cuántos lotes y el tamaño de cada uno en m². El ancho en el mapa será proporcional (ej. 7000 m² = 40% más ancho que 5000 m²).</p><div class="franja-modal-count-row"><input type="number" id="franja-modal-count" min="1" max="40" value="10"><button type="button" id="franja-modal-apply-count">Actualizar</button></div><div class="franja-scale-preview" id="franja-modal-scale-preview"></div><div class="franja-modal-rows" id="franja-modal-rows"></div><div class="franja-modal-tools"><button type="button" id="franja-modal-equal">Igualar todos</button><button type="button" id="franja-modal-last-big">Último +40% (7000)</button></div><div class="modal-btns"><button class="btn-cancel" id="franja-modal-cancel">Cancelar</button><button class="btn-save" id="franja-modal-confirm">Crear franja</button></div></div></div>
         <div id="global-event-interceptor" style="position: absolute; top:0; left:0; width:100%; height:100%; pointer-events: none; z-index: 9999999;"></div>
         <div id="snap-cursor"></div>
@@ -301,7 +305,129 @@
 
         function detectWebGL() { try { const canvas = document.createElement('canvas'); return !!(window.WebGLRenderingContext && (canvas.getContext('webgl') || canvas.getContext('experimental-webgl'))); } catch(e) { return false; } }
         function hexToRgb(hex) { if(!hex) return '255, 255, 255'; var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex); return result ? `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}` : '255, 255, 255'; }
-        function calcularRutaEstimada(lat1, lon1, lat2, lon2) { var R = 6371; var dLat = (lat2-lat1) * (Math.PI/180); var dLon = (lon2-lon1) * (Math.PI/180); var a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1 * (Math.PI/180)) * Math.cos(lat2 * (Math.PI/180)) * Math.sin(dLon/2) * Math.sin(dLon/2); var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); var distRecta = R * c; var distRuta = distRecta * 1.38; var velPromedio; if (distRuta < 4) velPromedio = 22; else if (distRuta < 12) velPromedio = 35; else if (distRuta < 35) velPromedio = 55; else velPromedio = 85; return { km: distRuta.toFixed(1), min: Math.round((distRuta / velPromedio) * 60) }; }
+        const _osrmRutaCache = new Map();
+        function parseCoordenadasDestino(str) {
+            if (!str || !String(str).includes(',')) return null;
+            const parts = String(str).replace(/\s/g, '').split(',');
+            if (parts.length < 2) return null;
+            const lat = parseFloat(parts[0]), lng = parseFloat(parts[1]);
+            if (isNaN(lat) || isNaN(lng)) return null;
+            return { lat, lng };
+        }
+        function parseMetricaRuta(str, defaultUnit) {
+            if (!str) return { v: '0', u: defaultUnit };
+            const s = String(str).trim();
+            const m = s.match(/^([\d.,]+)\s*(.*)$/i);
+            if (!m) return { v: s, u: defaultUnit };
+            const u = (m[2] || defaultUnit).toUpperCase() || defaultUnit;
+            return { v: m[1], u };
+        }
+        function formatearDistanciaKm(km) { return (typeof km === 'number' ? km.toFixed(1) : String(km)) + ' KM'; }
+        function formatearTiempoMin(min) { return Math.round(Number(min) || 0) + ' MIN'; }
+        function getFactorTraficoChile(date) {
+            date = date || new Date();
+            const h = date.getHours(), day = date.getDay(), month = date.getMonth();
+            let factor = 1.0, etiqueta = 'Flujo normal';
+            const isWeekday = day >= 1 && day <= 5;
+            if (isWeekday) {
+                if ((h >= 7 && h < 9) || (h === 9 && date.getMinutes() < 30)) { factor = 1.38; etiqueta = 'Hora punta mañana'; }
+                else if (h >= 17 && h < 20) { factor = 1.48; etiqueta = 'Hora punta tarde'; }
+                else if (h >= 12 && h < 14) { factor = 1.12; etiqueta = 'Mediodía'; }
+            } else if (day === 6 && h >= 10 && h < 14) { factor = 1.18; etiqueta = 'Sábado'; }
+            else if (day === 0 && h >= 11 && h < 19) { factor = 1.14; etiqueta = 'Domingo'; }
+            if (month >= 11 || month <= 1) { factor *= 1.1; etiqueta += ' · Temporada alta'; }
+            if (h >= 22 || h < 6) { factor = Math.max(0.88, factor * 0.92); etiqueta = 'Madrugada/noche'; }
+            return { factor, etiqueta };
+        }
+        function haversineKm(lat1, lon1, lat2, lon2) {
+            const R = 6371, dLat = (lat2 - lat1) * Math.PI / 180, dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
+            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        }
+        function calcularRutaHeuristica(lat1, lon1, lat2, lon2) {
+            const distRecta = haversineKm(lat1, lon1, lat2, lon2);
+            const winding = distRecta < 8 ? 1.42 : distRecta < 35 ? 1.48 : distRecta < 80 ? 1.55 : 1.62;
+            const distRuta = distRecta * winding;
+            let vel = distRuta < 3 ? 22 : distRuta < 10 ? 38 : distRuta < 30 ? 58 : distRuta < 70 ? 72 : 68;
+            const traffic = getFactorTraficoChile();
+            let min = (distRuta / vel) * 60 * traffic.factor;
+            if (distRuta > 25) min += Math.floor(distRuta / 80) * 10;
+            if (distRuta > 45) min = Math.max(min, distRuta * 1.05);
+            if (distRuta > 90) min = Math.max(min, distRuta * 1.15);
+            return { km: distRuta.toFixed(1), min: Math.round(min), factor: traffic.factor, etiqueta: traffic.etiqueta, source: 'heuristica' };
+        }
+        function calcularRutaEstimada(lat1, lon1, lat2, lon2) {
+            const h = calcularRutaHeuristica(lat1, lon1, lat2, lon2);
+            return { km: h.km, min: h.min };
+        }
+        async function fetchRutaOSRM(lat1, lon1, lat2, lon2, timeoutMs) {
+            timeoutMs = timeoutMs || 9000;
+            const key = lat1.toFixed(4) + ',' + lon1.toFixed(4) + '->' + lat2.toFixed(4) + ',' + lon2.toFixed(4);
+            if (_osrmRutaCache.has(key)) return _osrmRutaCache.get(key);
+            const ctrl = new AbortController();
+            const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+            try {
+                const url = 'https://router.project-osrm.org/route/v1/driving/' + lon1 + ',' + lat1 + ';' + lon2 + ',' + lat2 + '?overview=false';
+                const res = await fetch(url, { signal: ctrl.signal });
+                const data = await res.json();
+                if (data.code === 'Ok' && data.routes && data.routes[0]) {
+                    const route = data.routes[0];
+                    const out = { kmRaw: route.distance / 1000, minRaw: route.duration / 60, source: 'osrm' };
+                    _osrmRutaCache.set(key, out);
+                    return out;
+                }
+            } catch (e) {}
+            finally { clearTimeout(timer); }
+            return null;
+        }
+        async function calcularRutaCompleta(lat1, lon1, lat2, lon2) {
+            const traffic = getFactorTraficoChile();
+            const osrm = await fetchRutaOSRM(lat1, lon1, lat2, lon2);
+            if (osrm) {
+                const km = osrm.kmRaw;
+                let min = osrm.minRaw * traffic.factor;
+                if (km > 20) min += Math.floor(km / 70) * 8;
+                if (km > 50) min = Math.max(min, km * 0.92);
+                if (km > 100) min = Math.max(min, km * 1.05);
+                return { km: km.toFixed(1), min: Math.round(min), factor: traffic.factor, etiqueta: traffic.etiqueta, source: 'osrm' };
+            }
+            return calcularRutaHeuristica(lat1, lon1, lat2, lon2);
+        }
+        function aplicarEstimacionRutaAPin(punto, est) {
+            if (!punto || !est) return;
+            punto.distancia = formatearDistanciaKm(est.km);
+            punto.tiempo = formatearTiempoMin(est.min);
+            punto.rutaFactorTrafico = est.factor;
+            punto.rutaEtiquetaTrafico = est.etiqueta;
+            punto.rutaFuente = est.source;
+            punto.rutaCalculadaEn = Date.now();
+        }
+        async function calcularRutaParaPin(punto) {
+            if (!OrigenDrone?.lat || !OrigenDrone?.lng) return null;
+            const dest = parseCoordenadasDestino(punto.coordenadasDestino);
+            if (!dest) return null;
+            const est = await calcularRutaCompleta(OrigenDrone.lat, OrigenDrone.lng, dest.lat, dest.lng);
+            if (est) aplicarEstimacionRutaAPin(punto, est);
+            return est;
+        }
+        async function syncRutasDesdeOrigen(opts) {
+            opts = opts || {};
+            if (!OrigenDrone?.lat || !OrigenDrone?.lng || !PuntosHorizonte?.length) return false;
+            let updated = false;
+            for (const punto of PuntosHorizonte) {
+                if (punto.tipo !== 'ruta' && punto.tipo !== 'horizonte') continue;
+                const dest = parseCoordenadasDestino(punto.coordenadasDestino);
+                if (!dest) continue;
+                const vacio = !punto.distancia || /^0(\.0)?(\s*KM)?$/i.test(String(punto.distancia).trim()) || !punto.tiempo || /^0(\s*MIN)?$/i.test(String(punto.tiempo).trim());
+                const recalc = punto.tipo === 'ruta' || opts.refreshAll || (opts.refreshEmptyHorizonte !== false && vacio);
+                if (!recalc) continue;
+                const est = await calcularRutaParaPin(punto);
+                if (est) updated = true;
+                await new Promise(r => setTimeout(r, 180));
+            }
+            if (updated) { refreshAllHotspots(); saveToLocal(); }
+            return updated;
+        }
 
         function applyProjectConfig() {
             document.getElementById('head-title-tag').innerText = `Masterplan 360 | ${ConfigProyecto.titulo || "PROYECTO INMOBILIARIO"}`;
@@ -324,7 +450,7 @@
         function saveToLocal() { localStorage.setItem('suelo360_autosave', JSON.stringify({ configProyecto: ConfigProyecto, origen: OrigenDrone, norte: NorteOffset, lotes: BaseDatosLotes, horizontes: PuntosHorizonte, trazos: allDrawnLines })); }
         function loadFromLocal() { const savedData = localStorage.getItem('suelo360_autosave'); if (savedData) { try { const parsed = JSON.parse(savedData); if((parsed.lotes && parsed.lotes.length > 0) || (parsed.trazos && parsed.trazos.length > 0)) { ConfigProyecto = parsed.configProyecto || ConfigProyecto; OrigenDrone = parsed.origen || OrigenDrone; NorteOffset = parsed.norte || 0; BaseDatosLotes = parsed.lotes || BaseDatosLotes; PuntosHorizonte = parsed.horizontes || PuntosHorizonte; allDrawnLines = parsed.trazos || allDrawnLines; } } catch(e) {} } }
         async function fetchValorUFOnline() { try { const response = await fetch('https://mindicador.cl/api/uf', { cache: 'no-store' }); if (response.ok) { const data = await response.json(); if(data && data.serie && data.serie.length > 0) { UF_Online = data.serie[0].valor; return; } } } catch (error) {} }
-        async function fetchMasterData() { try { const response = await fetch('datos-suelo.json?v=' + new Date().getTime()); if(response.ok) { const data = await response.json(); ConfigProyecto = data.configProyecto || ConfigProyecto; OrigenDrone = data.origen || null; NorteOffset = data.norte || 0; BaseDatosLotes = data.lotes || []; PuntosHorizonte = data.horizontes || []; allDrawnLines = data.trazos || []; } else { loadFromLocal(); } } catch(e) { loadFromLocal(); } applyProjectConfig(); }
+        async function fetchMasterData() { try { const response = await fetch('datos-suelo.json?v=' + new Date().getTime()); if(response.ok) { const data = await response.json(); ConfigProyecto = data.configProyecto || ConfigProyecto; OrigenDrone = data.origen || null; NorteOffset = data.norte || 0; BaseDatosLotes = data.lotes || []; PuntosHorizonte = data.horizontes || []; allDrawnLines = data.trazos || []; } else { loadFromLocal(); } } catch(e) { loadFromLocal(); } applyProjectConfig(); await syncRutasDesdeOrigen(); }
 
         let visor360, currentPinSizeIndex = 1, isIntroAnimating = true, isDevModeDrawActive = false, isDevModePinsActive = false, currentLineType = 'solida', currentLinePoints = [], currentPinTypeMap = 'disponible', currentTempLineId = 'temp_' + Date.now(), draggingVertex = null, draggingFranjaDiv = null, pickedPin = null, snapCursor = null, ghostPin = null, snappedCoords = null, activePinArgs = null, isCreatingNewPin = false, isSnapToClose = false, franjaCornerA = null, franjaPreviewQuad = null, franjaPreviewDivs = [], franjaDraftCount = 10, franjaDraftBaseM2 = 5000, franjaPendingCreate = null;
         const DEFAULT_HFOV = 125, MAX_SCALE = 1.0, MIN_SCALE = 0.20, SNAP_DISTANCE = 8.0; 
@@ -1770,14 +1896,7 @@
                             const titulo = prompt(`${label}\nTítulo (ej: ${currentPinTypeMap === 'ruta' ? 'Ruta V-30' : 'Volcán Osorno'}):`);
                             if (titulo) { 
                                 baseArgs.titulo = titulo; baseArgs.tipo = currentPinTypeMap; 
-                                if (OrigenDrone && OrigenDrone.lat) { 
-                                    let dest = prompt(`Ingresa Lat,Lng de ${titulo} para auto-calcular distancia, o deja vacío para manual:`); 
-                                    if (dest && dest.includes(',')) { 
-                                        let parts = dest.split(','); 
-                                        let est = calcularRutaEstimada(OrigenDrone.lat, OrigenDrone.lng, parseFloat(parts[0]), parseFloat(parts[1])); 
-                                        baseArgs.distancia = est.km + ' KM'; baseArgs.tiempo = est.min + ' MIN'; 
-                                    } 
-                                } 
+                                baseArgs.coordenadasDestino = '';
                                 openPinEditor(baseArgs, true); 
                             }
                         } else if (currentPinTypeMap === 'vista360' || currentPinTypeMap === 'casa360') { 
@@ -1883,7 +2002,27 @@
 
         function setupModalEditor() {
             const btnCancelPin = document.getElementById('btn-cancel-pin'); const btnSavePin = document.getElementById('btn-save-pin'); const modalContent = document.getElementById('modal-content-box');
+            const btnCalcRoute = document.getElementById('pin-calc-route');
             if(modalContent) { modalContent.addEventListener('mousedown', (e) => e.stopPropagation()); modalContent.addEventListener('mouseup', (e) => e.stopPropagation()); modalContent.addEventListener('touchstart', (e) => e.stopPropagation(), {passive: true}); modalContent.addEventListener('touchend', (e) => e.stopPropagation()); }
+            if(btnCalcRoute) {
+                btnCalcRoute.addEventListener('click', async (e) => {
+                    e.preventDefault(); e.stopPropagation();
+                    if (!OrigenDrone?.lat) { alert('⚠️ Primero fija el Origen Drone en el panel de pines.'); return; }
+                    const coordsIn = document.getElementById('pin-coords');
+                    if (!parseCoordenadasDestino(coordsIn?.value)) { alert('⚠️ Ingresa coordenadas destino válidas (Lat, Lng).'); return; }
+                    btnCalcRoute.disabled = true;
+                    btnCalcRoute.innerText = 'Calculando ruta…';
+                    const tmp = { coordenadasDestino: coordsIn.value.trim() };
+                    const est = await calcularRutaParaPin(tmp);
+                    btnCalcRoute.disabled = false;
+                    btnCalcRoute.innerText = '🛣️ Calcular desde Origen Drone';
+                    if (!est) { alert('⚠️ No se pudo calcular la ruta.'); return; }
+                    document.getElementById('pin-area').value = est.km;
+                    document.getElementById('pin-price').value = est.min;
+                    const hint = document.getElementById('pin-traffic-hint');
+                    if (hint) hint.innerText = '✓ ' + (est.source === 'osrm' ? 'Ruta por carretera (OSRM)' : 'Estimación topográfica') + ' · ' + (est.etiqueta || 'Tráfico actual');
+                });
+            }
             if(btnCancelPin) { btnCancelPin.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); document.getElementById('pin-editor-modal').classList.remove('open'); activePinArgs = null; }); }
             if(btnSavePin) {
                 btnSavePin.addEventListener('click', (e) => {
@@ -1903,7 +2042,13 @@
                         activePinArgs.status = document.getElementById('pin-status').value || 'disponible';
                         let imgVal = document.getElementById('pin-img').value; let fallbackImage = "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&q=80"; activePinArgs.imagen = imgVal ? imgVal : fallbackImage;
                         let vidVal = document.getElementById('pin-video').value; if (vidVal) activePinArgs.videoUrl = vidVal; else delete activePinArgs.videoUrl;
-                    } else if(activePinArgs.tipo === 'horizonte' || activePinArgs.tipo === 'ruta') { activePinArgs.titulo = rawTitle || 'MARCADOR'; activePinArgs.distancia = document.getElementById('pin-area').value || '0 KM'; activePinArgs.tiempo = document.getElementById('pin-price').value || '0 MIN';
+                    } else if(activePinArgs.tipo === 'horizonte' || activePinArgs.tipo === 'ruta') {
+                        activePinArgs.titulo = rawTitle || 'MARCADOR';
+                        activePinArgs.coordenadasDestino = document.getElementById('pin-coords').value.trim();
+                        let rawDist = document.getElementById('pin-area').value.trim() || '0';
+                        let rawTime = document.getElementById('pin-price').value.trim() || '0';
+                        activePinArgs.distancia = rawDist.toUpperCase().includes('KM') ? rawDist : rawDist + ' KM';
+                        activePinArgs.tiempo = rawTime.toUpperCase().includes('MIN') ? rawTime : rawTime + ' MIN';
                     } else if(activePinArgs.tipo === 'vista360' || activePinArgs.tipo === 'casa360') { 
                         activePinArgs.titulo = rawTitle || (activePinArgs.tipo === 'vista360' ? 'VISTA 360' : 'CASA TOUR'); 
                         activePinArgs.url = document.getElementById('pin-video').value || '#'; 
@@ -1918,11 +2063,22 @@
             activePinArgs = args; isCreatingNewPin = isNew; document.getElementById('modal-title-text').innerText = isNew ? "Nuevo Smart Pin" : "Editar Smart Pin";
             let displayTitle = args.titulo || ''; if(!isNew && args.tipo === 'lote') displayTitle = displayTitle.replace(/lote\s*/i, '');
             document.getElementById('pin-title').value = displayTitle; document.getElementById('pin-status').value = args.status || 'disponible';
+            const coordsEl = document.getElementById('pin-coords');
+            const calcBtn = document.getElementById('pin-calc-route');
+            const trafficHint = document.getElementById('pin-traffic-hint');
+            if (coordsEl) coordsEl.value = args.coordenadasDestino || '';
             let cleanArea = (args.superficie || args.distancia || '').replace(/m²|m2|km|há|ha/gi, '').trim(); let cleanPrice = (args.precio || args.tiempo || '').replace(/uf|min/gi, '').trim();
             document.getElementById('pin-area').value = cleanArea; document.getElementById('pin-price').value = cleanPrice;
             document.getElementById('pin-img').value = (args.imagen && !args.imagen.includes("1600596542815") && !args.imagen.includes("1500382017468")) ? args.imagen : '';
             document.getElementById('pin-video').value = args.videoUrl || args.url || '';
-            if(args.tipo === 'horizonte' || args.tipo === 'ruta') { document.getElementById('pin-title').placeholder = "Título (ej: Volcán Osorno)"; document.getElementById('pin-area').placeholder = "Distancia (ej: 30 KM)"; document.getElementById('pin-price').placeholder = "Tiempo (ej: 25 MIN)"; document.getElementById('pin-img').style.display = 'none'; document.getElementById('pin-video').style.display = 'none'; document.getElementById('pin-status').style.display = 'none'; document.getElementById('pin-area').style.display = 'block'; document.getElementById('pin-price').style.display = 'block';
+            const isRutaNav = args.tipo === 'horizonte' || args.tipo === 'ruta';
+            if (coordsEl) coordsEl.style.display = isRutaNav ? 'block' : 'none';
+            if (calcBtn) { calcBtn.style.display = isRutaNav ? 'block' : 'none'; calcBtn.disabled = false; calcBtn.innerText = '🛣️ Calcular desde Origen Drone'; }
+            if (trafficHint) {
+                trafficHint.style.display = isRutaNav ? 'block' : 'none';
+                trafficHint.innerText = args.rutaEtiquetaTrafico ? ('Último cálculo: ' + args.rutaEtiquetaTrafico) : 'Distancia por carretera + factor tráfico Chile (hora punta, fin de semana y temporada).';
+            }
+            if(args.tipo === 'horizonte' || args.tipo === 'ruta') { document.getElementById('pin-title').placeholder = args.tipo === 'ruta' ? "Título (ej: Ruta V-30)" : "Título (ej: Volcán Osorno)"; document.getElementById('pin-area').placeholder = "Distancia (ej: 30) — auto al calcular"; document.getElementById('pin-price').placeholder = "Tiempo (ej: 90) — auto al calcular"; document.getElementById('pin-img').style.display = 'none'; document.getElementById('pin-video').style.display = 'none'; document.getElementById('pin-status').style.display = 'none'; document.getElementById('pin-area').style.display = 'block'; document.getElementById('pin-price').style.display = 'block'; if (coordsEl) coordsEl.placeholder = 'Coordenadas destino (Lat, Lng) — ej: -41.120, -72.480';
             } else if(args.tipo === 'vista360' || args.tipo === 'casa360') { 
                 document.getElementById('pin-title').placeholder = args.tipo === 'vista360' ? "Título (ej: Parque Norte)" : "Título (ej: Casa Piloto)"; 
                 document.getElementById('pin-area').style.display = 'none'; 
@@ -1977,7 +2133,7 @@
             const btnDeleteLastLine = document.createElement('button'); btnDeleteLastLine.id = 'btn-delete-last-line'; btnDeleteLastLine.style.display = 'none'; document.body.appendChild(btnDeleteLastLine);
             btnDeleteLastLine.addEventListener('click', () => { if (allDrawnLines.length > 0) { allDrawnLines.pop(); refreshAllHotspots(); saveToLocal(); } });
             document.querySelectorAll('.nuke').forEach(btn => { btn.addEventListener('click', limpiarProyecto); }); document.querySelectorAll('.export-ai').forEach(btn => { btn.addEventListener('click', exportarDatosParaIA); });
-            document.getElementById('btn-set-drone')?.addEventListener('click', () => { let val = prompt("Fijar Coordenada del Drone (Lat, Lng)\nEj: -41.3245, -72.9832", OrigenDrone ? `${OrigenDrone.lat}, ${OrigenDrone.lng}` : ""); if (val && val.includes(',')) { let parts = val.split(','); OrigenDrone = { lat: parseFloat(parts[0].trim()), lng: parseFloat(parts[1].trim()) }; saveToLocal(); document.getElementById('js-gmap-iframe').src = `https://maps.google.com/maps?q=${OrigenDrone.lat},${OrigenDrone.lng}&t=k&z=16&ie=UTF8&iwloc=&output=embed`; document.getElementById('js-directions-btn').href = `https://www.google.com/maps/dir/?api=1&destination=${OrigenDrone.lat},${OrigenDrone.lng}`; alert("📍 Coordenada Base fijada y Mapa Satelital actualizado."); } });
+            document.getElementById('btn-set-drone')?.addEventListener('click', () => { let val = prompt("Fijar Coordenada del Drone (Lat, Lng)\nEj: -41.3245, -72.9832", OrigenDrone ? `${OrigenDrone.lat}, ${OrigenDrone.lng}` : ""); if (val && val.includes(',')) { let parts = val.split(','); OrigenDrone = { lat: parseFloat(parts[0].trim()), lng: parseFloat(parts[1].trim()) }; saveToLocal(); document.getElementById('js-gmap-iframe').src = `https://maps.google.com/maps?q=${OrigenDrone.lat},${OrigenDrone.lng}&t=k&z=16&ie=UTF8&iwloc=&output=embed`; document.getElementById('js-directions-btn').href = `https://www.google.com/maps/dir/?api=1&destination=${OrigenDrone.lat},${OrigenDrone.lng}`; syncRutasDesdeOrigen({ refreshAll: true }).then(() => alert("📍 Origen Drone fijado.\nDistancias de pins ruta/horizonte recalculadas con tráfico.")); } });
             document.getElementById('btn-set-north')?.addEventListener('click', () => { if(!visor360) return; NorteOffset = visor360.getYaw(); saveToLocal(); alert("🧭 Brújula calibrada: El Norte Magnético apunta ahora a tu vista actual.\n(El parámetro 'norte' será incluido al Copiar Datos IA)."); const compassDial = document.getElementById('js-compass'); if(compassDial) compassDial.style.transform = `rotate(${-(visor360.getYaw() - NorteOffset)}deg)`; });
             document.getElementById('btn-edit-titles')?.addEventListener('click', () => { let t = prompt("Título del Proyecto (H1):", ConfigProyecto.titulo); let s = prompt("Subtítulo del Proyecto (p):", ConfigProyecto.subtitulo); if (t !== null && s !== null) { ConfigProyecto.titulo = t || 'PROYECTO INMOBILIARIO'; ConfigProyecto.subtitulo = s || ''; applyProjectConfig(); saveToLocal(); alert("Títulos actualizados temporalmente.\nAl hacer clic en 'COPIAR DATOS IA' se incluirán en el archivo JSON definitivo."); } });
             document.querySelectorAll('#dev-toolbar-pins .dev-btn:not(.action):not(.export):not(.export-ai):not(.nuke)').forEach(btn => { if(btn.id !== 'btn-set-drone' && btn.id !== 'btn-set-north' && btn.id !== 'btn-edit-titles') { btn.addEventListener('click', (e) => { currentPinTypeMap = e.target.dataset.pintype; document.querySelectorAll('#dev-toolbar-pins .dev-btn:not(.action):not(.export):not(.export-ai):not(.nuke)').forEach(b => b.classList.remove('active')); e.target.classList.add('active'); }); } });
@@ -2136,8 +2292,8 @@
         function generarMarcadorHorizonte(hotSpotDiv, args) {
             hotSpotDiv.style.width = '0px'; hotSpotDiv.style.height = '0px';
             const wrapper = document.createElement('div'); wrapper.className = 'horizon-hud-wrapper';
-            let distArr = (args.distancia || '0 KM').split(' '); let timeArr = (args.tiempo || '0 MIN').split(' ');
-            let dVal = distArr[0] || '0'; let dUnit = distArr[1] || 'KM'; let tVal = timeArr[0] || '0'; let tUnit = timeArr[1] || 'MIN';
+            let distArr = parseMetricaRuta(args.distancia, 'KM'); let timeArr = parseMetricaRuta(args.tiempo, 'MIN');
+            let dVal = distArr.v; let dUnit = distArr.u; let tVal = timeArr.v; let tUnit = timeArr.u;
             let destLatLon = args.coordenadasDestino ? args.coordenadasDestino.replace(/\s/g, '') : ''; let destinoQuery = destLatLon || encodeURIComponent(args.titulo);
             let linkWazeActual = destLatLon ? `https://www.waze.com/ul?ll=${destLatLon}&navigate=yes` : `https://www.waze.com/ul?q=${destinoQuery}&navigate=yes`;
             let linkGmapsActual = `https://www.google.com/maps/dir/?api=1&destination=${destinoQuery}&travelmode=driving`;
@@ -2151,8 +2307,10 @@
             hotSpotDiv.style.width = '0px'; hotSpotDiv.style.height = '0px';
             const wrapper = document.createElement('div'); wrapper.className = 'ruta-hud-wrapper';
             
-            let distArr = (args.distancia || '0 KM').split(' '); let timeArr = (args.tiempo || '0 MIN').split(' ');
-            let dVal = distArr[0] || '0'; let dUnit = distArr[1] || 'KM'; let tVal = timeArr[0] || '0'; let tUnit = timeArr[1] || 'MIN';
+            let distArr = parseMetricaRuta(args.distancia, 'KM'); let timeArr = parseMetricaRuta(args.tiempo, 'MIN');
+            let dVal = distArr.v; let dUnit = distArr.u; let tVal = timeArr.v; let tUnit = timeArr.u;
+            
+            const trafficTip = args.rutaEtiquetaTrafico ? ' title="' + args.rutaEtiquetaTrafico + '"' : '';
             
             let destLatLon = args.coordenadasDestino ? args.coordenadasDestino.replace(/\s/g, '') : ''; 
             let destinoQuery = destLatLon || encodeURIComponent(args.titulo);
@@ -2167,7 +2325,7 @@
                     <div class="ruta-divider"></div>
                     <div class="ruta-metrics">
                         <span class="ruta-val">${dVal}<small>${dUnit}</small></span>
-                        <span class="ruta-val">${tVal}<small>${tUnit}</small></span>
+                        <span class="ruta-val"${trafficTip}>~${tVal}<small>${tUnit}</small><span class="ruta-traffic-badge">TRF</span></span>
                     </div>
                     <div class="ruta-links">
                         <a href="${linkWazeActual}" target="_blank" class="r-link waze" title="Ir con Waze" draggable="false">
@@ -2213,7 +2371,7 @@
             const btnMap = document.getElementById('js-location-btn'); if(btnMap && mapPanel) { btnMap.addEventListener('click', (e) => { e.stopPropagation(); mapPanel.classList.toggle('open'); if(sidebar) sidebar.classList.remove('open'); }); }
             const btnCloseMap = document.getElementById('js-close-map'); if(btnCloseMap) { btnCloseMap.addEventListener('click', (e) => { e.stopPropagation(); mapPanel.classList.remove('open'); }); }
             const btnLotes = document.getElementById('js-toggle-btn'); if(btnLotes && sidebar) { btnLotes.addEventListener('click', (e) => { e.stopPropagation(); sidebar.classList.toggle('open'); if(mapPanel) mapPanel.classList.remove('open'); }); }
-            const btnGps = document.getElementById('js-btn-gps'); if (btnGps) { btnGps.addEventListener('click', () => { btnGps.innerText = "Sincronizando satélites..."; if (navigator.geolocation) { navigator.geolocation.getCurrentPosition( (pos) => { const lat = pos.coords.latitude; const lon = pos.coords.longitude; if (OrigenDrone && OrigenDrone.lat) { const est = calcularRutaEstimada(lat, lon, OrigenDrone.lat, OrigenDrone.lng); btnGps.style.display = 'none'; document.getElementById('js-gps-result').style.display = 'block'; document.getElementById('js-gps-km').innerText = est.km; document.getElementById('js-gps-min').innerText = est.min; } else { btnGps.innerText = "Error: Drone sin origen"; } }, (err) => { btnGps.innerText = "Acceso GPS Denegado"; }, { enableHighAccuracy: true } ); } else { btnGps.innerText = "GPS No Soportado"; } }); }
+            const btnGps = document.getElementById('js-btn-gps'); if (btnGps) { btnGps.addEventListener('click', () => { btnGps.innerText = "Sincronizando satélites..."; if (navigator.geolocation) { navigator.geolocation.getCurrentPosition( async (pos) => { const lat = pos.coords.latitude; const lon = pos.coords.longitude; if (OrigenDrone && OrigenDrone.lat) { const est = await calcularRutaCompleta(lat, lon, OrigenDrone.lat, OrigenDrone.lng); btnGps.style.display = 'none'; document.getElementById('js-gps-result').style.display = 'block'; document.getElementById('js-gps-km').innerText = est.km; document.getElementById('js-gps-min').innerText = est.min; } else { btnGps.innerText = "Error: Drone sin origen"; } }, (err) => { btnGps.innerText = "Acceso GPS Denegado"; }, { enableHighAccuracy: true } ); } else { btnGps.innerText = "GPS No Soportado"; } }); }
         }
 
         function renderSidebarList(lista) {
