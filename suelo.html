@@ -492,42 +492,8 @@
             if (orphans.length >= 2) { promoteClusterToFranja(orphans); return; }
             const orphanEdges = allDrawnLines.filter(l => isMacroEdgeType(l.tipo) && !l.franjaGrupo);
             if (orphanEdges.length >= 3) promoteMacroEdgesToFranja(orphanEdges);
+            ensureStitchedDivisorias();
             document.body.classList.toggle('auto-macro-active', allDrawnLines.some(l => isMacroEdgeType(l.tipo) || l.tipo === 'area-invisible'));
-        }
-        function eraseDrawnLine(lineId) {
-            const line = allDrawnLines.find(l => l.id === lineId);
-            if (!line) return;
-            if (line.id === currentTempLineId) { currentLinePoints = []; refreshAllHotspots(); saveToLocal(); return; }
-            if (line.tipo === 'franja-grupo') {
-                const gid = line.id;
-                allDrawnLines = allDrawnLines.filter(l => l.franjaGrupo !== gid && l.id !== gid);
-                clearFranjaDraft();
-                ensureFranjaIntegrity();
-                refreshAllHotspots(); saveToLocal(); return;
-            }
-            if (line.franjaGrupo) {
-                const gid = line.franjaGrupo;
-                const grp = allDrawnLines.find(l => l.id === gid);
-                allDrawnLines = allDrawnLines.filter(l => l.id !== lineId);
-                if (grp && line.tipo === 'area-invisible') {
-                    grp.franjaCount = Math.max(2, (grp.franjaCount || 2) - 1);
-                    ensureFranjaSplits(grp);
-                    if (line.franjaIdx != null && grp.franjaSplits.length > line.franjaIdx + 1) grp.franjaSplits.splice(line.franjaIdx + 1, 1);
-                }
-                rebuildFranjaGroup(gid);
-                ensureFranjaIntegrity();
-                refreshAllHotspots(); saveToLocal(); return;
-            }
-            if (isMacroEdgeType(line.tipo)) {
-                const cluster = allDrawnLines.filter(l => isMacroEdgeType(l.tipo) && !l.franjaGrupo);
-                allDrawnLines = allDrawnLines.filter(l => l.id !== lineId);
-                if (cluster.length >= 2) ensureFranjaIntegrity();
-                else refreshAllHotspots();
-                saveToLocal(); return;
-            }
-            allDrawnLines = allDrawnLines.filter(l => l.id !== lineId);
-            ensureFranjaIntegrity();
-            refreshAllHotspots(); saveToLocal();
         }
         function sortLotesAlongStrip(lotes) {
             return [...lotes].sort((a, b) => {
@@ -840,33 +806,173 @@
             const r = visor360.mouseEventToCoords({ clientX: sx, clientY: sy });
             return r ? [parseFloat(r[0].toFixed(3)), parseFloat(r[1].toFixed(3))] : null;
         }
-        function buildFranjaScreenPoints(ax, ay, bx, by, N) {
-            const x1 = Math.min(ax, bx), x2 = Math.max(ax, bx), y1 = Math.min(ay, by), y2 = Math.max(ay, by);
+        function getFranjaGrupoScreenRects() {
+            const proj = getPanoramaScreenProjector();
+            if (!proj) return [];
+            return allDrawnLines.filter(l => l.tipo === 'franja-grupo').map(g => {
+                const [TL, TR, BR, BL] = g.puntos;
+                const tl = proj.toScreen(TL[0], TL[1]), tr = proj.toScreen(TR[0], TR[1]);
+                const br = proj.toScreen(BR[0], BR[1]), bl = proj.toScreen(BL[0], BL[1]);
+                if (!tl || !tr || !br || !bl) return null;
+                return { gid: g.id, grp: g, tl, tr, br, bl,
+                    left: Math.min(tl[0], bl[0]), right: Math.max(tr[0], br[0]),
+                    top: Math.min(tl[1], tr[1]), bottom: Math.max(bl[1], br[1]) };
+            }).filter(Boolean);
+        }
+        function snapFranjaScreenRect(ax, ay, bx, by) {
+            const FRANJA_SNAP_PX = 24;
+            let x1 = Math.min(ax, bx), x2 = Math.max(ax, bx), y1 = Math.min(ay, by), y2 = Math.max(ay, by);
+            const rects = getFranjaGrupoScreenRects();
+            if (!rects.length) return { x1, x2, y1, y2, gapFill: false };
+            const near = (v, t) => Math.abs(v - t) < FRANJA_SNAP_PX;
+            const snapVal = (v, edges) => {
+                let best = v, bd = FRANJA_SNAP_PX;
+                edges.forEach(e => { const d = Math.abs(v - e); if (d < bd) { bd = d; best = e; } });
+                return best;
+            };
+            const allX = [], allY = [];
+            rects.forEach(r => { allX.push(r.left, r.right); allY.push(r.top, r.bottom); });
+            x1 = snapVal(x1, allX); x2 = snapVal(x2, allX); y1 = snapVal(y1, allY); y2 = snapVal(y2, allY);
+            let gapFill = false, upperGid = null, lowerGid = null;
+            rects.forEach(r => {
+                if (near(x1, r.left) && near(x2, r.right)) { x1 = r.left; x2 = r.right; }
+                if (near(y1, r.bottom)) { y1 = r.bottom; upperGid = r.gid; }
+                if (near(y2, r.top)) { y2 = r.top; lowerGid = r.gid; }
+            });
+            if (upperGid && lowerGid && upperGid !== lowerGid && x2 - x1 > 4 && y2 - y1 > 4) gapFill = true;
+            return { x1, x2, y1, y2, gapFill, upperGid, lowerGid };
+        }
+        function buildFranjaScreenPointsSnapped(ax, ay, bx, by, N) {
+            const s = snapFranjaScreenRect(ax, ay, bx, by);
             const topPts = [], botPts = [];
             for (let i = 0; i <= N; i++) {
-                const sx = x1 + (x2 - x1) * (i / N);
-                const tp = screenPointToPanorama(sx, y1), bp = screenPointToPanorama(sx, y2);
+                const sx = s.x1 + (s.x2 - s.x1) * (i / N);
+                const tp = screenPointToPanorama(sx, s.y1), bp = screenPointToPanorama(sx, s.y2);
                 if (!tp || !bp) return null;
                 topPts.push(tp); botPts.push(bp);
             }
-            return { topPts, botPts };
+            return { topPts, botPts, snap: s };
+        }
+        function edgeMatchesLine(p1, p2, q1, q2, tol) {
+            const d11 = Math.hypot(p1[0]-q1[0], p1[1]-q1[1]), d22 = Math.hypot(p2[0]-q2[0], p2[1]-q2[1]);
+            const d12 = Math.hypot(p1[0]-q2[0], p1[1]-q2[1]), d21 = Math.hypot(p2[0]-q1[0], p2[1]-q1[1]);
+            return (d11 < tol && d22 < tol) || (d12 < tol && d21 < tol);
+        }
+        function ensureStitchedDivisorias() {
+            const grupos = allDrawnLines.filter(l => l.tipo === 'franja-grupo');
+            const proj = getPanoramaScreenProjector();
+            if (!proj || grupos.length < 2) return;
+            const tol = 0.12;
+            for (let i = 0; i < grupos.length; i++) {
+                for (let j = i + 1; j < grupos.length; j++) {
+                    const a = grupos[i], b = grupos[j];
+                    const [aTL, aTR, aBR, aBL] = a.puntos, [bTL, bTR, bBR, bBL] = b.puntos;
+                    let shared = null, upper = null, lower = null;
+                    if (edgeMatchesLine(aBL, aBR, bTL, bTR, tol)) { shared = [aBL, aBR]; upper = a; lower = b; }
+                    else if (edgeMatchesLine(bBL, bBR, aTL, aTR, tol)) { shared = [bBL, bBR]; upper = b; lower = a; }
+                    if (!shared) continue;
+                    allDrawnLines = allDrawnLines.filter(l => {
+                        if (!l.franjaGrupo || l.tipo !== 'borde-macro') return true;
+                        if (l.franjaGrupo !== upper.id && l.franjaGrupo !== lower.id) return true;
+                        if (l.puntos.length < 2) return true;
+                        return !edgeMatchesLine(l.puntos[0], l.puntos[1], shared[0], shared[1], tol);
+                    });
+                    const exists = allDrawnLines.some(l => l.tipo === 'divisoria' && l.puntos.length >= 2 &&
+                        edgeMatchesLine(l.puntos[0], l.puntos[1], shared[0], shared[1], tol));
+                    if (!exists) {
+                        allDrawnLines.push({
+                            id: 'div_stitch_' + Date.now() + '_' + i + '_' + j,
+                            tipo: 'divisoria', puntos: [shared[0].map(v => v), shared[1].map(v => v)],
+                            franjaGrupo: upper.id, franjaStitch: lower.id
+                        });
+                    }
+                }
+            }
+        }
+        function mergeFranjasHorizontal(keepGid, mergeGid, mergeOnLeft) {
+            const keep = allDrawnLines.find(l => l.id === keepGid && l.tipo === 'franja-grupo');
+            const merge = allDrawnLines.find(l => l.id === mergeGid && l.tipo === 'franja-grupo');
+            if (!keep || !merge) return false;
+            const nK = keep.franjaCount || 1, nM = merge.franjaCount || 1;
+            const [kTL, kTR, kBR, kBL] = keep.puntos, [mTL, mTR, mBR, mBL] = merge.puntos;
+            if (mergeOnLeft) {
+                keep.puntos = [mTL, kTR, kBR, mBL].map(p => [...p]);
+                keep.franjaSplits = [...(merge.franjaSplits || ensureFranjaSplits(merge)), ...(keep.franjaSplits || ensureFranjaSplits(keep)).slice(1)];
+            } else {
+                keep.puntos = [kTL, mTR, mBR, kBL].map(p => [...p]);
+                keep.franjaSplits = [...(keep.franjaSplits || ensureFranjaSplits(keep)), ...(merge.franjaSplits || ensureFranjaSplits(merge)).slice(1)];
+            }
+            const total = nK + nM;
+            if (keep.franjaSplits.length !== total + 1) keep.franjaSplits = Array.from({ length: total + 1 }, (_, i) => i / total);
+            keep.franjaCount = total;
+            allDrawnLines = allDrawnLines.filter(l => l.franjaGrupo !== mergeGid && l.id !== mergeGid);
+            rebuildFranjaGroup(keepGid);
+            return true;
+        }
+        function tryMergeFranjaHorizontal(newGid) {
+            const newG = allDrawnLines.find(l => l.id === newGid && l.tipo === 'franja-grupo');
+            const proj = getPanoramaScreenProjector();
+            if (!newG || !proj) return false;
+            const nr = getFranjaGrupoScreenRects().find(r => r.gid === newGid);
+            if (!nr) return false;
+            for (const or of getFranjaGrupoScreenRects()) {
+                if (or.gid === newGid) continue;
+                const sameHeight = Math.abs(nr.top - or.top) < 24 && Math.abs(nr.bottom - or.bottom) < 24;
+                if (!sameHeight) continue;
+                if (Math.abs(nr.right - or.left) < 24) {
+                    if (mergeFranjasHorizontal(or.gid, newGid, true)) return true;
+                }
+                if (Math.abs(nr.left - or.right) < 24) {
+                    if (mergeFranjasHorizontal(or.gid, newGid, false)) return true;
+                }
+            }
+            return false;
+        }
+        function alignFranjaVerticalNeighbors(gid) {
+            const grp = allDrawnLines.find(l => l.id === gid && l.tipo === 'franja-grupo');
+            const proj = getPanoramaScreenProjector();
+            if (!grp || !proj) return;
+            const nr = getFranjaGrupoScreenRects().find(r => r.gid === gid);
+            if (!nr) return;
+            getFranjaGrupoScreenRects().forEach(or => {
+                if (or.gid === gid) return;
+                const sameWidth = Math.abs(nr.left - or.left) < 24 && Math.abs(nr.right - or.right) < 24;
+                if (!sameWidth) return;
+                if (Math.abs(nr.top - or.bottom) < 24) {
+                    const nTL = proj.toPY(or.bl[0], or.bottom), nTR = proj.toPY(or.br[0], or.bottom);
+                    if (nTL && nTR) { grp.puntos[0] = nTL; grp.puntos[1] = nTR; rebuildFranjaGroup(gid); }
+                } else if (Math.abs(nr.bottom - or.top) < 24) {
+                    const nBL = proj.toPY(or.tl[0], or.top), nBR = proj.toPY(or.tr[0], or.top);
+                    if (nBL && nBR) { grp.puntos[2] = nBR; grp.puntos[3] = nBL; rebuildFranjaGroup(gid); }
+                }
+            });
+        }
+        function finalizeNewFranja(topPts, botPts, N, snap) {
+            const gid = 'franja_' + Date.now();
+            const corners = [topPts[0], topPts[N], botPts[N], botPts[0]].map(p => [...p]);
+            allDrawnLines.push({ id: gid, tipo: 'franja-grupo', franjaCount: N, puntos: corners });
+            rebuildFranjaGroup(gid);
+            if (!tryMergeFranjaHorizontal(gid)) alignFranjaVerticalNeighbors(gid);
+            ensureStitchedDivisorias();
+            document.body.classList.add('auto-macro-active');
+            return gid;
+        }
+        function buildFranjaScreenPoints(ax, ay, bx, by, N) {
+            const r = buildFranjaScreenPointsSnapped(ax, ay, bx, by, Math.max(1, N));
+            return r ? { topPts: r.topPts, botPts: r.botPts, snap: r.snap } : null;
         }
         function updateFranjaPreview(bx, by) {
             if (!franjaCornerA) { franjaPreviewQuad = null; franjaPreviewDivs = []; return; }
-            const built = buildFranjaScreenPoints(franjaCornerA.sx, franjaCornerA.sy, bx, by, franjaDraftCount);
+            const raw = buildFranjaScreenPointsSnapped(franjaCornerA.sx, franjaCornerA.sy, bx, by, Math.max(1, franjaDraftCount));
+            if (!raw) { franjaPreviewQuad = null; franjaPreviewDivs = []; return; }
+            const N = raw.snap?.gapFill ? 1 : Math.max(1, franjaDraftCount);
+            const built = buildFranjaScreenPointsSnapped(franjaCornerA.sx, franjaCornerA.sy, bx, by, N);
             if (!built) { franjaPreviewQuad = null; franjaPreviewDivs = []; return; }
-            const N = franjaDraftCount;
             franjaPreviewQuad = [built.topPts[0], built.topPts[N], built.botPts[N], built.botPts[0]];
             franjaPreviewDivs = [];
             for (let i = 1; i < N; i++) {
                 franjaPreviewDivs.push({ id: 'franja_preview_div_' + i, tipo: 'franja-preview-div', puntos: [built.topPts[i], built.botPts[i]] });
             }
-        }
-        function crearFranjaLotesPremium(topPts, botPts, N) {
-            const gid = 'franja_' + Date.now();
-            const corners = [topPts[0], topPts[N], botPts[N], botPts[0]].map(p => [...p]);
-            allDrawnLines.push({ id: gid, tipo: 'franja-grupo', franjaCount: N, puntos: corners });
-            rebuildFranjaGroup(gid);
         }
 
         document.addEventListener("DOMContentLoaded", async () => {
@@ -977,7 +1083,7 @@
                         const pBase = document.createElementNS("http://www.w3.org/2000/svg", "path"); 
                         if (line.tipo === 'masterplan_fill') pBase.setAttribute("class", "linea-relleno-mp"); else if (line.tipo === 'neon') pBase.setAttribute("class", "linea-neon"); else if (line.tipo === 'punteada') pBase.setAttribute("class", "linea-punteada"); else if (line.tipo === 'cortar') pBase.setAttribute("class", "linea-corte"); else if (line.tipo === 'area-invisible') pBase.setAttribute("class", "linea-area-fill"); else pBase.setAttribute("class", "linea-solida");
                         if (line.tipo === 'area-invisible') g.setAttribute('data-status', 'disponible');
-                        g.appendChild(pBase); g.addEventListener('mousedown', (e) => { if (currentLineType === 'eraser') { e.stopPropagation(); eraseDrawnLine(line.id); } }); g.addEventListener('touchstart', () => { g.classList.add('hovered'); }, {passive: true}); g.addEventListener('touchend', () => { setTimeout(() => g.classList.remove('hovered'), 1500); }, {passive: true}); lLotes.appendChild(g); DOMCache.paths[line.id] = { gNode: g, base: [pBase] };
+                        g.appendChild(pBase); g.addEventListener('mousedown', (e) => { if (currentLineType === 'eraser') { e.stopPropagation(); if (line.id === currentTempLineId) currentLinePoints = []; else allDrawnLines = allDrawnLines.filter(l => l.id !== line.id); refreshAllHotspots(); saveToLocal(); } }); g.addEventListener('touchstart', () => { g.classList.add('hovered'); }, {passive: true}); g.addEventListener('touchend', () => { setTimeout(() => g.classList.remove('hovered'), 1500); }, {passive: true}); lLotes.appendChild(g); DOMCache.paths[line.id] = { gNode: g, base: [pBase] };
                     }
                 } else {
                     if (line.tipo === 'calle') {
@@ -1121,21 +1227,29 @@
                 if (timeDiff < 500 && moveDist < 10) {
                     if (Date.now() - lastClickTime < 300 && isDevModeDrawActive && currentLineType !== 'franja') { anclarTrazoActivo(); lastClickTime = 0; return; }
                     lastClickTime = Date.now();
-                    if (isDevModeDrawActive && currentLineType === 'eraser') { const coords = visor360.mouseEventToCoords(mock); if (!coords) return; let p = coords[0], y = coords[1]; let lineToDelete = null; let minDist = 3.5; allDrawnLines.forEach((line) => { line.puntos.forEach((pt) => { let dist = Math.sqrt(Math.pow(pt[0] - p, 2) + Math.pow(pt[1] - y, 2)); if (dist < minDist) { minDist = dist; lineToDelete = line.id; } }); }); if (lineToDelete) eraseDrawnLine(lineToDelete); return; }
+                    if (isDevModeDrawActive && currentLineType === 'eraser') { const coords = visor360.mouseEventToCoords(mock); if (!coords) return; let p = coords[0], y = coords[1]; let lineToDelete = null; let minDist = 3.5; allDrawnLines.forEach((line) => { line.puntos.forEach((pt) => { let dist = Math.sqrt(Math.pow(pt[0] - p, 2) + Math.pow(pt[1] - y, 2)); if (dist < minDist) { minDist = dist; lineToDelete = line.id; } }); }); if (lineToDelete) { allDrawnLines = allDrawnLines.filter((l) => l.id !== lineToDelete); refreshAllHotspots(); saveToLocal(); } return; }
                     if (isDevModeDrawActive && currentLineType === 'franja') {
                         if (!franjaCornerA) {
                             const coords = visor360.mouseEventToCoords(mock); if (!coords) return;
-                            franjaCornerA = { sx: mock.clientX, sy: mock.clientY, pitch: parseFloat(coords[0].toFixed(3)), yaw: parseFloat(coords[1].toFixed(3)) };
+                            const snapA = snapFranjaScreenRect(mock.clientX, mock.clientY, mock.clientX, mock.clientY);
+                            franjaCornerA = { sx: snapA.x1, sy: snapA.y1, pitch: parseFloat(coords[0].toFixed(3)), yaw: parseFloat(coords[1].toFixed(3)) };
                             try { visor360.addHotSpot({ id: 'franja_preview_a', pitch: franjaCornerA.pitch, yaw: franjaCornerA.yaw, createTooltipFunc: (div) => { div.classList.add('vertex-marker','franja-corner-marker','drawing-node'); div.id = 'franja_preview_a'; }, createTooltipArgs: {} }); } catch(e) {}
                         } else {
-                            const divStr = prompt('🏘️ FRANJA DE LOTES\n\n¿Cuántos lotes quieres crear?\n(Ej: 2, 10, 20 — alineados al rectángulo)', String(franjaDraftCount));
-                            if (divStr === null) { clearFranjaDraft(); refreshAllHotspots(); return; }
-                            const N = Math.max(2, Math.min(40, parseInt(divStr, 10) || franjaDraftCount));
+                            const built = buildFranjaScreenPointsSnapped(franjaCornerA.sx, franjaCornerA.sy, mock.clientX, mock.clientY, Math.max(1, franjaDraftCount));
+                            if (!built) { clearFranjaDraft(); alert('⚠️ No se pudo proyectar la franja. Ajusta la vista para que el área quede visible en pantalla.'); return; }
+                            let N = Math.max(1, franjaDraftCount);
+                            if (built.snap?.gapFill) {
+                                N = 1;
+                            } else {
+                                const divStr = prompt('🏘️ FRANJA DE LOTES\n\n¿Cuántos lotes quieres crear?\n(Mínimo 1 — usa 1 para rellenar un hueco)', String(franjaDraftCount));
+                                if (divStr === null) { clearFranjaDraft(); refreshAllHotspots(); return; }
+                                N = Math.max(1, Math.min(40, parseInt(divStr, 10) || franjaDraftCount));
+                            }
                             franjaDraftCount = N;
-                            const built = buildFranjaScreenPoints(franjaCornerA.sx, franjaCornerA.sy, mock.clientX, mock.clientY, N);
+                            const finalBuilt = buildFranjaScreenPointsSnapped(franjaCornerA.sx, franjaCornerA.sy, mock.clientX, mock.clientY, N);
                             clearFranjaDraft();
-                            if (!built) { alert('⚠️ No se pudo proyectar la franja. Ajusta la vista para que el área quede visible en pantalla.'); return; }
-                            crearFranjaLotesPremium(built.topPts, built.botPts, N);
+                            if (!finalBuilt) { alert('⚠️ No se pudo proyectar la franja. Ajusta la vista para que el área quede visible en pantalla.'); return; }
+                            finalizeNewFranja(finalBuilt.topPts, finalBuilt.botPts, N, finalBuilt.snap);
                             refreshAllHotspots(); saveToLocal(); flashScreenSuccess();
                         }
                         return;
