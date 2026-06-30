@@ -24,6 +24,7 @@
         g.lote-interactivo[data-status="reservado"] path { fill: rgba(var(--c-res), var(--o-res)); stroke: rgba(255, 255, 255, 0.8); stroke-width: var(--stroke-dyn); }
         g.lote-interactivo[data-status="vendido"] path { fill: rgba(var(--c-vend), var(--o-vend)); stroke: rgba(255, 255, 255, 0.4); stroke-width: var(--stroke-dyn); }
         g.lote-interactivo[data-status="no_disponible"] path { fill: rgba(var(--c-nodisp), var(--o-nodisp)); stroke: rgba(255, 255, 255, 0.5); stroke-width: var(--stroke-dyn); }
+        g.lote-interactivo path.linea-relleno-mp { fill: rgba(var(--c-disp), var(--o-disp)); }
         .linea-punteada { stroke-dasharray: 8 8; } .linea-neon { stroke: #06b6d4 !important; filter: drop-shadow(0 0 6px #06b6d4); }
         .linea-corte { stroke: #f59e0b !important; stroke-width: calc(var(--stroke-dyn) * 1.5) !important; stroke-dasharray: 6 6; filter: drop-shadow(0 0 8px #f59e0b); pointer-events: none; }
         .linea-relleno-mp { stroke: none !important; pointer-events: auto; }
@@ -157,8 +158,9 @@
         #inapp-modal.open .btn-volver-360 { opacity: 1 !important; transform: translateY(0); pointer-events: auto !important; transition-delay: 0.12s; }
         .btn-volver-360:hover { background: rgba(239, 68, 68, 0.95); border-color: rgba(255,255,255,0.35); box-shadow: 0 12px 30px rgba(239, 68, 68, 0.45); }
         #inapp-modal.mode-step-back { background: transparent !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; pointer-events: none; }
+        #inapp-modal.mode-step-back.open { opacity: 1 !important; visibility: visible !important; pointer-events: none !important; }
         #inapp-modal.mode-step-back .inapp-shell, #inapp-modal.mode-step-back .inapp-modal-tag { display: none !important; }
-        #inapp-modal.mode-step-back .btn-volver-360 { pointer-events: auto !important; }
+        #inapp-modal.mode-step-back .btn-volver-360 { pointer-events: auto !important; opacity: 1 !important; transform: translateY(0) !important; }
         body.inapp-viewer-open .premium-compass-container { z-index: 2147483646 !important; pointer-events: auto; }
         body.inapp-viewer-open .pnlm-controls, body.inapp-viewer-open .pnlm-fullscreen-toggle-button { opacity: 0 !important; pointer-events: none !important; visibility: hidden !important; }
         .inapp-modal-tag { position: fixed; top: max(18px, calc(env(safe-area-inset-top) + 2px)); left: 50%; transform: translateX(-50%); z-index: 2147483646; font-size: 9px; font-weight: 800; letter-spacing: 1.4px; text-transform: uppercase; color: rgba(255,255,255,0.72); pointer-events: none; opacity: 0; transition: opacity 0.25s; }
@@ -364,11 +366,13 @@
 
         function saveToLocal() { localStorage.setItem('masterplan360_autosave', JSON.stringify({ configProyecto: ConfigProyecto, origen: OrigenDrone, norte: NorteOffset, lotes: BaseDatosLotes, horizontes: PuntosHorizonte, trazos: allDrawnLines })); }
         function loadFromLocal() { const savedData = localStorage.getItem('masterplan360_autosave'); if (savedData) { try { const parsed = JSON.parse(savedData); if((parsed.lotes && parsed.lotes.length > 0) || (parsed.trazos && parsed.trazos.length > 0)) { ConfigProyecto = parsed.configProyecto || ConfigProyecto; OrigenDrone = parsed.origen || OrigenDrone; NorteOffset = parsed.norte || 0; BaseDatosLotes = parsed.lotes || BaseDatosLotes; PuntosHorizonte = parsed.horizontes || PuntosHorizonte; allDrawnLines = parsed.trazos || allDrawnLines; } } catch(e) {} } }
+        function getLocalTrazosFromStorage() { try { const savedData = localStorage.getItem('masterplan360_autosave'); if (!savedData) return []; const parsed = JSON.parse(savedData); return parsed.trazos || []; } catch(e) { return []; } }
         function countMasterplanFills(trazos) { return (trazos || []).filter(t => t.tipo === 'masterplan_fill').length; }
+        function countValidMasterplanFills(trazos) { return (trazos || []).filter(t => t.tipo === 'masterplan_fill' && t.puntos && t.puntos.length >= 3).length; }
         function pickBestTrazos(localTrazos, incomingTrazos) {
             if (!incomingTrazos || !incomingTrazos.length) return localTrazos || [];
             if (!localTrazos || !localTrazos.length) return incomingTrazos;
-            const localFills = countMasterplanFills(localTrazos), incomingFills = countMasterplanFills(incomingTrazos);
+            const localFills = countValidMasterplanFills(localTrazos), incomingFills = countValidMasterplanFills(incomingTrazos);
             if (incomingFills > localFills) return incomingTrazos;
             if (localFills > incomingFills) return localTrazos;
             return incomingTrazos.length >= localTrazos.length ? incomingTrazos : localTrazos;
@@ -381,7 +385,7 @@
         }
         function applyMasterplanFromAdmin(payload) {
             if (!payload) return;
-            const savedTrazos = [...allDrawnLines];
+            const savedTrazos = pickBestTrazos(getLocalTrazosFromStorage(), [...allDrawnLines]);
             if (payload.configProyecto) ConfigProyecto = { ...ConfigProyecto, ...payload.configProyecto };
             if (payload.origen !== undefined) OrigenDrone = payload.origen;
             if (payload.norte !== undefined) NorteOffset = payload.norte;
@@ -408,7 +412,22 @@
             window.addEventListener('message', (e) => { if (e.data && e.data.type === 'APPLY_MASTERPLAN_DATA') applyMasterplanFromAdmin(e.data.payload); });
         }
         async function fetchValorUFOnline() { try { const response = await fetch('https://mindicador.cl/api/uf', { cache: 'no-store' }); if (response.ok) { const data = await response.json(); if(data && data.serie && data.serie.length > 0) { UF_Online = data.serie[0].valor; return; } } } catch (error) {} }
-        async function fetchMasterData() { try { const response = await fetch('datos.json?v=' + new Date().getTime()); if(response.ok) { const data = await response.json(); ConfigProyecto = data.configProyecto || ConfigProyecto; OrigenDrone = data.origen || null; NorteOffset = data.norte || 0; BaseDatosLotes = data.lotes || []; PuntosHorizonte = data.horizontes || []; allDrawnLines = data.trazos || []; } else { loadFromLocal(); } } catch(e) { loadFromLocal(); } applyProjectConfig(); }
+        async function fetchMasterData() {
+            const localTrazos = getLocalTrazosFromStorage();
+            try {
+                const response = await fetch('datos.json?v=' + new Date().getTime());
+                if (response.ok) {
+                    const data = await response.json();
+                    ConfigProyecto = data.configProyecto || ConfigProyecto;
+                    OrigenDrone = data.origen || null;
+                    NorteOffset = data.norte || 0;
+                    BaseDatosLotes = data.lotes || [];
+                    PuntosHorizonte = data.horizontes || [];
+                    allDrawnLines = pickBestTrazos(localTrazos, data.trazos || []);
+                } else { loadFromLocal(); }
+            } catch(e) { loadFromLocal(); }
+            applyProjectConfig();
+        }
 
         let visor360, currentPinSizeIndex = 1, isIntroAnimating = true, isDevModeDrawActive = false, isDevModePinsActive = false, currentLineType = 'solida', currentLinePoints = [], currentPinTypeMap = 'disponible', currentTempLineId = 'temp_' + Date.now(), draggingVertex = null, pickedPin = null, snapCursor = null, ghostPin = null, snappedCoords = null, activePinArgs = null, isCreatingNewPin = false, isSnapToClose = false, isSnapToExisting = false, inAppCameraSnapshot = null, inAppNavStack = [], inAppNavStep = 0;
         const INAPP_BACK_ARROW_SVG = '<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>';
@@ -522,13 +541,14 @@
                     } else if (line.tipo === 'arista_solida' || line.tipo === 'arista_punteada') {
                         const pEdge = document.createElementNS("http://www.w3.org/2000/svg", "path"); pEdge.dataset.lineId = line.id; pEdge.setAttribute("class", line.tipo === 'arista_solida' ? 'linea-mp-perimetro' : 'linea-mp-interna'); lAristas.appendChild(pEdge); DOMCache.paths[line.id] = { base: [pEdge] };
                     } else {
-                        const g = document.createElementNS("http://www.w3.org/2000/svg", "g"); g.dataset.lineId = line.id; g.dataset.tipo = line.tipo; g.classList.add('lote-interactivo'); 
+                        const g = document.createElementNS("http://www.w3.org/2000/svg", "g"); g.dataset.lineId = line.id; g.dataset.tipo = line.tipo; g.classList.add('lote-interactivo'); g.setAttribute('data-status', 'disponible');
                         const pBase = document.createElementNS("http://www.w3.org/2000/svg", "path"); 
                         if (line.tipo === 'masterplan_fill') pBase.setAttribute("class", "linea-relleno-mp"); else if (line.tipo === 'neon') pBase.setAttribute("class", "linea-neon"); else if (line.tipo === 'punteada') pBase.setAttribute("class", "linea-punteada"); else if (line.tipo === 'cortar') pBase.setAttribute("class", "linea-corte"); else pBase.setAttribute("class", "linea-solida"); 
                         g.appendChild(pBase); g.addEventListener('mousedown', (e) => { if (currentLineType === 'eraser') { e.stopPropagation(); if (line.id === currentTempLineId) currentLinePoints = []; else { allDrawnLines = allDrawnLines.filter(l => l.id !== line.id); if (document.body.classList.contains('masterplan-premium-active')) refreshMasterplanAristas(); } refreshAllHotspots(); saveToLocal(); } }); g.addEventListener('touchstart', () => { g.classList.add('hovered'); }, {passive: true}); g.addEventListener('touchend', () => { setTimeout(() => g.classList.remove('hovered'), 1500); }, {passive: true}); lLotes.appendChild(g); DOMCache.paths[line.id] = { gNode: g, base: [pBase] };
                     }
                 } else { if (line.tipo === 'calle') { DOMCache.paths[line.id] = { base: Array.from(svg.querySelectorAll(`path[data-line-id="${line.id}"]`)) }; } else { const gNode = svg.querySelector(`g[data-line-id="${line.id}"]`); if (gNode) { DOMCache.paths[line.id] = { gNode: gNode, base: Array.from(gNode.querySelectorAll('path')) }; } } }
             });
+            if (!isIntroAnimating && visor360 && isSvgRenderAllowed()) updateSVGPaths();
         }
 
         function updateSVGPaths() {
@@ -596,7 +616,8 @@
                 if(renderer) { SmartGpuProfile.patchRenderer(renderer); const canvas = typeof renderer.getCanvas === 'function' ? renderer.getCanvas() : null; SmartGpuProfile.bindContextRecovery(canvas, () => retryPannellumSmart(panoramaBase, true) ); }
                 const pnlmUi = document.querySelector('.pnlm-ui'); const svg = document.getElementById('loteo-svg'); 
                 if (pnlmUi && svg && svg.parentNode !== pnlmUi) pnlmUi.insertBefore(svg, pnlmUi.firstChild); 
-                if (!isIntroAnimating) { if(renderer) hookRendererOverlay(renderer); syncSVGElements(); updateSVGPaths(); if (svg) svg.style.opacity = '1'; if (document.body.classList.contains('is-embedded')) { requestAnimationFrame(fitPremiumHeaderDock); refreshEmbeddedSvg(); notifyAdminEditorReady(); } } 
+                if (renderer) hookRendererOverlay(renderer);
+                if (!isIntroAnimating) { syncSVGElements(); updateSVGPaths(); if (svg) svg.style.opacity = '1'; if (document.body.classList.contains('is-embedded')) { requestAnimationFrame(fitPremiumHeaderDock); refreshEmbeddedSvg(); notifyAdminEditorReady(); } } 
             };
             visor360.on('error', () => { isWebGLSupported = false; viewerGpuReady = false; const spText = document.getElementById('splash-loading-text'); if (spText) spText.innerText = 'REINTENTO CON MODO LITE GPU...'; setTimeout(() => retryPannellumSmart(panoramaBase, true), 600); });
             visor360.on('load', handleLoad);
@@ -752,7 +773,7 @@
             const viewerConfig = { type: 'equirectangular', panorama: panoramaUrl, autoLoad: true, compass: false, hfov: 130, pitch: 60, yaw: -45, hotSpots: getHotspotsConfig(), fallback: 'loteo360.jpg', };
             if (touchDev) { viewerConfig.touchPanSpeedCoeffFactor = 1.35; viewerConfig.friction = 0.12; viewerConfig.showZoomCtrl = false; }
             visor360 = pannellum.viewer('panorama-container', viewerConfig);
-            if (touchDev) attachSmartViewerHandlers('loteo360.jpg');
+            attachSmartViewerHandlers('loteo360.jpg');
             if (!pannellumIntroBootstrapped) { pannellumIntroBootstrapped = true; runPannellumIntroBootstrap(); }
             if (!panoramaEventsBound) { panoramaEventsBound = true; bindPanoramaPointerEvents(); }
         }
@@ -784,10 +805,12 @@
                 clearInAppMedia();
                 modal.classList.remove('mode-360', 'mode-yt', 'mode-mp4');
                 modal.classList.add('mode-step-back');
+                document.body.classList.remove('inapp-viewer-open');
                 const pano = inAppNavStack[inAppNavStack.length - 1];
                 if (pano && visor360) setTimeout(() => { visor360.lookAt(pano.pitch, pano.yaw, pano.hfov, 700); }, 60);
                 inAppNavStep = 1;
                 updateInAppBackLabel();
+                if (!isIntroAnimating && visor360) { syncSVGElements(); updateSVGPaths(); refreshEmbeddedSvg(); }
                 return;
             }
             const snap = inAppNavStack.length >= 2 ? inAppNavStack[0] : (inAppNavStack[0] || inAppCameraSnapshot);
@@ -795,7 +818,7 @@
             document.body.classList.remove('inapp-viewer-open');
             setTimeout(() => { clearInAppMedia(); if(tag) tag.textContent = 'Tour Virtual'; setInAppBackLabel('Volver al entorno'); }, 300);
             inAppNavStack = []; inAppCameraSnapshot = null; inAppNavStep = 0;
-            if (snap && visor360) { setTimeout(() => { visor360.lookAt(snap.pitch, snap.yaw, snap.hfov, 900); }, 80); }
+            if (snap && visor360) { setTimeout(() => { visor360.lookAt(snap.pitch, snap.yaw, snap.hfov, 900); if (!isIntroAnimating) { syncSVGElements(); updateSVGPaths(); refreshEmbeddedSvg(); } }, 80); }
         }
         function extractYouTubeID(url) { if (!url) return null; const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/; const match = url.match(regExp); return (match && match[2].length === 11) ? match[2] : null; }
         window.openInAppViewer = function(e, url, label, opts) {
@@ -803,7 +826,7 @@
             if(e) { e.preventDefault(); e.stopPropagation(); }
             if(!url) return;
             const modal = document.getElementById('inapp-modal'); const content = document.getElementById('js-inapp-content'); const iframe = document.getElementById('inapp-iframe-player'); const video = document.getElementById('inapp-video-player'); const tag = document.getElementById('inapp-modal-tag');
-            if (visor360 && modal && !modal.classList.contains('open')) {
+            if (visor360 && modal && (!modal.classList.contains('open') || modal.classList.contains('mode-step-back'))) {
                 const current = { type: 'panorama', pitch: visor360.getPitch(), yaw: visor360.getYaw(), hfov: visor360.getHfov() };
                 inAppNavStack = [current];
                 inAppCameraSnapshot = { pitch: current.pitch, yaw: current.yaw, hfov: current.hfov };
