@@ -39,6 +39,9 @@
         .linea-borde-macro { stroke: rgba(255,255,255,0.94) !important; stroke-width: calc(var(--stroke-dyn) * 0.48) !important; stroke-linejoin: round; stroke-linecap: round; filter: drop-shadow(0 0 1px rgba(255,255,255,0.35)); pointer-events: none; }
         body.auto-macro-active g[data-tipo="borde-macro"] path { stroke-width: calc(var(--stroke-dyn) * 0.44) !important; }
         body.auto-macro-active g[data-tipo="divisoria"] path { stroke-width: calc(var(--stroke-dyn) * 0.38) !important; stroke-dasharray: 2.5 4.5; }
+        body.eraser-mode-active g[data-tipo="divisoria"] path, body.eraser-mode-active g[data-tipo="borde-macro"] path, body.eraser-mode-active g[data-tipo="franja-grupo"] path { pointer-events: auto !important; cursor: crosshair; }
+        body.eraser-mode-active .linea-corte { pointer-events: auto !important; cursor: crosshair; }
+        body.eraser-mode-active .vertex-marker { cursor: crosshair; }
         .linea-franja-preview { fill: rgba(16,185,129,0.07); stroke: rgba(255,255,255,0.5); stroke-width: calc(var(--stroke-dyn) * 0.55); stroke-dasharray: 5 4; pointer-events: none; }
         .vertex-marker.franja-corner-marker { background: #10b981 !important; border-color: #fff !important; box-shadow: 0 0 14px rgba(16,185,129,0.85); width: 16px !important; height: 16px !important; }
         .franja-lot-label { position: absolute; transform: translate(-50%,-50%); background: rgba(16,185,129,0.92); color: #fff; font-size: 10px; font-weight: 800; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.35); pointer-events: none; z-index: 99999; }
@@ -490,6 +493,123 @@
             ensureStitchedDivisorias();
             document.body.classList.toggle('auto-macro-active', allDrawnLines.some(l => isMacroEdgeType(l.tipo) || l.tipo === 'area-invisible'));
         }
+        function distPointToSegment2D(px, py, ax, ay, bx, by) {
+            const dx = bx - ax, dy = by - ay, len2 = dx * dx + dy * dy;
+            if (len2 < 0.0001) return Math.hypot(px - ax, py - ay);
+            let t = ((px - ax) * dx + (py - ay) * dy) / len2;
+            t = Math.max(0, Math.min(1, t));
+            return Math.hypot(px - (ax + t * dx), py - (ay + t * dy));
+        }
+        function pointInPolygonPY(p, y, pts) {
+            if (!pts || pts.length < 3) return false;
+            let inside = false;
+            for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+                const xi = pts[i][0], yi = pts[i][1], xj = pts[j][0], yj = pts[j][1];
+                if (((yi > y) !== (yj > y)) && (p < (xj - xi) * (y - yi) / (yj - yi + 1e-12) + xi)) inside = !inside;
+            }
+            return inside;
+        }
+        function findClosestLineAtPanorama(p, y, maxDist) {
+            let bestId = null, bestD = maxDist;
+            allDrawnLines.forEach(line => {
+                const pts = line.puntos;
+                if (!pts || pts.length < 1) return;
+                pts.forEach(pt => {
+                    const d = Math.hypot(pt[0] - p, pt[1] - y);
+                    if (d < bestD) { bestD = d; bestId = line.id; }
+                });
+                const closed = line.tipo !== 'calle' && line.tipo !== 'cortar' && line.tipo !== 'divisoria' && line.tipo !== 'borde-macro' && pts.length >= 3;
+                if (closed && pointInPolygonPY(p, y, pts)) {
+                    const cP = pts.reduce((s, pt) => s + pt[0], 0) / pts.length, cY = pts.reduce((s, pt) => s + pt[1], 0) / pts.length;
+                    const d = Math.hypot(cP - p, cY - y);
+                    if (d < bestD) { bestD = d; bestId = line.id; }
+                }
+                for (let i = 0; i < pts.length; i++) {
+                    if (line.tipo !== 'cortar' && !closed && i === pts.length - 1) break;
+                    const a = pts[i], b = pts[(i + 1) % pts.length];
+                    const d = distPointToSegment2D(p, y, a[0], a[1], b[0], b[1]);
+                    if (d < bestD) { bestD = d; bestId = line.id; }
+                }
+            });
+            return bestId;
+        }
+        function findClosestLineAtScreen(clientX, clientY, maxPx) {
+            const proj = getPanoramaScreenProjector();
+            if (!proj) return null;
+            const sx = clientX - DOMCache.viewport.left, sy = clientY - DOMCache.viewport.top;
+            let bestId = null, bestD = maxPx;
+            allDrawnLines.forEach(line => {
+                const pts = line.puntos;
+                if (!pts || pts.length < 1) return;
+                const closed = line.tipo !== 'calle' && line.tipo !== 'cortar' && line.tipo !== 'divisoria' && line.tipo !== 'borde-macro' && pts.length >= 3;
+                const scPts = pts.map(pt => proj.toScreen(pt[0], pt[1])).filter(Boolean);
+                if (closed && scPts.length >= 3) {
+                    let inside = false;
+                    for (let i = 0, j = scPts.length - 1; i < scPts.length; j = i++) {
+                        const xi = scPts[i][0], yi = scPts[i][1], xj = scPts[j][0], yj = scPts[j][1];
+                        if (((yi > sy) !== (yj > sy)) && (sx < (xj - xi) * (sy - yi) / (yj - yi + 1e-12) + xi)) inside = !inside;
+                    }
+                    if (inside) {
+                        const cx = scPts.reduce((s, p) => s + p[0], 0) / scPts.length;
+                        const cy = scPts.reduce((s, p) => s + p[1], 0) / scPts.length;
+                        const d = Math.hypot(sx - cx, sy - cy);
+                        if (d < bestD) { bestD = d; bestId = line.id; }
+                    }
+                }
+                for (let i = 0; i < pts.length; i++) {
+                    if (line.tipo !== 'cortar' && !closed && i === pts.length - 1) break;
+                    const p1 = proj.toScreen(pts[i][0], pts[i][1]), p2 = proj.toScreen(pts[(i + 1) % pts.length][0], pts[(i + 1) % pts.length][1]);
+                    if (!p1 || !p2) continue;
+                    const d = distPointToSegment2D(sx, sy, p1[0], p1[1], p2[0], p2[1]);
+                    if (d < bestD) { bestD = d; bestId = line.id; }
+                }
+            });
+            return bestId;
+        }
+        function applyEraserDelete(lineId) {
+            if (lineId === currentTempLineId) { currentLinePoints = []; return true; }
+            const line = allDrawnLines.find(l => l.id === lineId);
+            if (!line) return false;
+            const gid = line.tipo === 'franja-grupo' ? line.id : (line.franjaGrupo || null);
+            if (gid) {
+                allDrawnLines = allDrawnLines.filter(l => {
+                    if (l.id === gid || l.franjaGrupo === gid) return false;
+                    if (l.franjaStitch === gid || (l.franjaGrupo === gid)) return false;
+                    return true;
+                });
+                if (!allDrawnLines.some(l => l.tipo === 'franja-grupo' || isMacroEdgeType(l.tipo) || l.tipo === 'area-invisible')) {
+                    document.body.classList.remove('auto-macro-active');
+                }
+                return true;
+            }
+            allDrawnLines = allDrawnLines.filter(l => l.id !== lineId);
+            return true;
+        }
+        function runEraserAtEvent(mock) {
+            if (!visor360) return;
+            const coords = visor360.mouseEventToCoords(mock);
+            if (!coords) return;
+            const lineId = findClosestLineAtScreen(mock.clientX, mock.clientY, 32)
+                || findClosestLineAtPanorama(coords[0], coords[1], 8);
+            if (lineId) {
+                applyEraserDelete(lineId);
+                refreshAllHotspots(true);
+                saveToLocal();
+            }
+        }
+        function bindSvgEraser(el, lineId) {
+            if (!el || el.dataset.eraserBound) return;
+            el.dataset.eraserBound = '1';
+            const onErase = (e) => {
+                if (currentLineType !== 'eraser') return;
+                e.stopPropagation(); e.preventDefault();
+                applyEraserDelete(lineId);
+                refreshAllHotspots(true);
+                saveToLocal();
+            };
+            el.addEventListener('mousedown', onErase);
+            el.addEventListener('touchstart', onErase, { passive: false });
+        }
         function sortLotesAlongStrip(lotes) {
             return [...lotes].sort((a, b) => {
                 const ca = a.puntos.reduce((s, p, i) => i ? s + p[1] : p[1], 0) / a.puntos.length;
@@ -814,28 +934,92 @@
                     top: Math.min(tl[1], tr[1]), bottom: Math.max(bl[1], br[1]) };
             }).filter(Boolean);
         }
-        function snapFranjaScreenRect(ax, ay, bx, by) {
-            const FRANJA_SNAP_PX = 24;
-            let x1 = Math.min(ax, bx), x2 = Math.max(ax, bx), y1 = Math.min(ay, by), y2 = Math.max(ay, by);
-            const rects = getFranjaGrupoScreenRects();
-            if (!rects.length) return { x1, x2, y1, y2, gapFill: false };
-            const near = (v, t) => Math.abs(v - t) < FRANJA_SNAP_PX;
-            const snapVal = (v, edges) => {
-                let best = v, bd = FRANJA_SNAP_PX;
-                edges.forEach(e => { const d = Math.abs(v - e); if (d < bd) { bd = d; best = e; } });
-                return best;
-            };
-            const allX = [], allY = [];
-            rects.forEach(r => { allX.push(r.left, r.right); allY.push(r.top, r.bottom); });
-            x1 = snapVal(x1, allX); x2 = snapVal(x2, allX); y1 = snapVal(y1, allY); y2 = snapVal(y2, allY);
-            let gapFill = false, upperGid = null, lowerGid = null;
-            rects.forEach(r => {
-                if (near(x1, r.left) && near(x2, r.right)) { x1 = r.left; x2 = r.right; }
-                if (near(y1, r.bottom)) { y1 = r.bottom; upperGid = r.gid; }
-                if (near(y2, r.top)) { y2 = r.top; lowerGid = r.gid; }
+        function rectsSameWidth(a, b, px) {
+            return Math.abs(a.left - b.left) < px && Math.abs(a.right - b.right) < px;
+        }
+        function getAllStripSnapTargets() {
+            const targets = getFranjaGrupoScreenRects();
+            const orphanFills = allDrawnLines.filter(l => l.tipo === 'area-invisible' && !l.franjaGrupo);
+            if (!orphanFills.length) return targets;
+            const proj = getPanoramaScreenProjector();
+            if (!proj) return targets;
+            const sc = [];
+            orphanFills.forEach(l => l.puntos.forEach(p => { const s = proj.toScreen(p[0], p[1]); if (s) sc.push(s); }));
+            if (sc.length < 4) return targets;
+            const left = Math.min(...sc.map(s => s[0])), right = Math.max(...sc.map(s => s[0]));
+            const top = Math.min(...sc.map(s => s[1])), bottom = Math.max(...sc.map(s => s[1]));
+            targets.push({
+                gid: '__orphan_macro__', grp: null, orphan: true, fills: orphanFills,
+                left, right, top, bottom,
+                tl: [left, top], tr: [right, top], br: [right, bottom], bl: [left, bottom]
             });
-            if (upperGid && lowerGid && upperGid !== lowerGid && x2 - x1 > 4 && y2 - y1 > 4) gapFill = true;
-            return { x1, x2, y1, y2, gapFill, upperGid, lowerGid };
+            return targets;
+        }
+        function resolveOrphanToFranjaGid(target) {
+            if (!target?.orphan || !target.fills?.length) return target?.gid || null;
+            const orphanIds = new Set(target.fills.map(f => f.id));
+            const linked = allDrawnLines.find(l => l.tipo === 'franja-grupo' &&
+                allDrawnLines.some(c => c.franjaGrupo === l.id && orphanIds.has(c.id)));
+            if (linked) return linked.id;
+            promoteClusterToFranja([...target.fills]);
+            return allDrawnLines.filter(l => l.tipo === 'franja-grupo').slice(-1)[0]?.id || null;
+        }
+        function snapFranjaScreenRect(ax, ay, bx, by) {
+            const SNAP = 52;
+            let x1 = Math.min(ax, bx), x2 = Math.max(ax, bx), y1 = Math.min(ay, by), y2 = Math.max(ay, by);
+            const cx = (x1 + x2) / 2, cy = (y1 + y2) / 2;
+            const targets = getAllStripSnapTargets();
+            if (!targets.length) return { x1, x2, y1, y2, gapFill: false };
+            let bestCol = null, bestColD = SNAP * 3;
+            targets.forEach(t => {
+                const d = Math.abs(x1 - t.left) + Math.abs(x2 - t.right);
+                const dc = Math.abs(cx - (t.left + t.right) / 2);
+                if (dc < bestColD) { bestColD = dc; bestCol = t; }
+            });
+            if (bestCol && bestColD < SNAP * 3) { x1 = bestCol.left; x2 = bestCol.right; }
+            const colTargets = targets.filter(t => rectsSameWidth({ left: x1, right: x2 }, t, SNAP * 2));
+            let upper = null, lower = null;
+            let gapFill = false, upperGid = null, lowerGid = null;
+            const sortedCol = [...colTargets].sort((a, b) => a.top - b.top);
+            for (let i = 0; i < sortedCol.length - 1; i++) {
+                const u = sortedCol[i], l = sortedCol[i + 1];
+                if (u.gid === l.gid) continue;
+                const gapH = l.top - u.bottom;
+                if (gapH <= 3 || gapH >= 600) continue;
+                const centerInGap = cy >= u.bottom - SNAP && cy <= l.top + SNAP;
+                const crossesGap = y1 <= u.bottom + SNAP * 1.5 && y2 >= l.top - SNAP * 1.5;
+                if (centerInGap || crossesGap) {
+                    upper = u; lower = l;
+                    y1 = u.bottom; y2 = l.top; x1 = u.left; x2 = u.right;
+                    gapFill = true;
+                    upperGid = u.gid === '__orphan_macro__' ? null : u.gid;
+                    lowerGid = l.gid === '__orphan_macro__' ? null : l.gid;
+                    break;
+                }
+            }
+            if (!gapFill) {
+                colTargets.forEach(t => {
+                    if (t.bottom <= cy + SNAP * 1.5 && (!upper || t.bottom > upper.bottom)) upper = t;
+                    if (t.top >= cy - SNAP * 1.5 && (!lower || t.top < lower.top)) lower = t;
+                });
+            }
+            if (!gapFill) {
+                const near = (v, t) => Math.abs(v - t) < SNAP;
+                const snapVal = (v, edges) => {
+                    let best = v, bd = SNAP;
+                    edges.forEach(e => { const d = Math.abs(v - e); if (d < bd) { bd = d; best = e; } });
+                    return best;
+                };
+                const allX = [], allY = [];
+                colTargets.forEach(r => { allX.push(r.left, r.right); allY.push(r.top, r.bottom); });
+                x1 = snapVal(x1, allX); x2 = snapVal(x2, allX); y1 = snapVal(y1, allY); y2 = snapVal(y2, allY);
+                colTargets.forEach(r => {
+                    if (near(x1, r.left) && near(x2, r.right)) { x1 = r.left; x2 = r.right; }
+                    if (near(y1, r.bottom)) { y1 = r.bottom; if (r.gid !== '__orphan_macro__') upperGid = r.gid; }
+                    if (near(y2, r.top)) { y2 = r.top; if (r.gid !== '__orphan_macro__') lowerGid = r.gid; }
+                });
+            }
+            return { x1, x2, y1, y2, gapFill, upperGid, lowerGid, upperTarget: upper, lowerTarget: lower };
         }
         function buildFranjaScreenPointsSnapped(ax, ay, bx, by, N) {
             const s = snapFranjaScreenRect(ax, ay, bx, by);
@@ -854,35 +1038,104 @@
             return (d11 < tol && d22 < tol) || (d12 < tol && d21 < tol);
         }
         function ensureStitchedDivisorias() {
-            const grupos = allDrawnLines.filter(l => l.tipo === 'franja-grupo');
-            const proj = getPanoramaScreenProjector();
-            if (!proj || grupos.length < 2) return;
-            const tol = 0.12;
-            for (let i = 0; i < grupos.length; i++) {
-                for (let j = i + 1; j < grupos.length; j++) {
-                    const a = grupos[i], b = grupos[j];
-                    const [aTL, aTR, aBR, aBL] = a.puntos, [bTL, bTR, bBR, bBL] = b.puntos;
-                    let shared = null, upper = null, lower = null;
-                    if (edgeMatchesLine(aBL, aBR, bTL, bTR, tol)) { shared = [aBL, aBR]; upper = a; lower = b; }
-                    else if (edgeMatchesLine(bBL, bBR, aTL, aTR, tol)) { shared = [bBL, bBR]; upper = b; lower = a; }
-                    if (!shared) continue;
+            const rects = getFranjaGrupoScreenRects();
+            if (rects.length < 2) return;
+            const SNAP = 40;
+            for (let i = 0; i < rects.length; i++) {
+                for (let j = i + 1; j < rects.length; j++) {
+                    const a = rects[i], b = rects[j];
+                    if (!rectsSameWidth(a, b, SNAP)) continue;
+                    let upper = null, lower = null;
+                    if (Math.abs(a.bottom - b.top) < SNAP) { upper = a; lower = b; }
+                    else if (Math.abs(b.bottom - a.top) < SNAP) { upper = b; lower = a; }
+                    else continue;
+                    const proj = getPanoramaScreenProjector();
+                    if (!proj) continue;
+                    const p1 = proj.toPY(upper.bl[0], upper.bottom), p2 = proj.toPY(upper.br[0], upper.bottom);
+                    if (!p1 || !p2) continue;
+                    const tol = 0.15;
                     allDrawnLines = allDrawnLines.filter(l => {
                         if (!l.franjaGrupo || l.tipo !== 'borde-macro') return true;
-                        if (l.franjaGrupo !== upper.id && l.franjaGrupo !== lower.id) return true;
+                        if (l.franjaGrupo !== upper.gid && l.franjaGrupo !== lower.gid) return true;
                         if (l.puntos.length < 2) return true;
-                        return !edgeMatchesLine(l.puntos[0], l.puntos[1], shared[0], shared[1], tol);
+                        return !edgeMatchesLine(l.puntos[0], l.puntos[1], p1, p2, tol);
                     });
                     const exists = allDrawnLines.some(l => l.tipo === 'divisoria' && l.puntos.length >= 2 &&
-                        edgeMatchesLine(l.puntos[0], l.puntos[1], shared[0], shared[1], tol));
+                        edgeMatchesLine(l.puntos[0], l.puntos[1], p1, p2, tol));
                     if (!exists) {
                         allDrawnLines.push({
                             id: 'div_stitch_' + Date.now() + '_' + i + '_' + j,
-                            tipo: 'divisoria', puntos: [shared[0].map(v => v), shared[1].map(v => v)],
-                            franjaGrupo: upper.id, franjaStitch: lower.id
+                            tipo: 'divisoria', puntos: [p1.map(v => v), p2.map(v => v)],
+                            franjaGrupo: upper.gid, franjaStitch: lower.gid
                         });
                     }
                 }
             }
+        }
+        function mergeVerticalFranjaChain(gids) {
+            const unique = [...new Set(gids.filter(Boolean))];
+            if (unique.length < 2) return false;
+            const strips = unique.map(id => allDrawnLines.find(l => l.id === id && l.tipo === 'franja-grupo')).filter(Boolean);
+            if (strips.length < 2) return false;
+            const proj = getPanoramaScreenProjector();
+            if (!proj) return false;
+            const metas = strips.map(s => {
+                const r = getFranjaGrupoScreenRects().find(x => x.gid === s.id);
+                return { s, r, n: s.franjaCount || 1, h: r ? r.bottom - r.top : 1 };
+            }).filter(m => m.r);
+            if (metas.length < 2) return false;
+            metas.sort((a, b) => a.r.top - b.r.top);
+            const allSingle = metas.every(m => m.n === 1);
+            const keep = metas[0].s;
+            const totalH = metas.reduce((sum, m) => sum + m.h, 0);
+            const splits = [0];
+            let acc = 0;
+            for (let i = 0; i < metas.length - 1; i++) {
+                acc += metas[i].h;
+                splits.push(acc / totalH);
+            }
+            splits.push(1);
+            const topR = metas[0].r, botR = metas[metas.length - 1].r;
+            const nTL = proj.toPY(topR.tl[0], topR.tl[1]), nTR = proj.toPY(topR.tr[0], topR.tr[1]);
+            const nBR = proj.toPY(botR.br[0], botR.br[1]), nBL = proj.toPY(botR.bl[0], botR.bl[1]);
+            if (!nTL || !nTR || !nBR || !nBL) return false;
+            metas.slice(1).forEach(m => {
+                allDrawnLines = allDrawnLines.filter(l => l.franjaGrupo !== m.s.id && l.id !== m.s.id);
+            });
+            keep.puntos = [nTL, nTR, nBR, nBL];
+            keep.franjaCount = allSingle ? metas.length : metas.reduce((sum, m) => sum + m.n, 0);
+            keep.franjaSplits = splits.length === keep.franjaCount + 1 ? splits : Array.from({ length: keep.franjaCount + 1 }, (_, i) => i / keep.franjaCount);
+            rebuildFranjaGroup(keep.id);
+            return true;
+        }
+        function tryMergeVerticalHilera(triggerGid, snap) {
+            let upperGid = snap?.upperGid, lowerGid = snap?.lowerGid;
+            if (snap?.upperTarget?.orphan) upperGid = resolveOrphanToFranjaGid(snap.upperTarget) || upperGid;
+            if (snap?.lowerTarget?.orphan) lowerGid = resolveOrphanToFranjaGid(snap.lowerTarget) || lowerGid;
+            const rects = getFranjaGrupoScreenRects();
+            const trigger = rects.find(r => r.gid === triggerGid);
+            if (!trigger) return false;
+            const chain = rects.filter(r => rectsSameWidth(r, trigger, 55)).sort((a, b) => a.top - b.top);
+            if (chain.length < 2) return false;
+            if (snap?.gapFill) {
+                const ids = [upperGid, triggerGid, lowerGid].filter((id, i, arr) => id && arr.indexOf(id) === i);
+                if (ids.length >= 2 && mergeVerticalFranjaChain(ids)) return true;
+            }
+            let touching = [chain[0].gid];
+            for (let i = 1; i < chain.length; i++) {
+                if (chain[i].top - chain[i - 1].bottom < 55) touching.push(chain[i].gid);
+                else break;
+            }
+            for (let i = 0; i < chain.length; i++) {
+                if (chain[i].gid === triggerGid) {
+                    const start = Math.max(0, i - 1), end = Math.min(chain.length, i + 2);
+                    const slice = chain.slice(start, end);
+                    if (slice.length >= 2 && slice.every((r, idx) => idx === 0 || r.top - slice[idx - 1].bottom < 80)) {
+                        return mergeVerticalFranjaChain(slice.map(r => r.gid));
+                    }
+                }
+            }
+            return mergeVerticalFranjaChain(touching.length >= 2 ? touching : chain.map(r => r.gid));
         }
         function mergeFranjasHorizontal(keepGid, mergeGid, mergeOnLeft) {
             const keep = allDrawnLines.find(l => l.id === keepGid && l.tipo === 'franja-grupo');
@@ -943,11 +1196,16 @@
             });
         }
         function finalizeNewFranja(topPts, botPts, N, snap) {
+            if (snap?.gapFill && snap.upperTarget?.orphan) snap.upperGid = resolveOrphanToFranjaGid(snap.upperTarget) || snap.upperGid;
+            if (snap?.gapFill && snap.lowerTarget?.orphan) snap.lowerGid = resolveOrphanToFranjaGid(snap.lowerTarget) || snap.lowerGid;
             const gid = 'franja_' + Date.now();
             const corners = [topPts[0], topPts[N], botPts[N], botPts[0]].map(p => [...p]);
             allDrawnLines.push({ id: gid, tipo: 'franja-grupo', franjaCount: N, puntos: corners });
             rebuildFranjaGroup(gid);
-            if (!tryMergeFranjaHorizontal(gid)) alignFranjaVerticalNeighbors(gid);
+            if (!tryMergeFranjaHorizontal(gid)) {
+                alignFranjaVerticalNeighbors(gid);
+                tryMergeVerticalHilera(gid, snap);
+            }
             ensureStitchedDivisorias();
             document.body.classList.add('auto-macro-active');
             return gid;
@@ -1057,17 +1315,17 @@
                 if (existingElements.length === 0) {
                     if (line.tipo === 'calle') {
                         const pBorde = document.createElementNS("http://www.w3.org/2000/svg", "path"); pBorde.setAttribute("class", "linea-calle-borde"); pBorde.dataset.lineId = line.id; lBordes.appendChild(pBorde);
-                        const pAsfalto = document.createElementNS("http://www.w3.org/2000/svg", "path"); pAsfalto.setAttribute("class", "linea-calle-asfalto"); pAsfalto.dataset.lineId = line.id; pAsfalto.addEventListener('mousedown', (e) => { if (currentLineType === 'eraser') { e.stopPropagation(); if (line.id === currentTempLineId) currentLinePoints = []; else allDrawnLines = allDrawnLines.filter(l => l.id !== line.id); refreshAllHotspots(); saveToLocal(); } }); lAsfalto.appendChild(pAsfalto); DOMCache.paths[line.id] = { base: [pBorde, pAsfalto] };
+                        const pAsfalto = document.createElementNS("http://www.w3.org/2000/svg", "path"); pAsfalto.setAttribute("class", "linea-calle-asfalto"); pAsfalto.dataset.lineId = line.id; bindSvgEraser(pAsfalto, line.id); lAsfalto.appendChild(pAsfalto); DOMCache.paths[line.id] = { base: [pBorde, pAsfalto] };
                     } else if (line.tipo === 'divisoria' || line.tipo === 'borde-macro') {
                         const gMacro = document.createElementNS("http://www.w3.org/2000/svg", "g"); gMacro.dataset.lineId = line.id; gMacro.dataset.tipo = line.tipo;
                         const pMacro = document.createElementNS("http://www.w3.org/2000/svg", "path");
                         pMacro.setAttribute("class", line.tipo === 'divisoria' ? 'linea-divisoria' : 'linea-borde-macro');
-                        gMacro.appendChild(pMacro); lAristas.appendChild(gMacro); DOMCache.paths[line.id] = { base: [pMacro] };
+                        gMacro.appendChild(pMacro); bindSvgEraser(gMacro, line.id); bindSvgEraser(pMacro, line.id); lAristas.appendChild(gMacro); DOMCache.paths[line.id] = { base: [pMacro] };
                     } else if (line.tipo === 'franja-grupo') {
                         const gGrp = document.createElementNS("http://www.w3.org/2000/svg", "g"); gGrp.dataset.lineId = line.id; gGrp.dataset.tipo = 'franja-grupo';
                         const pGrp = document.createElementNS("http://www.w3.org/2000/svg", "path");
                         pGrp.setAttribute("class", "linea-franja-preview");
-                        gGrp.appendChild(pGrp); lLotes.appendChild(gGrp); DOMCache.paths[line.id] = { base: [pGrp] };
+                        gGrp.appendChild(pGrp); bindSvgEraser(gGrp, line.id); bindSvgEraser(pGrp, line.id); lLotes.appendChild(gGrp); DOMCache.paths[line.id] = { base: [pGrp] };
                     } else if (line.tipo === 'franja-preview' || line.tipo === 'franja-preview-div') {
                         const gPrev = document.createElementNS("http://www.w3.org/2000/svg", "g"); gPrev.dataset.lineId = line.id; gPrev.dataset.tipo = line.tipo;
                         const pPrev = document.createElementNS("http://www.w3.org/2000/svg", "path");
@@ -1078,7 +1336,7 @@
                         const pBase = document.createElementNS("http://www.w3.org/2000/svg", "path"); 
                         if (line.tipo === 'masterplan_fill') pBase.setAttribute("class", "linea-relleno-mp"); else if (line.tipo === 'neon') pBase.setAttribute("class", "linea-neon"); else if (line.tipo === 'punteada') pBase.setAttribute("class", "linea-punteada"); else if (line.tipo === 'cortar') pBase.setAttribute("class", "linea-corte"); else if (line.tipo === 'area-invisible') pBase.setAttribute("class", "linea-area-fill"); else pBase.setAttribute("class", "linea-solida");
                         if (line.tipo === 'area-invisible') g.setAttribute('data-status', 'disponible');
-                        g.appendChild(pBase); g.addEventListener('mousedown', (e) => { if (currentLineType === 'eraser') { e.stopPropagation(); if (line.id === currentTempLineId) currentLinePoints = []; else allDrawnLines = allDrawnLines.filter(l => l.id !== line.id); refreshAllHotspots(); saveToLocal(); } }); g.addEventListener('touchstart', () => { g.classList.add('hovered'); }, {passive: true}); g.addEventListener('touchend', () => { setTimeout(() => g.classList.remove('hovered'), 1500); }, {passive: true}); lLotes.appendChild(g); DOMCache.paths[line.id] = { gNode: g, base: [pBase] };
+                        g.appendChild(pBase); bindSvgEraser(g, line.id); bindSvgEraser(pBase, line.id); g.addEventListener('touchstart', () => { g.classList.add('hovered'); }, {passive: true}); g.addEventListener('touchend', () => { setTimeout(() => g.classList.remove('hovered'), 1500); }, {passive: true}); lLotes.appendChild(g); DOMCache.paths[line.id] = { gNode: g, base: [pBase] };
                     }
                 } else {
                     if (line.tipo === 'calle') {
@@ -1089,6 +1347,8 @@
                             gNode.dataset.tipo = line.tipo;
                             const pBase = gNode.querySelector('path');
                             if (pBase) pBase.setAttribute('class', getPathClassForLine(line));
+                            bindSvgEraser(gNode, line.id);
+                            if (pBase) bindSvgEraser(pBase, line.id);
                             DOMCache.paths[line.id] = { gNode: gNode, base: Array.from(gNode.querySelectorAll('path')) };
                         }
                     }
@@ -1223,7 +1483,7 @@
                 if (timeDiff < 500 && moveDist < 10) {
                     if (Date.now() - lastClickTime < 300 && isDevModeDrawActive && currentLineType !== 'franja') { anclarTrazoActivo(); lastClickTime = 0; return; }
                     lastClickTime = Date.now();
-                    if (isDevModeDrawActive && currentLineType === 'eraser') { const coords = visor360.mouseEventToCoords(mock); if (!coords) return; let p = coords[0], y = coords[1]; let lineToDelete = null; let minDist = 3.5; allDrawnLines.forEach((line) => { line.puntos.forEach((pt) => { let dist = Math.sqrt(Math.pow(pt[0] - p, 2) + Math.pow(pt[1] - y, 2)); if (dist < minDist) { minDist = dist; lineToDelete = line.id; } }); }); if (lineToDelete) { allDrawnLines = allDrawnLines.filter((l) => l.id !== lineToDelete); refreshAllHotspots(); saveToLocal(); } return; }
+                    if (isDevModeDrawActive && currentLineType === 'eraser') { runEraserAtEvent(mock); return; }
                     if (isDevModeDrawActive && currentLineType === 'franja') {
                         if (!franjaCornerA) {
                             const coords = visor360.mouseEventToCoords(mock); if (!coords) return;
@@ -1455,7 +1715,7 @@
             document.getElementById('btn-straighten-franja')?.addEventListener('click', enderezarFranjas);
             document.getElementById('btn-eraser')?.addEventListener('click', (e) => { setDrawMode('eraser', e.target); });
             
-            function setDrawMode(mode, targetBtn) { if (mode !== 'franja') clearFranjaDraft(); currentLineType = mode; document.querySelectorAll('#dev-toolbar-draw .dev-btn:not(.action):not(.export):not(.export-ai):not(.nuke)').forEach(b => b.classList.remove('active')); if(targetBtn) targetBtn.classList.add('active'); }
+            function setDrawMode(mode, targetBtn) { if (mode !== 'franja') clearFranjaDraft(); currentLineType = mode; document.body.classList.toggle('eraser-mode-active', mode === 'eraser'); document.querySelectorAll('#dev-toolbar-draw .dev-btn:not(.action):not(.export):not(.export-ai):not(.nuke)').forEach(b => b.classList.remove('active')); if(targetBtn) targetBtn.classList.add('active'); }
             
             document.getElementById('btn-undo-point')?.addEventListener('click', () => { if (currentLinePoints.length > 0) { currentLinePoints.pop(); refreshAllHotspots(); } });
 
@@ -1513,6 +1773,13 @@
             };
             hotSpotDiv.addEventListener('mousedown', startDrag);
             hotSpotDiv.addEventListener('touchstart', startDrag, { passive: false });
+            hotSpotDiv.addEventListener('mousedown', (e) => {
+                if (currentLineType !== 'eraser') return;
+                e.stopPropagation(); e.preventDefault();
+                applyEraserDelete(args.gid);
+                refreshAllHotspots(true);
+                saveToLocal();
+            }, true);
         }
 
         function renderHiddenVertex(hotSpotDiv, args) { 
@@ -1521,14 +1788,23 @@
             if (!DOMCache.markers[args.lineId]) DOMCache.markers[args.lineId] = { base: [] }; DOMCache.markers[args.lineId].base[args.idx] = hotSpotDiv; 
             if (args.lineId === currentTempLineId) { hotSpotDiv.classList.add('drawing-node'); }
             if (args.lineId === currentTempLineId && args.idx === 0 && currentLinePoints.length >= 3 && currentLineType !== 'cortar' && currentLineType !== 'eraser') { hotSpotDiv.classList.add('origin-vertex'); }
+            const onEraseVertex = (e) => {
+                if (currentLineType !== 'eraser') return;
+                e.stopPropagation(); e.preventDefault();
+                applyEraserDelete(args.lineId);
+                refreshAllHotspots(true);
+                saveToLocal();
+            };
+            hotSpotDiv.addEventListener('mousedown', onEraseVertex);
+            hotSpotDiv.addEventListener('touchstart', onEraseVertex, { passive: false });
             if (args.isGuide && currentLineType !== 'eraser' && currentLineType !== 'cortar' && args.type !== 'divisoria' && args.type !== 'borde-macro') { 
                 const startDragGuide = (e) => { e.stopPropagation(); e.preventDefault(); hotSpotDiv.classList.add('is-dragging'); draggingVertex = { lineId: args.lineId, idx: args.idx, el: hotSpotDiv, hsId: args.hsId }; }; 
                 hotSpotDiv.addEventListener('mousedown', startDragGuide); hotSpotDiv.addEventListener('touchstart', startDragGuide, {passive: false}); 
             } 
         }
 
-        function refreshAllHotspots() {
-            if(!visor360) return; ensureFranjaIntegrity(); DOMCache.markers = {}; const currentSpots = visor360.getConfig().hotSpots || [];
+        function refreshAllHotspots(skipIntegrity) {
+            if(!visor360) return; if (!skipIntegrity) ensureFranjaIntegrity(); DOMCache.markers = {}; const currentSpots = visor360.getConfig().hotSpots || [];
             for (let i = currentSpots.length - 1; i >= 0; i--) { if(currentSpots[i].id) { try { visor360.removeHotSpot(currentSpots[i].id); } catch(err) {} } }
             document.querySelectorAll('.pnlm-hotspot-base').forEach(el => { try { if(el.parentNode) el.parentNode.removeChild(el); } catch(err) {} });
             setTimeout(() => { getHotspotsConfig().forEach(hs => { try { visor360.addHotSpot(hs); } catch(err) {} }); syncSVGElements(); updateSVGPaths(); renderSidebarList(BaseDatosLotes); }, 10);
