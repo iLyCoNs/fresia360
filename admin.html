@@ -1149,6 +1149,7 @@
                             <div class="lote-header-info">
                                 <input type="text" class="lote-num-input" data-id="${lote.id}" data-field="numero" value="${lote.numero || ''}" title="Número del Lote">
                                 <div class="pin-badge badge-lote">LOTE</div>
+                                ${lote.videoUrl ? '<div class="pin-badge badge-360" style="font-size:10px;">360° ACTIVO</div>' : ''}
                             </div>
                             <div class="lote-details">
                                 <div class="lote-field col-span-2">
@@ -1196,8 +1197,8 @@
                                 </div>
 
                                 <div class="lote-field col-span-full">
-                                    <label>URL Recorrido Virtual / YouTube</label>
-                                    <input type="text" data-id="${lote.id}" data-field="videoUrl" value="${lote.videoUrl || ''}" placeholder="Opcional. Ej: https://youtu.be/...">
+                                    <label>Recorrido Virtual 360° del Lote <span style="color:#BF5AF2;font-size:11px;">(activa leyenda + latido en el mapa)</span></label>
+                                    <input type="text" data-id="${lote.id}" data-field="videoUrl" value="${lote.videoUrl || ''}" placeholder="Opcional. Ej: https://youtu.be/... o tour 360°">
                                 </div>
 
                                 <div class="lote-field col-span-full" style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 16px; margin-top: 8px;">
@@ -1382,6 +1383,7 @@
                     const result = await response.json();
                     shaActual = result.content.sha; 
                     mostrarToast("Panel Actualizado Exitosamente", true);
+                    pushMasterplanToEditor();
                 } else {
                     const err = await response.json();
                     alert("⛔ Error al guardar: " + err.message);
@@ -1421,6 +1423,37 @@
             location.reload();
         }
 
+        function getEditorPayloadForVista(vista) {
+            if (vista === 'suelo') {
+                return {
+                    vista: 'suelo',
+                    configProyecto: masterData.configProyecto || {},
+                    origen: masterData.origen || null,
+                    norte: masterData.norteSuelo ?? 0,
+                    lotes: masterData.lotesSuelo || [],
+                    horizontes: masterData.horizontesSuelo || [],
+                    trazos: masterData.trazosSuelo || []
+                };
+            }
+            return {
+                vista: 'aereo',
+                configProyecto: masterData.configProyecto || {},
+                origen: masterData.origen || null,
+                norte: masterData.norte ?? 0,
+                lotes: masterData.lotes || [],
+                horizontes: masterData.horizontes || [],
+                trazos: masterData.trazos || []
+            };
+        }
+
+        function pushMasterplanToEditor() {
+            const iframe = document.getElementById('iframe-editor-360');
+            if (!iframe || !iframe.contentWindow) return;
+            try {
+                iframe.contentWindow.postMessage({ type: 'APPLY_MASTERPLAN_DATA', payload: getEditorPayloadForVista(editorVistaActual) }, '*');
+            } catch(e) {}
+        }
+
         function getEditorIframeSrc(vista) {
             const file = vista === 'suelo' ? 'suelo.html' : 'index.html';
             return `${file}?admin=true&v=${Date.now()}`;
@@ -1436,7 +1469,7 @@
             if (loader) loader.style.display = 'flex';
             if (iframe) {
                 iframe.src = getEditorIframeSrc(vista);
-                iframe.onload = () => { setTimeout(() => { if (loader) loader.style.display = 'none'; }, 900); };
+                iframe.onload = () => { setTimeout(() => { pushMasterplanToEditor(); if (loader) loader.style.display = 'none'; }, 900); };
             }
         }
 
@@ -1451,12 +1484,18 @@
                 iframe.src = getEditorIframeSrc(editorVistaActual);
                 
                 iframe.onload = () => {
-                    setTimeout(() => { if (loader) loader.style.display = 'none'; }, 1000);
+                    setTimeout(() => { pushMasterplanToEditor(); if (loader) loader.style.display = 'none'; }, 1000);
                 };
             }
         }
 
         window.addEventListener("message", (event) => {
+            if (event.data && event.data.type === "EDITOR_READY") {
+                if (!event.data.vista || event.data.vista === editorVistaActual) {
+                    pushMasterplanToEditor();
+                }
+                return;
+            }
             if (event.data && event.data.type === "SAVE_MASTERPLAN_DATA") {
                 console.log("¡Datos espaciales recibidos del motor 3D!");
                 
@@ -1479,6 +1518,7 @@
                     renderUI();
                     mostrarToast("Geometría aérea recibida. Subiendo a la bóveda...", true);
                     guardarCambios();
+                    pushMasterplanToEditor();
                 }
             }
         });
