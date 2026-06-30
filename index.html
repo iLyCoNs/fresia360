@@ -31,11 +31,15 @@
         g[data-tipo="area-invisible"] path { stroke: transparent !important; fill-opacity: 1; }
         .linea-area-fill { stroke: transparent !important; pointer-events: auto; }
         g[data-tipo="area-invisible"].lote-interactivo:hover path, g[data-tipo="area-invisible"].lote-interactivo.hovered path { stroke: transparent !important; }
+        g.lote-interactivo path.linea-relleno-mp { fill: rgba(var(--c-disp), var(--o-disp)); stroke: none !important; pointer-events: auto; }
+        g.lote-interactivo.hovered path.linea-relleno-mp, g.lote-interactivo:hover path.linea-relleno-mp { fill: transparent !important; stroke: #ffffff !important; stroke-width: var(--stroke-dyn-hover) !important; filter: drop-shadow(0 0 8px rgba(255,255,255,0.9)); }
         .linea-borde-macro { stroke: rgba(255,255,255,0.94) !important; stroke-width: calc(var(--stroke-dyn) * 0.48) !important; stroke-linejoin: round; stroke-linecap: round; filter: drop-shadow(0 0 1px rgba(255,255,255,0.35)); pointer-events: none; }
         body.auto-macro-active g[data-tipo="borde-macro"] path { stroke-width: calc(var(--stroke-dyn) * 0.44) !important; }
         body.auto-macro-active g[data-tipo="divisoria"] path { stroke-width: calc(var(--stroke-dyn) * 0.38) !important; stroke-dasharray: 2.5 4.5; }
         .linea-franja-preview { fill: rgba(16,185,129,0.07); stroke: rgba(255,255,255,0.5); stroke-width: calc(var(--stroke-dyn) * 0.55); stroke-dasharray: 5 4; pointer-events: none; }
-        .vertex-marker.franja-corner-marker { background: #10b981 !important; border-color: #fff !important; box-shadow: 0 0 14px rgba(16,185,129,0.85); }
+        .vertex-marker.franja-corner-marker { background: #10b981 !important; border-color: #fff !important; box-shadow: 0 0 14px rgba(16,185,129,0.85); width: 16px !important; height: 16px !important; }
+        .franja-lot-label { position: absolute; transform: translate(-50%,-50%); background: rgba(16,185,129,0.92); color: #fff; font-size: 10px; font-weight: 800; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.35); pointer-events: none; z-index: 99999; }
+        g[data-tipo="franja-grupo"] path { fill: rgba(16,185,129,0.04); stroke: rgba(16,185,129,0.45); stroke-width: calc(var(--stroke-dyn) * 0.5); stroke-dasharray: 4 4; pointer-events: none; }
         .btn-franja-lotes::before { content:'🏘️'; display:inline-block; font-size:10px; margin-right: 3px; }
         .linea-corte { stroke: #f59e0b !important; stroke-width: calc(var(--stroke-dyn) * 1.5) !important; stroke-dasharray: 6 6; filter: drop-shadow(0 0 8px #f59e0b); pointer-events: none; }
         g.lote-interactivo.hovered path, g.lote-interactivo:hover path { fill: transparent !important; stroke: #ffffff !important; stroke-width: var(--stroke-dyn-hover) !important; filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.9)); }
@@ -287,7 +291,7 @@
         async function fetchValorUFOnline() { try { const response = await fetch('https://mindicador.cl/api/uf', { cache: 'no-store' }); if (response.ok) { const data = await response.json(); if(data && data.serie && data.serie.length > 0) { UF_Online = data.serie[0].valor; return; } } } catch (error) {} }
         async function fetchMasterData() { try { const response = await fetch('datos.json?v=' + new Date().getTime()); if(response.ok) { const data = await response.json(); ConfigProyecto = data.configProyecto || ConfigProyecto; OrigenDrone = data.origen || null; NorteOffset = data.norte || 0; BaseDatosLotes = data.lotes || []; PuntosHorizonte = data.horizontes || []; allDrawnLines = data.trazos || []; } else { loadFromLocal(); } } catch(e) { loadFromLocal(); } applyProjectConfig(); }
 
-        let visor360, currentPinSizeIndex = 1, isIntroAnimating = true, isDevModeDrawActive = false, isDevModePinsActive = false, currentLineType = 'solida', currentLinePoints = [], currentPinTypeMap = 'disponible', currentTempLineId = 'temp_' + Date.now(), draggingVertex = null, pickedPin = null, snapCursor = null, ghostPin = null, snappedCoords = null, activePinArgs = null, isCreatingNewPin = false, isSnapToClose = false, franjaCornerA = null, franjaPreviewQuad = null;
+        let visor360, currentPinSizeIndex = 1, isIntroAnimating = true, isDevModeDrawActive = false, isDevModePinsActive = false, currentLineType = 'solida', currentLinePoints = [], currentPinTypeMap = 'disponible', currentTempLineId = 'temp_' + Date.now(), draggingVertex = null, pickedPin = null, snapCursor = null, ghostPin = null, snappedCoords = null, activePinArgs = null, isCreatingNewPin = false, isSnapToClose = false, franjaCornerA = null, franjaPreviewQuad = null, franjaPreviewDivs = [], franjaDraftCount = 10;
         const DEFAULT_HFOV = 125, MAX_SCALE = 1.0, MIN_SCALE = 0.20, SNAP_DISTANCE = 8.0; 
 
         function intersectSegments(p0, p1, p2, p3) {
@@ -345,7 +349,124 @@
         function getMockEvent(e) { let cx = e.clientX, cy = e.clientY; if(cx === undefined && e.changedTouches && e.changedTouches.length > 0) { cx = e.changedTouches[0].clientX; cy = e.changedTouches[0].clientY; } return { clientX: cx, clientY: cy }; }
 
         function isAutoMacroLotePoly(line) {
-            return line && line.puntos && line.puntos.length >= 3 && (line.tipo === 'solida' || line.tipo === 'punteada' || line.tipo === 'area-invisible');
+            if (!line || !line.puntos || line.puntos.length < 3) return false;
+            const skip = new Set(['calle','cortar','divisoria','borde-macro','arista_solida','arista_punteada','neon','franja-preview','franja-preview-div','franja-grupo']);
+            return !skip.has(line.tipo);
+        }
+        function isMacroEdgeType(tipo) { return tipo === 'divisoria' || tipo === 'borde-macro' || tipo === 'arista_solida' || tipo === 'arista_punteada'; }
+        function lerpPY(a, b, t) { return [a[0] + (b[0]-a[0])*t, a[1] + (b[1]-a[1])*t]; }
+        function getFranjaChildLines(gid) {
+            return allDrawnLines.filter(l => l.franjaGrupo === gid && l.tipo === 'area-invisible');
+        }
+        function rebuildMacroEdgesForFranjaGroup(gid) {
+            const lotes = getFranjaChildLines(gid);
+            if (!lotes.length) return;
+            allDrawnLines = allDrawnLines.filter(l => !(l.franjaGrupo === gid && (l.tipo === 'divisoria' || l.tipo === 'borde-macro')));
+            const { macroLines } = buildAutoMacroFromLotes(lotes);
+            macroLines.forEach(m => { m.franjaGrupo = gid; });
+            allDrawnLines.push(...macroLines);
+        }
+        function rebuildFranjaGroup(gid) {
+            const grp = allDrawnLines.find(l => l.id === gid && l.tipo === 'franja-grupo');
+            if (!grp || grp.puntos.length < 4) return;
+            const [TL, TR, BR, BL] = grp.puntos;
+            const N = grp.franjaCount || 2;
+            allDrawnLines = allDrawnLines.filter(l => l.franjaGrupo !== gid);
+            const topPts = [], botPts = [];
+            for (let i = 0; i <= N; i++) {
+                const t = i / N;
+                topPts.push(lerpPY(TL, TR, t));
+                botPts.push(lerpPY(BL, BR, t));
+            }
+            const draftPolys = [];
+            for (let i = 0; i < N; i++) {
+                draftPolys.push({
+                    id: gid + '_' + i, tipo: 'solida', franjaGrupo: gid, franjaIdx: i,
+                    franjaNumero: String(i + 1).padStart(2, '0'),
+                    puntos: [topPts[i], topPts[i+1], botPts[i+1], botPts[i]]
+                });
+            }
+            const { invisibleFills, macroLines } = buildAutoMacroFromLotes(draftPolys);
+            invisibleFills.forEach((f, i) => {
+                f.franjaGrupo = gid; f.franjaIdx = i; f.franjaNumero = draftPolys[i].franjaNumero; f.id = gid + '_' + i;
+            });
+            macroLines.forEach(m => { m.franjaGrupo = gid; });
+            allDrawnLines.push(...invisibleFills, ...macroLines);
+            document.body.classList.add('auto-macro-active');
+        }
+        function migrateFranjaGroupsFromData() {
+            const childRe = /^franja_\d+_\d+$/;
+            const groups = new Map();
+            allDrawnLines.forEach(l => {
+                if (!childRe.test(l.id) || !isAutoMacroLotePoly(l)) return;
+                const gid = l.id.replace(/_\d+$/, '');
+                if (!groups.has(gid)) groups.set(gid, []);
+                groups.get(gid).push(l);
+            });
+            groups.forEach((children, gid) => {
+                if (allDrawnLines.some(l => l.id === gid && l.tipo === 'franja-grupo')) return;
+                const sorted = [...children].sort((a, b) => parseInt(a.id.split('_').pop()) - parseInt(b.id.split('_').pop()));
+                if (!sorted.length) return;
+                const N = sorted.length;
+                const first = sorted[0].puntos, last = sorted[N-1].puntos;
+                if (!first || first.length < 4 || !last || last.length < 4) return;
+                allDrawnLines.push({
+                    id: gid, tipo: 'franja-grupo', franjaCount: N,
+                    puntos: [first[0], first[1], last[2], last[3]].map(p => [...p])
+                });
+                sorted.forEach((c, i) => {
+                    c.franjaGrupo = gid; c.franjaIdx = i; c.franjaNumero = String(i + 1).padStart(2, '0');
+                });
+            });
+        }
+        function createFranjaFromPolygon(poly, N) {
+            if (!poly || poly.puntos.length < 4) return false;
+            const gid = 'franja_' + Date.now();
+            allDrawnLines = allDrawnLines.filter(l => l.id !== poly.id);
+            allDrawnLines.push({
+                id: gid, tipo: 'franja-grupo', franjaCount: N,
+                puntos: poly.puntos.slice(0, 4).map(p => [...p])
+            });
+            rebuildFranjaGroup(gid);
+            return true;
+        }
+        function collectLotesForAutoMacro() {
+            migrateFranjaGroupsFromData();
+            const grupos = allDrawnLines.filter(l => l.tipo === 'franja-grupo');
+            let lotes = allDrawnLines.filter(l => isAutoMacroLotePoly(l) && l.tipo !== 'franja-grupo');
+            if (grupos.length) return { mode: 'franja-rebuild', grupos, lotes };
+            if (lotes.length >= 2) return { mode: 'macro', lotes };
+            if (lotes.length === 1 && lotes[0].puntos.length >= 4) return { mode: 'subdivide', lotes };
+            return { mode: 'none', lotes: [] };
+        }
+        function syncFranjaVertexDrag(linea, idx, coords) {
+            const old = [...linea.puntos[idx]];
+            getFranjaChildLines(linea.franjaGrupo).forEach(l => {
+                l.puntos.forEach((pt, i) => {
+                    if (Math.hypot(pt[0]-old[0], pt[1]-old[1]) < 0.08) l.puntos[i] = [coords[0], coords[1]];
+                });
+            });
+            linea.puntos[idx] = [coords[0], coords[1]];
+        }
+        function applyDraggedVertexCoords(coords) {
+            if (!draggingVertex || !coords || isNaN(coords[0])) return;
+            if (draggingVertex.lineId === currentTempLineId) {
+                currentLinePoints[draggingVertex.idx] = [coords[0], coords[1]];
+                return;
+            }
+            const linea = allDrawnLines.find(l => l.id === draggingVertex.lineId);
+            if (!linea) return;
+            if (linea.tipo === 'franja-grupo') {
+                linea.puntos[draggingVertex.idx] = [coords[0], coords[1]];
+                rebuildFranjaGroup(linea.id);
+                return;
+            }
+            if (linea.franjaGrupo) {
+                syncFranjaVertexDrag(linea, draggingVertex.idx, coords);
+                rebuildMacroEdgesForFranjaGroup(linea.franjaGrupo);
+                return;
+            }
+            linea.puntos[draggingVertex.idx] = [coords[0], coords[1]];
         }
         function autoMacroSnap(v) { return Math.round(v * 100) / 100; }
         function autoMacroEdgeKey(p1, p2) {
@@ -393,22 +514,48 @@
             const invisibleFills = lotes.map(l => ({ ...l, tipo: 'area-invisible' }));
             return { invisibleFills, macroLines };
         }
-        function runAutoMacroTransform() {
-            const lotes = allDrawnLines.filter(isAutoMacroLotePoly);
-            if (lotes.length < 2) return false;
-            const others = allDrawnLines.filter(l => !isAutoMacroLotePoly(l) && l.tipo !== 'divisoria' && l.tipo !== 'borde-macro');
+        function runAutoMacroTransform(explicitLotes) {
+            migrateFranjaGroupsFromData();
+            let lotes = explicitLotes || allDrawnLines.filter(l => isAutoMacroLotePoly(l) && l.tipo !== 'franja-grupo');
+            if (!lotes.length) {
+                const grupos = allDrawnLines.filter(l => l.tipo === 'franja-grupo');
+                if (grupos.length) { grupos.forEach(g => rebuildFranjaGroup(g.id)); return true; }
+                return false;
+            }
+            const grupoIds = new Set(lotes.map(l => l.franjaGrupo).filter(Boolean));
+            const lotIds = new Set(lotes.map(l => l.id));
+            const others = allDrawnLines.filter(l => {
+                if (l.tipo === 'franja-grupo') return true;
+                if (isMacroEdgeType(l.tipo)) {
+                    if (l.franjaGrupo && grupoIds.has(l.franjaGrupo)) return false;
+                    if (!explicitLotes && !l.franjaGrupo) return false;
+                    return true;
+                }
+                if (lotIds.has(l.id)) return false;
+                if (l.franjaGrupo && grupoIds.has(l.franjaGrupo)) return false;
+                if (isAutoMacroLotePoly(l) && l.tipo !== 'franja-grupo') return false;
+                return true;
+            });
             const { invisibleFills, macroLines } = buildAutoMacroFromLotes(lotes);
+            invisibleFills.forEach(f => {
+                const src = lotes.find(l => l.id === f.id) || lotes[invisibleFills.indexOf(f)];
+                if (src?.franjaGrupo) { f.franjaGrupo = src.franjaGrupo; f.franjaIdx = src.franjaIdx; f.franjaNumero = src.franjaNumero; }
+            });
+            if (grupoIds.size === 1) macroLines.forEach(m => { m.franjaGrupo = [...grupoIds][0]; });
             allDrawnLines = [...others, ...invisibleFills, ...macroLines];
             document.body.classList.add('auto-macro-active');
             return true;
         }
         function initAutoMacroFromData() {
-            if (allDrawnLines.some(l => l.tipo === 'divisoria' || l.tipo === 'borde-macro') && allDrawnLines.some(l => l.tipo === 'area-invisible')) {
-                document.body.classList.add('auto-macro-active');
-            }
+            migrateFranjaGroupsFromData();
+            allDrawnLines.filter(l => l.tipo === 'franja-grupo').forEach(g => rebuildFranjaGroup(g.id));
+            const fills = allDrawnLines.filter(l => isAutoMacroLotePoly(l) && l.tipo !== 'franja-grupo');
+            const hasMacroEdges = allDrawnLines.some(l => isMacroEdgeType(l.tipo));
+            if (fills.length >= 2 && !hasMacroEdges) runAutoMacroTransform(fills);
+            else if (hasMacroEdges && fills.some(l => l.tipo === 'area-invisible' || l.tipo === 'masterplan_fill')) document.body.classList.add('auto-macro-active');
         }
         function clearFranjaDraft() {
-            franjaCornerA = null; franjaPreviewQuad = null;
+            franjaCornerA = null; franjaPreviewQuad = null; franjaPreviewDivs = [];
             try { visor360?.removeHotSpot('franja_preview_a'); } catch(e) {}
         }
         function screenPointToPanorama(sx, sy) {
@@ -428,22 +575,21 @@
             return { topPts, botPts };
         }
         function updateFranjaPreview(bx, by) {
-            if (!franjaCornerA) { franjaPreviewQuad = null; return; }
-            const tl = screenPointToPanorama(Math.min(franjaCornerA.sx, bx), Math.min(franjaCornerA.sy, by));
-            const tr = screenPointToPanorama(Math.max(franjaCornerA.sx, bx), Math.min(franjaCornerA.sy, by));
-            const br = screenPointToPanorama(Math.max(franjaCornerA.sx, bx), Math.max(franjaCornerA.sy, by));
-            const bl = screenPointToPanorama(Math.min(franjaCornerA.sx, bx), Math.max(franjaCornerA.sy, by));
-            franjaPreviewQuad = (tl && tr && br && bl) ? [tl, tr, br, bl] : null;
+            if (!franjaCornerA) { franjaPreviewQuad = null; franjaPreviewDivs = []; return; }
+            const built = buildFranjaScreenPoints(franjaCornerA.sx, franjaCornerA.sy, bx, by, franjaDraftCount);
+            if (!built) { franjaPreviewQuad = null; franjaPreviewDivs = []; return; }
+            const N = franjaDraftCount;
+            franjaPreviewQuad = [built.topPts[0], built.topPts[N], built.botPts[N], built.botPts[0]];
+            franjaPreviewDivs = [];
+            for (let i = 1; i < N; i++) {
+                franjaPreviewDivs.push({ id: 'franja_preview_div_' + i, tipo: 'franja-preview-div', puntos: [built.topPts[i], built.botPts[i]] });
+            }
         }
         function crearFranjaLotesPremium(topPts, botPts, N) {
-            const baseId = 'franja_' + Date.now();
-            const draftPolys = [];
-            for (let i = 0; i < N; i++) {
-                draftPolys.push({ id: baseId + '_' + i, tipo: 'solida', puntos: [topPts[i], topPts[i + 1], botPts[i + 1], botPts[i]] });
-            }
-            const { invisibleFills, macroLines } = buildAutoMacroFromLotes(draftPolys);
-            allDrawnLines.push(...invisibleFills, ...macroLines);
-            document.body.classList.add('auto-macro-active');
+            const gid = 'franja_' + Date.now();
+            const corners = [topPts[0], topPts[N], botPts[N], botPts[0]].map(p => [...p]);
+            allDrawnLines.push({ id: gid, tipo: 'franja-grupo', franjaCount: N, puntos: corners });
+            rebuildFranjaGroup(gid);
         }
 
         document.addEventListener("DOMContentLoaded", async () => {
@@ -489,7 +635,25 @@
                     hotspots.push({ "id": uniqueId, "pitch": punto.pitch, "yaw": punto.yaw, "createTooltipFunc": generarMarcadorHorizonte, "createTooltipArgs": punto }); 
                 }
             });
-            if(isSvgRenderAllowed() && isDevModeDrawActive) { allDrawnLines.forEach((linea) => { linea.puntos.forEach((coord, pIdx) => { hotspots.push({ "id": "vert_base_" + linea.id + "_" + pIdx, "pitch": coord[0], "yaw": coord[1], "createTooltipFunc": renderHiddenVertex, "createTooltipArgs": { lineId: linea.id, type: linea.tipo, isGuide: isDevModeDrawActive, idx: pIdx, hsId: "vert_base_" + linea.id + "_" + pIdx } }); }); }); currentLinePoints.forEach((coord, idx) => { hotspots.push({ "id": "temp_base_" + currentTempLineId + "_" + idx, "pitch": coord[0], "yaw": coord[1], "createTooltipFunc": renderHiddenVertex, "createTooltipArgs": { lineId: currentTempLineId, type: currentLineType, isGuide: isDevModeDrawActive, idx: idx, hsId: "temp_base_" + currentTempLineId + "_" + idx } }); }); }
+            if(isSvgRenderAllowed() && isDevModeDrawActive) {
+                allDrawnLines.forEach((linea) => {
+                    if (linea.tipo === 'franja-grupo') {
+                        linea.puntos.forEach((coord, pIdx) => {
+                            hotspots.push({ "id": "vert_franja_corner_" + linea.id + "_" + pIdx, "pitch": coord[0], "yaw": coord[1], "createTooltipFunc": renderHiddenVertex, "createTooltipArgs": { lineId: linea.id, type: linea.tipo, isGuide: true, isFranjaCorner: true, idx: pIdx, hsId: "vert_franja_corner_" + linea.id + "_" + pIdx } });
+                        });
+                    } else if (linea.tipo !== 'divisoria' && linea.tipo !== 'borde-macro') {
+                        linea.puntos.forEach((coord, pIdx) => {
+                            hotspots.push({ "id": "vert_base_" + linea.id + "_" + pIdx, "pitch": coord[0], "yaw": coord[1], "createTooltipFunc": renderHiddenVertex, "createTooltipArgs": { lineId: linea.id, type: linea.tipo, isGuide: isDevModeDrawActive, idx: pIdx, hsId: "vert_base_" + linea.id + "_" + pIdx } });
+                        });
+                    }
+                    if (linea.tipo === 'area-invisible' && linea.franjaNumero && linea.puntos.length >= 3) {
+                        let cP = 0, cY = 0; linea.puntos.forEach(pt => { cP += pt[0]; cY += pt[1]; });
+                        cP /= linea.puntos.length; cY /= linea.puntos.length;
+                        hotspots.push({ "id": "franja_lbl_" + linea.id, "pitch": cP, "yaw": cY, "createTooltipFunc": renderFranjaLotLabel, "createTooltipArgs": { numero: linea.franjaNumero } });
+                    }
+                });
+                currentLinePoints.forEach((coord, idx) => { hotspots.push({ "id": "temp_base_" + currentTempLineId + "_" + idx, "pitch": coord[0], "yaw": coord[1], "createTooltipFunc": renderHiddenVertex, "createTooltipArgs": { lineId: currentTempLineId, type: currentLineType, isGuide: isDevModeDrawActive, idx: idx, hsId: "temp_base_" + currentTempLineId + "_" + idx } }); });
+            }
             return hotspots;
         }
 
@@ -497,9 +661,9 @@
             if(!isSvgRenderAllowed()) return; const svg = document.getElementById('loteo-svg'); if(!svg) return;
             let lBordes = document.getElementById('layer-calles-bordes'), lAsfalto = document.getElementById('layer-calles-asfalto'), lLotes = document.getElementById('layer-lotes'), lAristas = document.getElementById('layer-aristas');
             if(!lBordes) { svg.innerHTML = '<g id="layer-calles-bordes"></g><g id="layer-calles-asfalto"></g><g id="layer-lotes"></g><g id="layer-aristas"></g>'; lBordes = document.getElementById('layer-calles-bordes'); lAsfalto = document.getElementById('layer-calles-asfalto'); lLotes = document.getElementById('layer-lotes'); lAristas = document.getElementById('layer-aristas'); }
-            const currentLineIds = allDrawnLines.map(l => l.id); if (currentLinePoints.length > 0) currentLineIds.push(currentTempLineId); if (franjaPreviewQuad) currentLineIds.push('franja_preview_quad');
+            const currentLineIds = allDrawnLines.map(l => l.id); if (currentLinePoints.length > 0) currentLineIds.push(currentTempLineId); if (franjaPreviewQuad) currentLineIds.push('franja_preview_quad'); franjaPreviewDivs.forEach(d => currentLineIds.push(d.id));
             Array.from(svg.querySelectorAll('[data-line-id]')).forEach(el => { if (!currentLineIds.includes(el.dataset.lineId)) el.remove(); });
-            DOMCache.paths = {}; const allLinesData = [...allDrawnLines]; if (currentLinePoints.length > 0) allLinesData.push({ id: currentTempLineId, tipo: currentLineType, puntos: currentLinePoints }); if (franjaPreviewQuad) allLinesData.push({ id: 'franja_preview_quad', tipo: 'franja-preview', puntos: franjaPreviewQuad });
+            DOMCache.paths = {}; const allLinesData = [...allDrawnLines]; if (currentLinePoints.length > 0) allLinesData.push({ id: currentTempLineId, tipo: currentLineType, puntos: currentLinePoints }); if (franjaPreviewQuad) allLinesData.push({ id: 'franja_preview_quad', tipo: 'franja-preview', puntos: franjaPreviewQuad }); franjaPreviewDivs.forEach(d => allLinesData.push(d));
             allLinesData.forEach(line => {
                 const existingElements = svg.querySelectorAll(`[data-line-id="${line.id}"]`);
                 if (existingElements.length === 0) {
@@ -511,14 +675,20 @@
                         const pMacro = document.createElementNS("http://www.w3.org/2000/svg", "path");
                         pMacro.setAttribute("class", line.tipo === 'divisoria' ? 'linea-divisoria' : 'linea-borde-macro');
                         gMacro.appendChild(pMacro); lAristas.appendChild(gMacro); DOMCache.paths[line.id] = { base: [pMacro] };
-                    } else if (line.tipo === 'franja-preview') {
-                        const gPrev = document.createElementNS("http://www.w3.org/2000/svg", "g"); gPrev.dataset.lineId = line.id; gPrev.dataset.tipo = 'franja-preview';
-                        const pPrev = document.createElementNS("http://www.w3.org/2000/svg", "path"); pPrev.setAttribute("class", "linea-franja-preview");
-                        gPrev.appendChild(pPrev); lLotes.appendChild(gPrev); DOMCache.paths[line.id] = { base: [pPrev] };
+                    } else if (line.tipo === 'franja-grupo') {
+                        const gGrp = document.createElementNS("http://www.w3.org/2000/svg", "g"); gGrp.dataset.lineId = line.id; gGrp.dataset.tipo = 'franja-grupo';
+                        const pGrp = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                        pGrp.setAttribute("class", "linea-franja-preview");
+                        gGrp.appendChild(pGrp); lLotes.appendChild(gGrp); DOMCache.paths[line.id] = { base: [pGrp] };
+                    } else if (line.tipo === 'franja-preview' || line.tipo === 'franja-preview-div') {
+                        const gPrev = document.createElementNS("http://www.w3.org/2000/svg", "g"); gPrev.dataset.lineId = line.id; gPrev.dataset.tipo = line.tipo;
+                        const pPrev = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                        pPrev.setAttribute("class", line.tipo === 'franja-preview-div' ? 'linea-divisoria' : 'linea-franja-preview');
+                        gPrev.appendChild(pPrev); (line.tipo === 'franja-preview-div' ? lAristas : lLotes).appendChild(gPrev); DOMCache.paths[line.id] = { base: [pPrev] };
                     } else {
                         const g = document.createElementNS("http://www.w3.org/2000/svg", "g"); g.dataset.lineId = line.id; g.dataset.tipo = line.tipo; g.classList.add('lote-interactivo'); 
                         const pBase = document.createElementNS("http://www.w3.org/2000/svg", "path"); 
-                        if (line.tipo === 'neon') pBase.setAttribute("class", "linea-neon"); else if (line.tipo === 'punteada') pBase.setAttribute("class", "linea-punteada"); else if (line.tipo === 'cortar') pBase.setAttribute("class", "linea-corte"); else if (line.tipo === 'area-invisible') pBase.setAttribute("class", "linea-area-fill"); else pBase.setAttribute("class", "linea-solida");
+                        if (line.tipo === 'masterplan_fill') pBase.setAttribute("class", "linea-relleno-mp"); else if (line.tipo === 'neon') pBase.setAttribute("class", "linea-neon"); else if (line.tipo === 'punteada') pBase.setAttribute("class", "linea-punteada"); else if (line.tipo === 'cortar') pBase.setAttribute("class", "linea-corte"); else if (line.tipo === 'area-invisible') pBase.setAttribute("class", "linea-area-fill"); else pBase.setAttribute("class", "linea-solida");
                         g.appendChild(pBase); g.addEventListener('mousedown', (e) => { if (currentLineType === 'eraser') { e.stopPropagation(); if (line.id === currentTempLineId) currentLinePoints = []; else allDrawnLines = allDrawnLines.filter(l => l.id !== line.id); refreshAllHotspots(); saveToLocal(); } }); g.addEventListener('touchstart', () => { g.classList.add('hovered'); }, {passive: true}); g.addEventListener('touchend', () => { setTimeout(() => g.classList.remove('hovered'), 1500); }, {passive: true}); lLotes.appendChild(g); DOMCache.paths[line.id] = { gNode: g, base: [pBase] };
                     }
                 } else { if (line.tipo === 'calle') { DOMCache.paths[line.id] = { base: Array.from(svg.querySelectorAll(`path[data-line-id="${line.id}"]`)) }; } else { const gNode = svg.querySelector(`g[data-line-id="${line.id}"]`); if (gNode) { DOMCache.paths[line.id] = { gNode: gNode, base: Array.from(gNode.querySelectorAll('path')) }; } } }
@@ -533,9 +703,10 @@
             function getCam(pitch, yaw) { const p = pitch * Math.PI / 180, y = yaw * Math.PI / 180, sin_p = Math.sin(p), cos_p = Math.cos(p); let y_diff = y - cy; while (y_diff > Math.PI) y_diff -= 2 * Math.PI; while (y_diff < -Math.PI) y_diff += 2 * Math.PI; const sin_yd = Math.sin(y_diff), cos_yd = Math.cos(y_diff); return { x: cos_p * sin_yd, y: sin_p * cos_cp - cos_p * cos_yd * sin_cp, z: sin_p * sin_cp + cos_p * cos_yd * cos_cp }; }
             Object.keys(DOMCache.paths).forEach(lineId => {
                 const cacheObj = DOMCache.paths[lineId]; if (!cacheObj) return;
-                let lineData = allDrawnLines.find(l => l.id === lineId); if (!lineData && lineId === currentTempLineId) lineData = { tipo: currentLineType, puntos: currentLinePoints }; if (!lineData && lineId === 'franja_preview_quad' && franjaPreviewQuad) lineData = { tipo: 'franja-preview', puntos: franjaPreviewQuad }; if (!lineData) return;
-                if (cacheObj.gNode && lineData.tipo !== 'calle') { if (lineData.puntos && lineData.puntos.length > 0) { let cP = 0, cY = 0; lineData.puntos.forEach(pt => { cP += pt[0]; cY += pt[1]; }); cP /= lineData.puntos.length; cY /= lineData.puntos.length; let closestPin = null; let minDist = 30; BaseDatosLotes.forEach(pin => { if(pin.tipo === 'lote') { let dist = Math.pow(pin.pitch - cP, 2) + Math.pow(pin.yaw - cY, 2); if(dist < minDist) { minDist = dist; closestPin = pin; } } }); let polyStatus = closestPin ? closestPin.status : 'disponible'; cacheObj.gNode.setAttribute('data-status', polyStatus); } }
-                let dBase = '', isClosed = (lineData.tipo !== 'calle' && lineData.tipo !== 'cortar' && lineData.tipo !== 'divisoria' && lineData.tipo !== 'borde-macro' && lineId !== currentTempLineId), pts = lineData.puntos, hasVisiblePoints = false;
+                let lineData = allDrawnLines.find(l => l.id === lineId); if (!lineData && lineId === currentTempLineId) lineData = { tipo: currentLineType, puntos: currentLinePoints }; if (!lineData && lineId === 'franja_preview_quad' && franjaPreviewQuad) lineData = { tipo: 'franja-preview', puntos: franjaPreviewQuad }; if (!lineData && lineId.startsWith('franja_preview_div_')) lineData = franjaPreviewDivs.find(d => d.id === lineId); if (!lineData) return;
+                let isClosed = (lineData.tipo !== 'calle' && lineData.tipo !== 'cortar' && lineData.tipo !== 'divisoria' && lineData.tipo !== 'borde-macro' && lineData.tipo !== 'franja-preview-div' && lineId !== currentTempLineId);
+                if (cacheObj.gNode && lineData.tipo !== 'calle' && lineData.tipo !== 'franja-grupo') { if (lineData.puntos && lineData.puntos.length > 0) { let cP = 0, cY = 0; lineData.puntos.forEach(pt => { cP += pt[0]; cY += pt[1]; }); cP /= lineData.puntos.length; cY /= lineData.puntos.length; let closestPin = null; let minDist = 30; BaseDatosLotes.forEach(pin => { if(pin.tipo === 'lote') { let dist = Math.pow(pin.pitch - cP, 2) + Math.pow(pin.yaw - cY, 2); if(dist < minDist) { minDist = dist; closestPin = pin; } } }); let polyStatus = closestPin ? closestPin.status : 'disponible'; cacheObj.gNode.setAttribute('data-status', polyStatus); } }
+                let dBase = '', pts = lineData.puntos, hasVisiblePoints = false;
                 for (let i = 0; i < pts.length; i++) {
                     let p1 = pts[i], p2 = pts[(i + 1) % pts.length];
                     if (!isClosed && i === pts.length - 1) break;
@@ -630,14 +801,7 @@
                     if(draggingVertex.el) draggingVertex.el.classList.remove('is-dragging'); 
                     let mock = getMockEvent(e);
                     let coords = visor360.mouseEventToCoords(mock);
-                    if(coords && !isNaN(coords[0])) {
-                        if (draggingVertex.lineId === currentTempLineId) { 
-                            currentLinePoints[draggingVertex.idx] = [coords[0], coords[1]]; 
-                        } else { 
-                            const linea = allDrawnLines.find((l) => l.id === draggingVertex.lineId); 
-                            if (linea) linea.puntos[draggingVertex.idx] = [coords[0], coords[1]]; 
-                        } 
-                    }
+                    if(coords && !isNaN(coords[0])) applyDraggedVertexCoords(coords);
                     draggingVertex = null; 
                     window.lastMouseX = undefined;
                     window.lastMouseY = undefined;
@@ -658,9 +822,10 @@
                             franjaCornerA = { sx: mock.clientX, sy: mock.clientY, pitch: parseFloat(coords[0].toFixed(3)), yaw: parseFloat(coords[1].toFixed(3)) };
                             try { visor360.addHotSpot({ id: 'franja_preview_a', pitch: franjaCornerA.pitch, yaw: franjaCornerA.yaw, createTooltipFunc: (div) => { div.classList.add('vertex-marker','franja-corner-marker','drawing-node'); div.id = 'franja_preview_a'; }, createTooltipArgs: {} }); } catch(e) {}
                         } else {
-                            const divStr = prompt('🏘️ FRANJA DE LOTES\n\n¿Cuántos lotes quieres crear?\n(Ej: 2, 10, 20 — alineados al rectángulo)', '2');
+                            const divStr = prompt('🏘️ FRANJA DE LOTES\n\n¿Cuántos lotes quieres crear?\n(Ej: 2, 10, 20 — alineados al rectángulo)', String(franjaDraftCount));
                             if (divStr === null) { clearFranjaDraft(); refreshAllHotspots(); return; }
-                            const N = Math.max(1, Math.min(40, parseInt(divStr, 10) || 2));
+                            const N = Math.max(2, Math.min(40, parseInt(divStr, 10) || franjaDraftCount));
+                            franjaDraftCount = N;
                             const built = buildFranjaScreenPoints(franjaCornerA.sx, franjaCornerA.sy, mock.clientX, mock.clientY, N);
                             clearFranjaDraft();
                             if (!built) { alert('⚠️ No se pudo proyectar la franja. Ajusta la vista para que el área quede visible en pantalla.'); return; }
@@ -725,7 +890,11 @@
                 if (draggingVertex) { 
                     if (e.cancelable) e.preventDefault(); e.stopPropagation(); 
                     window.lastMouseX = mock.clientX; window.lastMouseY = mock.clientY;
-                    updateSVGPaths();
+                    try {
+                        const coords = visor360.mouseEventToCoords(mock);
+                        if (coords && !isNaN(coords[0])) applyDraggedVertexCoords(coords);
+                    } catch(err) {}
+                    syncSVGElements(); updateSVGPaths();
                     return; 
                 }
                 
@@ -877,10 +1046,20 @@
             document.querySelectorAll('#dev-toolbar-pins .dev-btn:not(.action):not(.export):not(.export-ai):not(.nuke)').forEach(btn => { if(btn.id !== 'btn-set-drone' && btn.id !== 'btn-set-north' && btn.id !== 'btn-edit-titles') { btn.addEventListener('click', (e) => { currentPinTypeMap = e.target.dataset.pintype; document.querySelectorAll('#dev-toolbar-pins .dev-btn:not(.action):not(.export):not(.export-ai):not(.nuke)').forEach(b => b.classList.remove('active')); e.target.classList.add('active'); }); } });
             document.getElementById('btn-heatmap')?.addEventListener('click', function() { isHeatmapActive = !isHeatmapActive; this.classList.toggle('active', isHeatmapActive); document.body.classList.toggle('heatmap-mode', isHeatmapActive); updateSVGPaths(); });
             document.getElementById('btn-auto-macro')?.addEventListener('click', () => {
-                const lotes = allDrawnLines.filter(isAutoMacroLotePoly);
-                if(lotes.length < 2) return alert("Dibuja al menos 2 lotes cerrados primero.");
-                if(!confirm("✨ AUTO-MACRO\n\n¿Convertir los lotes a estilo premium?\n• Perímetro: líneas sólidas finas\n• Divisiones internas: líneas punteadas\n\nCada lote conserva su área individual (hover/estado).")) return;
-                if (!runAutoMacroTransform()) return;
+                const plan = collectLotesForAutoMacro();
+                if (plan.mode === 'none') return alert("No hay lotes reconocibles.\n\n✓ Franja de lotes ya creada\n✓ Polígonos sólidos / masterplan\n✓ Un recuadro grande para subdividir\n\nActiva Modo Arquitecto y vuelve a intentar.");
+                if (plan.mode === 'subdivide') {
+                    const nStr = prompt('📐 SUBDIVIDIR RECUADRO\n\n¿En cuántos lotes? (divisiones internas punteadas)', '10');
+                    if (nStr === null) return;
+                    const N = Math.max(2, Math.min(40, parseInt(nStr, 10) || 10));
+                    if (!createFranjaFromPolygon(plan.lotes[0], N)) return alert("No se pudo subdividir el polígono.");
+                } else if (plan.mode === 'franja-rebuild') {
+                    if(!confirm("✨ AUTO-MACRO\n\n¿Regenerar franja(s) con bordes sólidos finos y divisiones punteadas?")) return;
+                    plan.grupos.forEach(g => rebuildFranjaGroup(g.id));
+                } else {
+                    if(!confirm("✨ AUTO-MACRO\n\n¿Convertir " + plan.lotes.length + " lote(s) a estilo premium?\n• Perímetro: sólido fino\n• Divisiones internas: punteadas")) return;
+                    if (!runAutoMacroTransform(plan.lotes)) return alert("No se pudo aplicar AUTO-MACRO.");
+                }
                 refreshAllHotspots();
                 saveToLocal();
                 flashScreenSuccess();
@@ -895,12 +1074,18 @@
             if(event && event.target) { const btn = event.target; const originalText = btn.innerHTML; btn.innerHTML = "☁️ GUARDANDO..."; setTimeout(() => { btn.innerHTML = "✅ GUARDADO EN NUBE"; btn.style.background = "#10b981"; setTimeout(() => { btn.innerHTML = originalText; btn.style.background = ""; }, 2500); }, 500); }
         }
 
+        function renderFranjaLotLabel(hotSpotDiv, args) {
+            hotSpotDiv.className = 'franja-lot-label';
+            hotSpotDiv.textContent = args.numero || '00';
+        }
+
         function renderHiddenVertex(hotSpotDiv, args) { 
             hotSpotDiv.classList.add('vertex-marker'); hotSpotDiv.id = args.hsId;
+            if (args.isFranjaCorner || args.type === 'franja-grupo') hotSpotDiv.classList.add('franja-corner-marker');
             if (!DOMCache.markers[args.lineId]) DOMCache.markers[args.lineId] = { base: [] }; DOMCache.markers[args.lineId].base[args.idx] = hotSpotDiv; 
             if (args.lineId === currentTempLineId) { hotSpotDiv.classList.add('drawing-node'); }
             if (args.lineId === currentTempLineId && args.idx === 0 && currentLinePoints.length >= 3 && currentLineType !== 'cortar' && currentLineType !== 'eraser') { hotSpotDiv.classList.add('origin-vertex'); }
-            if (args.isGuide && currentLineType !== 'eraser' && currentLineType !== 'cortar') { 
+            if (args.isGuide && currentLineType !== 'eraser' && currentLineType !== 'cortar' && args.type !== 'divisoria' && args.type !== 'borde-macro') { 
                 const startDragGuide = (e) => { e.stopPropagation(); e.preventDefault(); hotSpotDiv.classList.add('is-dragging'); draggingVertex = { lineId: args.lineId, idx: args.idx, el: hotSpotDiv, hsId: args.hsId }; }; 
                 hotSpotDiv.addEventListener('mousedown', startDragGuide); hotSpotDiv.addEventListener('touchstart', startDragGuide, {passive: false}); 
             } 
