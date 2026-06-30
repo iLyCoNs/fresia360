@@ -87,6 +87,18 @@
         .dev-toolbar { position: absolute; top: 20px; left: 50%; z-index: 99999; background: rgba(20, 20, 20, 0.85); backdrop-filter: blur(24px); border: 1px solid rgba(255,255,255,0.1); border-top: 1px solid rgba(255,255,255,0.15); padding: 16px 24px; border-radius: 16px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); transform: translate(-50%, -200%); visibility: hidden; opacity: 0; pointer-events: auto; transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s, visibility 0.4s; display: flex; flex-direction: column; align-items: center; min-width: 320px; } .dev-toolbar.show { transform: translate(-50%, 0); visibility: visible; opacity: 1; } .macos-header { width: 100%; display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; } .macos-dots { display: flex; gap: 6px; } .macos-dots i { width: 12px; height: 12px; border-radius: 50%; } .macos-dots i:nth-child(1) { background: #ff5f56; } .macos-dots i:nth-child(2) { background: #ffbd2e; } .macos-dots i:nth-child(3) { background: #27c93f; } .dev-toolbar-title { color: #94a3b8; font-size: 11px; font-weight: 700; letter-spacing: 1px; flex: 1; text-align: center; } .dev-tools-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: center; } .dev-btn { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #cbd5e1; padding: 8px 14px; border-radius: 8px; font-size: 11px; font-weight: 600; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px; pointer-events: auto;} .dev-btn:hover { background: rgba(255,255,255,0.15); color: #fff; } .dev-btn.active { background: rgba(59, 130, 246, 0.3); border-color: #3b82f6; color: #fff; box-shadow: 0 0 10px rgba(59, 130, 246, 0.2); } .dev-btn.action { background: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.3); color: #fca5a5; } .dev-btn.action:hover { background: rgba(239, 68, 68, 0.8); color: #fff; } .dev-btn.export { background: rgba(16, 185, 129, 0.8); border-color: #10b981; color: #fff; margin-left: 5px; font-weight: 700; } .dev-btn.export-ai { background: rgba(139, 92, 246, 0.8); border-color: #7c3aed; color: #fff; margin-left: 5px; font-weight: 700; } .dev-btn.export-ai:hover { background: rgba(139, 92, 246, 1); box-shadow: 0 0 15px rgba(139, 92, 246, 0.5); } .dev-btn.nuke { background: rgba(220, 38, 38, 0.2); border-color: rgba(220, 38, 38, 0.5); color: #f87171; } .dev-btn.nuke:hover { background: rgba(220, 38, 38, 0.9); color: #fff; }
         .btn-pin-disp::before { content:''; display:inline-block; width:8px; height:8px; border-radius:50%; background:#10b981; } .btn-pin-res::before { content:''; display:inline-block; width:8px; height:8px; border-radius:50%; background:#f59e0b; } .btn-pin-vend::before { content:''; display:inline-block; width:8px; height:8px; border-radius:50%; background:#ef4444; } .btn-pin-nodisp::before { content:''; display:inline-block; width:8px; height:8px; border-radius:50%; background:#94a3b8; } .btn-pin-360::before { content:'👁️'; display:inline-block; font-size:10px; } .btn-pin-hor::before { content:'⛰️'; display:inline-block; font-size:10px; }
 
+        /* --- MODO EMBEBIDO (IFRAME) --- */
+        body.is-embedded .premium-header,
+        body.is-embedded .premium-dock,
+        body.is-embedded .premium-compass-container,
+        body.is-embedded .poi-trigger-btn,
+        body.is-embedded #promo-banner-hud,
+        body.is-embedded .watermark,
+        body.is-embedded #sun-hud {
+            display: none !important;
+        }
+        /* El botón de volver al 360 lo maneja el padre, el hijo debe ser solo el lienzo puro */
+
         @media (max-width: 1024px), (max-height: 700px) {
             .premium-header { top: 16px; padding: 10px 16px; z-index: 999999; pointer-events: auto; } body.has-banner .premium-header { top: 40px; } .premium-header h1 { font-size: 14px; } .premium-header p { font-size: 8px; }
             .premium-compass-container { top: 16px; right: 16px; width: 40px; height: 40px; z-index: 999999; pointer-events: auto; } body.has-banner .premium-compass-container { top: 40px; }
@@ -294,6 +306,10 @@
         function getMockEvent(e) { let cx = e.clientX, cy = e.clientY; if(cx === undefined && e.changedTouches && e.changedTouches.length > 0) { cx = e.changedTouches[0].clientX; cy = e.changedTouches[0].clientY; } return { clientX: cx, clientY: cy }; }
 
         document.addEventListener("DOMContentLoaded", async () => {
+            // Detección de Modo Embebido (Si se ejecuta dentro de un iframe)
+            if (window.self !== window.top) {
+                document.body.classList.add('is-embedded');
+            }
             if (isTouchDevice()) { isWebGLSupported = true; viewerGpuReady = false; } else { isWebGLSupported = detectWebGL(); }
             const splashBar = document.getElementById('js-progress-bar'); if(splashBar) splashBar.style.width = '30%';
             await fetchMasterData(); if(splashBar) splashBar.style.width = '60%'; await fetchValorUFOnline();
@@ -543,7 +559,42 @@
             });
         }
 
-        function setupInAppModal() { const modal = document.getElementById('inapp-modal'); const closeBtn = document.getElementById('js-close-inapp'); const iframe = document.getElementById('inapp-iframe-player'); if(closeBtn) { closeBtn.addEventListener('click', () => { modal.classList.remove('open'); setTimeout(() => { iframe.src = ""; }, 300); }); } }
+        function setupInAppModal() { 
+            const modal = document.getElementById('inapp-modal'); 
+            const closeBtn = document.getElementById('js-close-inapp'); 
+            const iframe = document.getElementById('inapp-iframe-player'); 
+            if(closeBtn) { 
+                closeBtn.addEventListener('click', () => { 
+                    modal.classList.remove('open'); 
+                    setTimeout(() => { 
+                        iframe.src = ""; 
+                        // --- FIX: ANTI-FLOTACIÓN DE SVG ---
+                        if (visor360) {
+                            try {
+                                // 1. Forzar redibujado del motor WebGL
+                                visor360.resize();
+                                const r = visor360.getRenderer();
+                                if (r && typeof r.resize === 'function') r.resize();
+                                
+                                // 2. Recalibrar la caché matemática del SVG
+                                const container = document.getElementById('panorama-container');
+                                if (container) {
+                                    const rect = container.getBoundingClientRect();
+                                    DOMCache.viewport.w = rect.width;
+                                    DOMCache.viewport.h = rect.height;
+                                    DOMCache.viewport.left = rect.left;
+                                    DOMCache.viewport.top = rect.top;
+                                }
+                                
+                                // 3. Engañar al navegador para refrescar la matriz de proyección
+                                window.dispatchEvent(new Event('resize'));
+                                updateSVGPaths();
+                            } catch(e) {}
+                        }
+                    }, 300); 
+                }); 
+            } 
+        }
         function extractYouTubeID(url) { if (!url) return null; const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/; const match = url.match(regExp); return (match && match[2].length === 11) ? match[2] : null; }
         window.openInAppViewer = function(e, url) { if(e) { e.preventDefault(); e.stopPropagation(); } if(!url) return; const modal = document.getElementById('inapp-modal'); const content = document.getElementById('js-inapp-content'); const iframe = document.getElementById('inapp-iframe-player'); const videoID = extractYouTubeID(url); if(videoID) { content.className = 'inapp-content is-yt'; iframe.src = `https://www.youtube.com/embed/${videoID}?autoplay=1&rel=0&modestbranding=1`; } else { content.className = 'inapp-content is-360'; iframe.src = url; } modal.classList.add('open'); };
 
