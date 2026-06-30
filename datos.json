@@ -1,4 +1,24 @@
 {
+  "vista": "aereo",
+  "configProyecto": {
+    "titulo": "PARCELAS LOS TRES MAITENES",
+    "subtitulo": "TERRENOS DESDE 5.000 M²",
+    "colorDisp": "#10b981",
+    "colorRes": "#f59e0b",
+    "colorVend": "#ef4444",
+    "colorNoDisp": "#94a3b8",
+    "opacidadDisp": 15,
+    "opacidadRes": 15,
+    "opacidadVend": 25,
+    "opacidadNoDisp": 25,
+    "valorUF": 0,
+    "whatsapp": "",
+    "colorPrincipal": "#10b981",
+    "logoUrl": "",
+    "bannerActivo": false,
+    "bannerTipo": "descuento",
+    "bannerTexto": ""
+  },
   "origen": {
     "lat": -41.22583035619617,
     "lng": -73.3173470901525
@@ -462,7 +482,7 @@
       ]
     },
     {
-      "id": "arista_mp_1782778401663_0",
+      "id": "arista_mp_1782785835100_0",
       "tipo": "arista_solida",
       "puntos": [
         [
@@ -476,7 +496,7 @@
       ]
     },
     {
-      "id": "arista_mp_1782778401663_1",
+      "id": "arista_mp_1782785835100_1",
       "tipo": "arista_punteada",
       "puntos": [
         [
@@ -490,7 +510,7 @@
       ]
     },
     {
-      "id": "arista_mp_1782778401663_2",
+      "id": "arista_mp_1782785835100_2",
       "tipo": "arista_solida",
       "puntos": [
         [
@@ -504,7 +524,7 @@
       ]
     },
     {
-      "id": "arista_mp_1782778401663_3",
+      "id": "arista_mp_1782785835100_3",
       "tipo": "arista_solida",
       "puntos": [
         [
@@ -518,7 +538,7 @@
       ]
     },
     {
-      "id": "arista_mp_1782778401663_4",
+      "id": "arista_mp_1782785835100_4",
       "tipo": "arista_solida",
       "puntos": [
         [
@@ -532,7 +552,7 @@
       ]
     },
     {
-      "id": "arista_mp_1782778401663_5",
+      "id": "arista_mp_1782785835100_5",
       "tipo": "arista_punteada",
       "puntos": [
         [
@@ -546,7 +566,7 @@
       ]
     },
     {
-      "id": "arista_mp_1782778401663_6",
+      "id": "arista_mp_1782785835100_6",
       "tipo": "arista_solida",
       "puntos": [
         [
@@ -560,7 +580,7 @@
       ]
     },
     {
-      "id": "arista_mp_1782778401663_7",
+      "id": "arista_mp_1782785835100_7",
       "tipo": "arista_solida",
       "puntos": [
         [
@@ -574,7 +594,7 @@
       ]
     },
     {
-      "id": "arista_mp_1782778401663_8",
+      "id": "arista_mp_1782785835100_8",
       "tipo": "arista_punteada",
       "puntos": [
         [
@@ -588,7 +608,7 @@
       ]
     },
     {
-      "id": "arista_mp_1782778401663_9",
+      "id": "arista_mp_1782785835100_9",
       "tipo": "arista_solida",
       "puntos": [
         [
@@ -602,7 +622,7 @@
       ]
     },
     {
-      "id": "arista_mp_1782778401663_10",
+      "id": "arista_mp_1782785835100_10",
       "tipo": "arista_solida",
       "puntos": [
         [
@@ -616,7 +636,7 @@
       ]
     },
     {
-      "id": "arista_mp_1782778401663_11",
+      "id": "arista_mp_1782785835100_11",
       "tipo": "arista_punteada",
       "puntos": [
         [
@@ -630,7 +650,7 @@
       ]
     },
     {
-      "id": "arista_mp_1782778401663_12",
+      "id": "arista_mp_1782785835100_12",
       "tipo": "arista_solida",
       "puntos": [
         [
@@ -644,7 +664,7 @@
       ]
     },
     {
-      "id": "arista_mp_1782778401663_13",
+      "id": "arista_mp_1782785835100_13",
       "tipo": "arista_solida",
       "puntos": [
         [
@@ -658,7 +678,7 @@
       ]
     },
     {
-      "id": "arista_mp_1782778401663_14",
+      "id": "arista_mp_1782785835100_14",
       "tipo": "arista_punteada",
       "puntos": [
         [
@@ -672,7 +692,7 @@
       ]
     },
     {
-      "id": "arista_mp_1782778401663_15",
+      "id": "arista_mp_1782785835100_15",
       "tipo": "arista_solida",
       "puntos": [
         [
@@ -686,7 +706,7 @@
       ]
     },
     {
-      "id": "arista_mp_1782778401663_16",
+      "id": "arista_mp_1782785835100_16",
       "tipo": "arista_solida",
       "puntos": [
         [
@@ -700,7 +720,7 @@
       ]
     },
     {
-      "id": "arista_mp_1782778401663_17",
+      "id": "arista_mp_1782785835100_17",
       "tipo": "arista_punteada",
       "puntos": [
         [
@@ -714,7 +734,7 @@
       ]
     },
     {
-      "id": "arista_mp_1782778401663_18",
+      "id": "arista_mp_1782785835100_18",
       "tipo": "arista_solida",
       "puntos": [
         [
@@ -728,7 +748,7 @@
       ]
     },
     {
-      "id": "arista_mp_1782778401663_19",
+      "id": "arista_mp_1782785835100_19",
       "tipo": "arista_solida",
       "puntos": [
         [
@@ -742,7 +762,7 @@
       ]
     },
     {
-      "id": "arista_mp_1782778401663_20",
+      "id": "arista_mp_1782785835100_20",
       "tipo": "arista_punteada",
       "puntos": [
         [
@@ -756,7 +776,7 @@
       ]
     },
     {
-      "id": "arista_mp_1782778401663_21",
+      "id": "arista_mp_1782785835100_21",
       "tipo": "arista_solida",
       "puntos": [
         [
@@ -770,7 +790,7 @@
       ]
     },
     {
-      "id": "arista_mp_1782778401663_22",
+      "id": "arista_mp_1782785835100_22",
       "tipo": "arista_solida",
       "puntos": [
         [
@@ -784,7 +804,7 @@
       ]
     },
     {
-      "id": "arista_mp_1782778401663_23",
+      "id": "arista_mp_1782785835100_23",
       "tipo": "arista_punteada",
       "puntos": [
         [
@@ -798,7 +818,7 @@
       ]
     },
     {
-      "id": "arista_mp_1782778401663_24",
+      "id": "arista_mp_1782785835100_24",
       "tipo": "arista_solida",
       "puntos": [
         [
@@ -812,7 +832,7 @@
       ]
     },
     {
-      "id": "arista_mp_1782778401663_25",
+      "id": "arista_mp_1782785835100_25",
       "tipo": "arista_solida",
       "puntos": [
         [
@@ -826,7 +846,7 @@
       ]
     },
     {
-      "id": "arista_mp_1782778401663_26",
+      "id": "arista_mp_1782785835100_26",
       "tipo": "arista_punteada",
       "puntos": [
         [
@@ -840,7 +860,7 @@
       ]
     },
     {
-      "id": "arista_mp_1782778401663_27",
+      "id": "arista_mp_1782785835100_27",
       "tipo": "arista_solida",
       "puntos": [
         [
@@ -854,7 +874,7 @@
       ]
     },
     {
-      "id": "arista_mp_1782778401663_28",
+      "id": "arista_mp_1782785835100_28",
       "tipo": "arista_solida",
       "puntos": [
         [
@@ -868,7 +888,7 @@
       ]
     },
     {
-      "id": "arista_mp_1782778401663_29",
+      "id": "arista_mp_1782785835100_29",
       "tipo": "arista_solida",
       "puntos": [
         [
@@ -882,7 +902,7 @@
       ]
     },
     {
-      "id": "arista_mp_1782778401663_30",
+      "id": "arista_mp_1782785835100_30",
       "tipo": "arista_solida",
       "puntos": [
         [
@@ -895,24 +915,5 @@
         ]
       ]
     }
-  ],
-  "configProyecto": {
-    "titulo": "PARCELAS LOS TRES MAITENES",
-    "subtitulo": "TERRENOS DESDE 5.000 M²",
-    "colorDisp": "#10b981",
-    "colorRes": "#f59e0b",
-    "colorVend": "#ef4444",
-    "colorNoDisp": "#94a3b8",
-    "opacidadDisp": 15,
-    "opacidadRes": 15,
-    "opacidadVend": 25,
-    "opacidadNoDisp": 25,
-    "valorUF": 0,
-    "whatsapp": "",
-    "colorPrincipal": "#10b981",
-    "logoUrl": "",
-    "bannerActivo": false,
-    "bannerTipo": "descuento",
-    "bannerTexto": ""
-  }
+  ]
 }
