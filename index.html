@@ -279,9 +279,9 @@
         let ConfigProyecto = { titulo: "PROYECTO INMOBILIARIO", subtitulo: "Masterplan Interactivo 360°" };
         let OrigenDrone = null, NorteOffset = 0, BaseDatosLotes = [], PuntosHorizonte = [], allDrawnLines = [], UF_Online = 0;
         const DOMCache = { paths: {}, markers: {}, viewport: { w: window.innerWidth, h: window.innerHeight, left: 0, top: 0 } }; 
-        let isHeatmapActive = false, isWebGLSupported = true, viewerGpuReady = true, smartInitAttempts = 0, panoramaEventsBound = false, pannellumIntroBootstrapped = false, svgFrameCounter = 0, svgViewSyncBound = false, lastRenderViewState = null;
+        let isHeatmapActive = false, isWebGLSupported = true, viewerGpuReady = true, smartInitAttempts = 0, panoramaEventsBound = false, pannellumIntroBootstrapped = false, svgFrameCounter = 0, svgViewSyncBound = false;
         function isTouchDevice() { return (navigator.maxTouchPoints || 0) > 0 || ('ontouchstart' in window); }
-        function isSvgRenderAllowed() { if (document.body.classList.contains('inapp-viewer-open')) return false; return (!isWebGLSupported) ? false : (isTouchDevice() ? viewerGpuReady && !!visor360 : !!visor360); }
+        function isSvgRenderAllowed() { return (!isWebGLSupported) ? false : (isTouchDevice() ? viewerGpuReady && !!visor360 : true); }
         function shouldUpdateSVGThisFrame() { if (document.body.classList.contains('is-embedded')) { svgFrameCounter++; return svgFrameCounter % 2 === 0; } return true; }
         function fitPremiumHeaderDock() {
             const header = document.querySelector('.premium-header'); const h1 = document.getElementById('ui-main-title'); const sub = document.getElementById('ui-subtitle');
@@ -375,50 +375,11 @@
             if (localFills > incomingFills) return localTrazos;
             return incomingTrazos.length >= localTrazos.length ? incomingTrazos : localTrazos;
         }
-        function refreshPanoramaSvg() {
+        function refreshEmbeddedSvg() {
+            if (!document.body.classList.contains('is-embedded')) return;
             const container = document.getElementById('panorama-container');
             if (container) { const rect = container.getBoundingClientRect(); DOMCache.viewport.w = rect.width; DOMCache.viewport.h = rect.height; DOMCache.viewport.left = rect.left; DOMCache.viewport.top = rect.top; }
-            if (!visor360) return;
-            mountSvgInPanoramaUi();
-            const renderer = visor360.getRenderer();
-            if (renderer && typeof renderer.resize === 'function') { try { renderer.resize(); } catch(e) {} }
-            syncSVGElements();
-            wakePanoramaRenderLoop();
-            if ((!isIntroAnimating || isDevModeDrawActive) && isSvgRenderAllowed()) updateSVGPaths(lastRenderViewState);
-            const svg = document.getElementById('loteo-svg');
-            if (svg && isSvgRenderAllowed()) svg.style.opacity = '1';
-        }
-        function refreshEmbeddedSvg() { if (document.body.classList.contains('is-embedded')) refreshPanoramaSvg(); }
-        function onceAnimateFinished(fn) {
-            if (!visor360 || typeof fn !== 'function') return;
-            const handler = () => { try { visor360.off('animatefinished', handler); } catch(e) {} fn(); };
-            visor360.on('animatefinished', handler);
-        }
-        function restorePanoramaAfterInApp() {
-            if (!visor360 || isIntroAnimating) return;
-            forceRehookRenderer();
-            ensureSvgRenderPipeline();
-            wakePanoramaRenderLoop();
-            refreshPanoramaSvg();
-            requestAnimationFrame(() => { wakePanoramaRenderLoop(); refreshPanoramaSvg(); requestAnimationFrame(refreshPanoramaSvg); });
-        }
-        function wakePanoramaRenderLoop() {
-            if (!visor360) return;
-            try { visor360.setPitch(visor360.getPitch(), 0); } catch(e) {}
-        }
-        function forceRehookRenderer() {
-            const renderer = visor360 && visor360.getRenderer();
-            if (!renderer || typeof renderer.render !== 'function') return;
-            if (renderer._isHooked && renderer._originalRender) { renderer.render = renderer._originalRender; renderer._isHooked = false; }
-            hookRendererOverlay(renderer);
-        }
-        function schedulePanoramaRestoreAfterLookAt(snap) {
-            if (!visor360) { restorePanoramaAfterInApp(); return; }
-            if (!snap) { restorePanoramaAfterInApp(); return; }
-            visor360.lookAt(snap.pitch, snap.yaw, snap.hfov, 900);
-            onceAnimateFinished(restorePanoramaAfterInApp);
-            setTimeout(restorePanoramaAfterInApp, 120);
-            setTimeout(restorePanoramaAfterInApp, 980);
+            if (visor360) { const r = visor360.getRenderer(); if (r && typeof r.resize === 'function') { try { r.resize(); } catch(e) {} } syncSVGElements(); updateSVGPaths(); }
         }
         function applyMasterplanFromAdmin(payload) {
             if (!payload) return;
@@ -621,20 +582,12 @@
             if ((!isIntroAnimating || isDevModeDrawActive) && visor360 && isSvgRenderAllowed()) updateSVGPaths();
         }
 
-        function updateSVGPaths(viewState) {
+        function updateSVGPaths() {
             if ((isIntroAnimating && !isDevModeDrawActive) || !visor360 || !isSvgRenderAllowed()) return;
             const container = document.getElementById('panorama-container'); if(!container) return;
-            const renderer = visor360.getRenderer();
-            const canvas = renderer && typeof renderer.getCanvas === 'function' ? renderer.getCanvas() : null;
-            const w = canvas ? canvas.clientWidth : container.clientWidth;
-            const h = canvas ? canvas.clientHeight : container.clientHeight;
-            const vs = viewState || lastRenderViewState;
-            const pitchDeg = vs ? vs.pitch : visor360.getPitch();
-            const camYawDeg = vs ? vs.yaw : visor360.getYaw();
-            const hfov = vs ? vs.hfov : visor360.getHfov();
-            const cp = pitchDeg * Math.PI / 180, sin_cp = Math.sin(cp), cos_cp = Math.cos(cp), f = 0.5 * w / Math.tan(hfov * Math.PI / 360), cx = w / 2, cy_screen = h / 2;
-            function getCam(pitch, yaw) { const sin_p = Math.sin(pitch * Math.PI / 180), cos_p = Math.cos(pitch * Math.PI / 180); const yDiffRad = (-yaw + camYawDeg) * Math.PI / 180; const sin_yd = Math.sin(yDiffRad), cos_yd = Math.cos(yDiffRad); return { x: cos_p * sin_yd, y: sin_p * cos_cp - cos_p * cos_yd * sin_cp, z: sin_p * sin_cp + cos_p * cos_yd * cos_cp }; }
-            function rnd(n) { return Math.round(n * 100) / 100; }
+            const w = container.clientWidth, h = container.clientHeight, cp = visor360.getPitch() * Math.PI / 180, cy = visor360.getYaw() * Math.PI / 180, hfov = visor360.getHfov();
+            const sin_cp = Math.sin(cp), cos_cp = Math.cos(cp), f = 0.5 * w / Math.tan(hfov * Math.PI / 360), cx = w / 2, cy_screen = h / 2;
+            function getCam(pitch, yaw) { const p = pitch * Math.PI / 180, y = yaw * Math.PI / 180, sin_p = Math.sin(p), cos_p = Math.cos(p); let y_diff = y - cy; while (y_diff > Math.PI) y_diff -= 2 * Math.PI; while (y_diff < -Math.PI) y_diff += 2 * Math.PI; const sin_yd = Math.sin(y_diff), cos_yd = Math.cos(y_diff); return { x: cos_p * sin_yd, y: sin_p * cos_cp - cos_p * cos_yd * sin_cp, z: sin_p * sin_cp + cos_p * cos_yd * cos_cp }; }
             Object.keys(DOMCache.paths).forEach(lineId => {
                 const cacheObj = DOMCache.paths[lineId]; if (!cacheObj) return;
                 let lineData = allDrawnLines.find(l => l.id === lineId); if (!lineData && lineId === currentTempLineId) lineData = { tipo: currentLineType, puntos: currentLinePoints }; if (!lineData) return;
@@ -646,12 +599,12 @@
                     let c1 = getCam(p1[0], p1[1]), c2 = getCam(p2[0], p2[1]);
                     let in1 = c1.z > 0.0001, in2 = c2.z > 0.0001; if (!in1 && !in2) continue; 
                     let s1, s2;
-                    if (in1) { s1 = { x: rnd(cx + (c1.x / c1.z) * f), y: rnd(cy_screen - (c1.y / c1.z) * f) }; hasVisiblePoints = true; } else { let t = c1.z / (c1.z - c2.z), ix = c1.x + t * (c2.x - c1.x), iy = c1.y + t * (c2.y - c1.y); s1 = { x: rnd(cx + (ix / 0.0001) * f), y: rnd(cy_screen - (iy / 0.0001) * f) }; }
-                    if (in2) { s2 = { x: rnd(cx + (c2.x / c2.z) * f), y: rnd(cy_screen - (c2.y / c2.z) * f) }; hasVisiblePoints = true; } else { let t = c2.z / (c2.z - c1.z), ix = c2.x + t * (c1.x - c2.x), iy = c2.y + t * (c1.y - c2.y); s2 = { x: rnd(cx + (ix / 0.0001) * f), y: rnd(cy_screen - (iy / 0.0001) * f) }; }
+                    if (in1) { s1 = { x: cx + (c1.x / c1.z) * f, y: cy_screen - (c1.y / c1.z) * f }; hasVisiblePoints = true; } else { let t = c1.z / (c1.z - c2.z), ix = c1.x + t * (c2.x - c1.x), iy = c1.y + t * (c2.y - c1.y); s1 = { x: cx + (ix / 0.0001) * f, y: cy_screen - (iy / 0.0001) * f }; }
+                    if (in2) { s2 = { x: cx + (c2.x / c2.z) * f, y: cy_screen - (c2.y / c2.z) * f }; hasVisiblePoints = true; } else { let t = c2.z / (c2.z - c1.z), ix = c2.x + t * (c1.x - c2.x), iy = c2.y + t * (c1.y - c2.y); s2 = { x: cx + (ix / 0.0001) * f, y: cy_screen - (iy / 0.0001) * f }; }
                     if(isNaN(s1.x) || isNaN(s2.x)) continue; 
                     if (dBase === '') { dBase += `M ${s1.x},${s1.y} L ${s2.x},${s2.y} `; } else { if (!in1) dBase += `M ${s1.x},${s1.y} `; dBase += `L ${s2.x},${s2.y} `; }
                 }
-                if (!isClosed && lineId === currentTempLineId && window.lastMouseX !== undefined) { let mx = window.lastMouseX - DOMCache.viewport.left, my = window.lastMouseY - DOMCache.viewport.top; if(dBase === '' && pts.length > 0) { let c1 = getCam(pts[0][0], pts[0][1]); if(c1.z > 0) dBase += `M ${rnd(cx + (c1.x / c1.z) * f)},${rnd(cy_screen - (c1.y / c1.z) * f)} `; } dBase += `L ${rnd(mx)},${rnd(my)} `; hasVisiblePoints = true; }
+                if (!isClosed && lineId === currentTempLineId && window.lastMouseX !== undefined) { let mx = window.lastMouseX - DOMCache.viewport.left, my = window.lastMouseY - DOMCache.viewport.top; if(dBase === '' && pts.length > 0) { let c1 = getCam(pts[0][0], pts[0][1]); if(c1.z > 0) dBase += `M ${cx + (c1.x / c1.z) * f},${cy_screen - (c1.y / c1.z) * f} `; } dBase += `L ${mx},${my} `; hasVisiblePoints = true; }
                 if (isClosed && dBase.trim() !== '') dBase += ' Z'; if (!hasVisiblePoints && isClosed) dBase = 'M -999 -999';
                 if (cacheObj.base) { cacheObj.base.forEach(path => path.setAttribute("d", dBase.trim() !== '' ? dBase : 'M -999 -999')); }
             });
@@ -668,24 +621,20 @@
         }
 
         function hookRendererOverlay(renderer) {
-            if (renderer && typeof renderer.render === 'function') {
-                if (renderer._isHooked && renderer._originalRender) { renderer.render = renderer._originalRender; renderer._isHooked = false; }
-                if (!renderer._isHooked) {
-                    renderer._isHooked = true; const originalRender = renderer.render.bind(renderer); renderer._originalRender = originalRender;
-                    renderer.render = function (pitch, yaw, hfov, opts) {
-                        originalRender.apply(this, arguments);
-                        lastRenderViewState = { pitch: pitch * 180 / Math.PI, yaw: yaw * 180 / Math.PI, hfov: hfov * 180 / Math.PI };
-                        if (isSvgRenderAllowed() && shouldUpdateSVGThisFrame()) updateSVGPaths(lastRenderViewState);
-                        const compassDial = document.getElementById('js-compass'); if (compassDial) { compassDial.style.transform = `rotate(${-(visor360.getYaw() - NorteOffset)}deg)`; }
-                        const isMobile = DOMCache.viewport.w <= 768; const currentHfov = visor360.getHfov();
-                        let newScale = (isMobile ? 0.30 : 0.45) * (DEFAULT_HFOV / currentHfov); newScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, newScale));
-                        document.querySelectorAll('.pin-scaler').forEach((s) => { s.style.transform = `scale(${newScale.toFixed(3)})`; });
-                        let zoomFactor = DEFAULT_HFOV / currentHfov; let baseStroke = isMobile ? 1.2 : 2.0; let dynStroke = baseStroke * zoomFactor;
-                        if (isMobile) { dynStroke = Math.max(0.8, Math.min(dynStroke, 3.0)); } else { dynStroke = Math.max(1.5, Math.min(dynStroke, 4.5)); }
-                        document.documentElement.style.setProperty('--stroke-dyn', dynStroke + 'px'); document.documentElement.style.setProperty('--stroke-dyn-hover', (dynStroke + 1.2) + 'px');
-                    };
-                    if (!isIntroAnimating) { try { wakePanoramaRenderLoop(); } catch(e) {} }
-                }
+            if (renderer && typeof renderer.render === 'function' && !renderer._isHooked) {
+                renderer._isHooked = true; const originalRender = renderer.render.bind(renderer);
+                renderer.render = function () {
+                    originalRender.apply(this, arguments);
+                    if (isSvgRenderAllowed() && shouldUpdateSVGThisFrame()) updateSVGPaths();
+                    const compassDial = document.getElementById('js-compass'); if (compassDial) { compassDial.style.transform = `rotate(${-(visor360.getYaw() - NorteOffset)}deg)`; }
+                    const isMobile = DOMCache.viewport.w <= 768; const currentHfov = visor360.getHfov();
+                    let newScale = (isMobile ? 0.30 : 0.45) * (DEFAULT_HFOV / currentHfov); newScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, newScale));
+                    document.querySelectorAll('.pin-scaler').forEach((s) => { s.style.transform = `scale(${newScale.toFixed(3)})`; });
+                    let zoomFactor = DEFAULT_HFOV / currentHfov; let baseStroke = isMobile ? 1.2 : 2.0; let dynStroke = baseStroke * zoomFactor;
+                    if (isMobile) { dynStroke = Math.max(0.8, Math.min(dynStroke, 3.0)); } else { dynStroke = Math.max(1.5, Math.min(dynStroke, 4.5)); }
+                    document.documentElement.style.setProperty('--stroke-dyn', dynStroke + 'px'); document.documentElement.style.setProperty('--stroke-dyn-hover', (dynStroke + 1.2) + 'px');
+                };
+                if (!isIntroAnimating) { try { renderer.render(); } catch(e) {} }
             }
         }
 
@@ -890,12 +839,7 @@
             if (video) { video.pause(); video.removeAttribute('src'); video.load(); video.style.display = 'none'; }
             if (content) content.className = 'inapp-content';
         }
-        function setupInAppModal() {
-            const modal = document.getElementById('inapp-modal'); const closeBtn = document.getElementById('js-close-inapp');
-            if(closeBtn) { closeBtn.addEventListener('click', (e) => { e.preventDefault(); closeInAppViewer(); }); }
-            if(modal) { modal.addEventListener('click', (e) => { if(e.target === modal) closeInAppViewer(); }); }
-            document.addEventListener('visibilitychange', () => { if (!document.hidden && !document.body.classList.contains('inapp-viewer-open') && visor360 && !isIntroAnimating) restorePanoramaAfterInApp(); }, { passive: true });
-        }
+        function setupInAppModal() { const modal = document.getElementById('inapp-modal'); const closeBtn = document.getElementById('js-close-inapp'); if(closeBtn) { closeBtn.addEventListener('click', (e) => { e.preventDefault(); closeInAppViewer(); }); } if(modal) { modal.addEventListener('click', (e) => { if(e.target === modal) closeInAppViewer(); }); } }
         function isDirectVideoUrl(url) { if(!url) return false; const clean = url.toLowerCase().split('?')[0]; return /\.(mp4|webm|mov|m4v|ogg)(\?|$)/i.test(clean); }
         function closeInAppViewer() {
             const modal = document.getElementById('inapp-modal'); const tag = document.getElementById('inapp-modal-tag');
@@ -905,20 +849,18 @@
                 modal.classList.add('mode-step-back');
                 document.body.classList.remove('inapp-viewer-open');
                 const pano = inAppNavStack[inAppNavStack.length - 1];
-                if (pano && visor360) setTimeout(() => { schedulePanoramaRestoreAfterLookAt(pano); }, 60);
+                if (pano && visor360) setTimeout(() => { visor360.lookAt(pano.pitch, pano.yaw, pano.hfov, 700); }, 60);
                 inAppNavStep = 1;
                 updateInAppBackLabel();
-                if (!isIntroAnimating && visor360) restorePanoramaAfterInApp();
+                if (!isIntroAnimating && visor360) { ensureSvgRenderPipeline(); refreshEmbeddedSvg(); }
                 return;
             }
             const snap = inAppNavStack.length >= 2 ? inAppNavStack[0] : (inAppNavStack[0] || inAppCameraSnapshot);
             if(modal) modal.classList.remove('open', 'mode-360', 'mode-yt', 'mode-mp4', 'mode-step-back');
             document.body.classList.remove('inapp-viewer-open');
-            clearInAppMedia();
-            restorePanoramaAfterInApp();
-            setTimeout(() => { if(tag) tag.textContent = 'Tour Virtual'; setInAppBackLabel('Volver al entorno'); restorePanoramaAfterInApp(); }, 300);
+            setTimeout(() => { clearInAppMedia(); if(tag) tag.textContent = 'Tour Virtual'; setInAppBackLabel('Volver al entorno'); }, 300);
             inAppNavStack = []; inAppCameraSnapshot = null; inAppNavStep = 0;
-            if (!isIntroAnimating) setTimeout(() => schedulePanoramaRestoreAfterLookAt(snap), 80);
+            if (snap && visor360) { setTimeout(() => { visor360.lookAt(snap.pitch, snap.yaw, snap.hfov, 900); if (!isIntroAnimating) ensureSvgRenderPipeline(); }, 80); }
         }
         function extractYouTubeID(url) { if (!url) return null; const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/; const match = url.match(regExp); return (match && match[2].length === 11) ? match[2] : null; }
         window.openInAppViewer = function(e, url, label, opts) {
@@ -934,8 +876,6 @@
             }
             document.body.classList.add('inapp-viewer-open');
             modal.classList.remove('mode-360', 'mode-yt', 'mode-mp4');
-            const svgHide = document.getElementById('loteo-svg');
-            if (svgHide) svgHide.style.opacity = '0';
             if(tag) tag.textContent = label || 'Tour Virtual';
             if(iframe) iframe.style.display = 'none';
             if(video) video.style.display = 'none';
