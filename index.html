@@ -281,7 +281,7 @@
         const DOMCache = { paths: {}, markers: {}, viewport: { w: window.innerWidth, h: window.innerHeight, left: 0, top: 0 } }; 
         let isHeatmapActive = false, isWebGLSupported = true, viewerGpuReady = true, smartInitAttempts = 0, panoramaEventsBound = false, pannellumIntroBootstrapped = false, svgFrameCounter = 0, svgViewSyncBound = false;
         function isTouchDevice() { return (navigator.maxTouchPoints || 0) > 0 || ('ontouchstart' in window); }
-        function isSvgRenderAllowed() { return (!isWebGLSupported) ? false : (isTouchDevice() ? viewerGpuReady && !!visor360 : true); }
+        function isSvgRenderAllowed() { if (document.body.classList.contains('inapp-viewer-open')) return false; return (!isWebGLSupported) ? false : (isTouchDevice() ? viewerGpuReady && !!visor360 : !!visor360); }
         function shouldUpdateSVGThisFrame() { if (document.body.classList.contains('is-embedded')) { svgFrameCounter++; return svgFrameCounter % 2 === 0; } return true; }
         function fitPremiumHeaderDock() {
             const header = document.querySelector('.premium-header'); const h1 = document.getElementById('ui-main-title'); const sub = document.getElementById('ui-subtitle');
@@ -375,11 +375,38 @@
             if (localFills > incomingFills) return localTrazos;
             return incomingTrazos.length >= localTrazos.length ? incomingTrazos : localTrazos;
         }
-        function refreshEmbeddedSvg() {
-            if (!document.body.classList.contains('is-embedded')) return;
+        function refreshPanoramaSvg() {
             const container = document.getElementById('panorama-container');
             if (container) { const rect = container.getBoundingClientRect(); DOMCache.viewport.w = rect.width; DOMCache.viewport.h = rect.height; DOMCache.viewport.left = rect.left; DOMCache.viewport.top = rect.top; }
-            if (visor360) { const r = visor360.getRenderer(); if (r && typeof r.resize === 'function') { try { r.resize(); } catch(e) {} } syncSVGElements(); updateSVGPaths(); }
+            if (!visor360) return;
+            mountSvgInPanoramaUi();
+            const renderer = visor360.getRenderer();
+            if (renderer && typeof renderer.resize === 'function') { try { renderer.resize(); } catch(e) {} }
+            syncSVGElements();
+            if ((!isIntroAnimating || isDevModeDrawActive) && isSvgRenderAllowed()) updateSVGPaths();
+            if (renderer) { try { renderer.render(); } catch(e) {} }
+            const svg = document.getElementById('loteo-svg');
+            if (svg && isSvgRenderAllowed()) svg.style.opacity = '1';
+        }
+        function refreshEmbeddedSvg() { if (document.body.classList.contains('is-embedded')) refreshPanoramaSvg(); }
+        function onceAnimateFinished(fn) {
+            if (!visor360 || typeof fn !== 'function') return;
+            const handler = () => { try { visor360.off('animatefinished', handler); } catch(e) {} fn(); };
+            visor360.on('animatefinished', handler);
+        }
+        function restorePanoramaAfterInApp() {
+            if (!visor360 || isIntroAnimating) return;
+            ensureSvgRenderPipeline();
+            refreshPanoramaSvg();
+            requestAnimationFrame(() => { refreshPanoramaSvg(); requestAnimationFrame(refreshPanoramaSvg); });
+        }
+        function schedulePanoramaRestoreAfterLookAt(snap) {
+            if (!visor360) { restorePanoramaAfterInApp(); return; }
+            if (!snap) { restorePanoramaAfterInApp(); return; }
+            visor360.lookAt(snap.pitch, snap.yaw, snap.hfov, 900);
+            onceAnimateFinished(restorePanoramaAfterInApp);
+            setTimeout(restorePanoramaAfterInApp, 120);
+            setTimeout(restorePanoramaAfterInApp, 980);
         }
         function applyMasterplanFromAdmin(payload) {
             if (!payload) return;
@@ -849,18 +876,18 @@
                 modal.classList.add('mode-step-back');
                 document.body.classList.remove('inapp-viewer-open');
                 const pano = inAppNavStack[inAppNavStack.length - 1];
-                if (pano && visor360) setTimeout(() => { visor360.lookAt(pano.pitch, pano.yaw, pano.hfov, 700); }, 60);
+                if (pano && visor360) setTimeout(() => { schedulePanoramaRestoreAfterLookAt(pano); }, 60);
                 inAppNavStep = 1;
                 updateInAppBackLabel();
-                if (!isIntroAnimating && visor360) { ensureSvgRenderPipeline(); refreshEmbeddedSvg(); }
+                if (!isIntroAnimating && visor360) restorePanoramaAfterInApp();
                 return;
             }
             const snap = inAppNavStack.length >= 2 ? inAppNavStack[0] : (inAppNavStack[0] || inAppCameraSnapshot);
             if(modal) modal.classList.remove('open', 'mode-360', 'mode-yt', 'mode-mp4', 'mode-step-back');
             document.body.classList.remove('inapp-viewer-open');
-            setTimeout(() => { clearInAppMedia(); if(tag) tag.textContent = 'Tour Virtual'; setInAppBackLabel('Volver al entorno'); }, 300);
+            setTimeout(() => { clearInAppMedia(); if(tag) tag.textContent = 'Tour Virtual'; setInAppBackLabel('Volver al entorno'); restorePanoramaAfterInApp(); }, 300);
             inAppNavStack = []; inAppCameraSnapshot = null; inAppNavStep = 0;
-            if (snap && visor360) { setTimeout(() => { visor360.lookAt(snap.pitch, snap.yaw, snap.hfov, 900); if (!isIntroAnimating) ensureSvgRenderPipeline(); }, 80); }
+            if (!isIntroAnimating) setTimeout(() => schedulePanoramaRestoreAfterLookAt(snap), 80);
         }
         function extractYouTubeID(url) { if (!url) return null; const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/; const match = url.match(regExp); return (match && match[2].length === 11) ? match[2] : null; }
         window.openInAppViewer = function(e, url, label, opts) {
@@ -876,6 +903,8 @@
             }
             document.body.classList.add('inapp-viewer-open');
             modal.classList.remove('mode-360', 'mode-yt', 'mode-mp4');
+            const svgHide = document.getElementById('loteo-svg');
+            if (svgHide) svgHide.style.opacity = '0';
             if(tag) tag.textContent = label || 'Tour Virtual';
             if(iframe) iframe.style.display = 'none';
             if(video) video.style.display = 'none';
