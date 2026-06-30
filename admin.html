@@ -171,6 +171,17 @@
         .vista-switch-btn:hover { color: var(--text-main); background: rgba(255,255,255,0.06); }
         .vista-switch-btn.active { color: #fff; background: linear-gradient(135deg, rgba(10,132,255,0.85), rgba(94,92,230,0.85)); border-color: rgba(255,255,255,0.18); box-shadow: 0 4px 14px rgba(10,132,255,0.35); }
 
+        /* MAPEO FULLSCREEN (Ctrl+H → botón Mapeo 3D) */
+        #mapeo-fullscreen { position: fixed; inset: 0; z-index: 9999999; background: #000; display: none; flex-direction: column; opacity: 0; visibility: hidden; transition: opacity 0.2s ease, visibility 0.2s; }
+        #mapeo-fullscreen.open { display: flex; opacity: 1; visibility: visible; }
+        body.mapeo-fs-active { overflow: hidden !important; }
+        .mapeo-fs-topbar { position: absolute; top: 0; left: 0; right: 0; z-index: 30; display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; pointer-events: none; }
+        .mapeo-fs-topbar .vista-switch-bar { position: static; pointer-events: auto; }
+        .mapeo-fs-hint { pointer-events: none; font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.75); background: rgba(0,0,0,0.55); border: 1px solid rgba(255,255,255,0.15); padding: 8px 14px; border-radius: 10px; backdrop-filter: blur(12px); letter-spacing: 0.3px; }
+        .mapeo-fs-hint kbd { display: inline-block; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; padding: 1px 6px; margin-right: 4px; font-family: inherit; font-size: 10px; }
+        #mapeo-fs-loader { position: absolute; inset: 0; z-index: 20; background: #090b11; display: none; flex-direction: column; align-items: center; justify-content: center; }
+        #iframe-fullscreen-360 { flex: 1; width: 100%; height: 100%; border: none; display: block; }
+
         .tab-section { display: none; animation: fadeIn 0.4s ease; height: 100%; }
         .tab-section.active { display: block; }
 
@@ -559,7 +570,7 @@
             <span>Global</span>
         </button>
         
-        <button class="dock-item" id="btn-dock-mapeo" onclick="abrirEditorEspacial(this)" title="Mapeo Espacial" style="display: none;">
+        <button class="dock-item" id="btn-dock-mapeo" onclick="abrirMapeoFullscreen(this)" title="Mapeo Espacial" style="display: none;">
             <div class="dock-icon" style="background: linear-gradient(135deg, #BF5AF2, #5E5CE6);"><svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg></div>
             <span>Mapeo 3D</span>
         </button>
@@ -586,6 +597,22 @@
         <span id="toast-msg">Panel Actualizado Exitosamente</span>
     </div>
 
+    <!-- MASTERPLAN FULLSCREEN (solo salida con Escape) -->
+    <div id="mapeo-fullscreen" aria-hidden="true">
+        <div class="mapeo-fs-topbar">
+            <div class="vista-switch-bar">
+                <button type="button" id="btn-fs-vista-aereo" class="vista-switch-btn active" onclick="cambiarVistaEditor('aereo')">🚁 Vista Aérea</button>
+                <button type="button" id="btn-fs-vista-suelo" class="vista-switch-btn" onclick="cambiarVistaEditor('suelo')">🌿 Vista Suelo</button>
+            </div>
+            <span class="mapeo-fs-hint"><kbd>Esc</kbd> Volver al panel admin</span>
+        </div>
+        <div id="mapeo-fs-loader">
+            <svg class="spinner" width="30" height="30" fill="none" stroke="var(--mac-blue)" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <p style="margin-top: 15px; font-weight: 600; color: #fff;">Inicializando Masterplan 360°...</p>
+        </div>
+        <iframe id="iframe-fullscreen-360" src="" title="Masterplan 360 Fullscreen"></iframe>
+    </div>
+
     <script>
         // CONFIGURACIÓN CENTRAL
         const FILENAME = "datos.json";
@@ -595,6 +622,29 @@
         let masterData = {};
         let editorVistaActual = 'aereo';
         let guardarCambiosEnCurso = false;
+        let mapeoFsReturnDock = null;
+
+        function isMapeoFullscreenOpen() {
+            const fs = document.getElementById('mapeo-fullscreen');
+            return !!(fs && fs.classList.contains('open'));
+        }
+
+        function getActiveEditorIframe() {
+            if (isMapeoFullscreenOpen()) return document.getElementById('iframe-fullscreen-360');
+            return document.getElementById('iframe-editor-360');
+        }
+
+        function getActiveMapeoLoader() {
+            if (isMapeoFullscreenOpen()) return document.getElementById('mapeo-fs-loader');
+            return document.getElementById('mapeo-loader');
+        }
+
+        function syncVistaSwitchButtons(vista) {
+            const v = vista || editorVistaActual;
+            const aereo = v === 'aereo';
+            ['btn-vista-aereo', 'btn-fs-vista-aereo'].forEach(id => document.getElementById(id)?.classList.toggle('active', aereo));
+            ['btn-vista-suelo', 'btn-fs-vista-suelo'].forEach(id => document.getElementById(id)?.classList.toggle('active', !aereo));
+        }
 
         async function fetchGithubFileSha(user, repo, token, filename) {
             const url = `https://api.github.com/repos/${user}/${repo}/contents/${filename}`;
@@ -687,6 +737,12 @@
 
         // BACKDOOR DE SEGURIDAD (TECLADO Y TÁCTIL) PARA MOSTRAR BOTÓN DE MAPEO ESPACIAL
         document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && isMapeoFullscreenOpen()) {
+                e.preventDefault();
+                e.stopPropagation();
+                cerrarMapeoFullscreen();
+                return;
+            }
             if (e.ctrlKey && e.key.toLowerCase() === 'h') {
                 e.preventDefault();
                 toggleAdminMapeoBtn();
@@ -728,7 +784,8 @@
                 } else {
                     btnMapeo.style.display = 'none';
                     mostrarToast("🔒 Modo Arquitecto Oculto", true);
-                    if(btnMapeo.classList.contains('active')) {
+                    if (isMapeoFullscreenOpen()) cerrarMapeoFullscreen();
+                    else if (btnMapeo.classList.contains('active')) {
                         switchTab('tab-global', document.querySelector('.dock-item[title="Ajustes Globales"]'));
                     }
                 }
@@ -1500,7 +1557,7 @@
         }
 
         function pushMasterplanToEditor() {
-            const iframe = document.getElementById('iframe-editor-360');
+            const iframe = getActiveEditorIframe();
             if (!iframe || !iframe.contentWindow) return;
             try {
                 iframe.contentWindow.postMessage({ type: 'APPLY_MASTERPLAN_DATA', payload: getEditorPayloadForVista(editorVistaActual) }, '*');
@@ -1512,37 +1569,75 @@
             return `${file}?admin=true&v=${Date.now()}`;
         }
 
-        function cambiarVistaEditor(vista) {
-            if (editorVistaActual === vista) return;
-            editorVistaActual = vista;
-            document.getElementById('btn-vista-aereo')?.classList.toggle('active', vista === 'aereo');
-            document.getElementById('btn-vista-suelo')?.classList.toggle('active', vista === 'suelo');
-            const iframe = document.getElementById('iframe-editor-360');
-            const loader = document.getElementById('mapeo-loader');
+        function loadEditorIframe(iframe, loader) {
+            if (!iframe) return;
             if (loader) loader.style.display = 'flex';
-            if (iframe) {
-                iframe.src = getEditorIframeSrc(vista);
-                iframe.onload = () => { setTimeout(() => { pushMasterplanToEditor(); if (loader) loader.style.display = 'none'; }, 900); };
+            iframe.src = getEditorIframeSrc(editorVistaActual);
+            iframe.onload = () => {
+                setTimeout(() => { pushMasterplanToEditor(); if (loader) loader.style.display = 'none'; }, 900);
+            };
+        }
+
+        function abrirMapeoFullscreen(dockItem) {
+            const overlay = document.getElementById('mapeo-fullscreen');
+            if (!overlay) return;
+
+            const prevActive = document.querySelector('.dock-item.active');
+            mapeoFsReturnDock = (prevActive && prevActive !== dockItem) ? prevActive : document.querySelector('.dock-item[title="Ajustes Globales"]');
+
+            if (dockItem) {
+                document.querySelectorAll('.dock-item').forEach(b => b.classList.remove('active'));
+                dockItem.classList.add('active');
             }
+
+            syncVistaSwitchButtons(editorVistaActual);
+            overlay.classList.add('open');
+            overlay.setAttribute('aria-hidden', 'false');
+            document.body.classList.add('mapeo-fs-active');
+
+            const iframe = document.getElementById('iframe-fullscreen-360');
+            const loader = document.getElementById('mapeo-fs-loader');
+
+            if (!iframe.src || iframe.src === window.location.href || !iframe.src.includes('.html')) {
+                loadEditorIframe(iframe, loader);
+            } else {
+                if (loader) loader.style.display = 'none';
+                pushMasterplanToEditor();
+            }
+        }
+
+        function cerrarMapeoFullscreen() {
+            const overlay = document.getElementById('mapeo-fullscreen');
+            if (!overlay || !overlay.classList.contains('open')) return;
+
+            overlay.classList.remove('open');
+            overlay.setAttribute('aria-hidden', 'true');
+            document.body.classList.remove('mapeo-fs-active');
+
+            document.querySelectorAll('.dock-item').forEach(b => b.classList.remove('active'));
+            if (mapeoFsReturnDock) mapeoFsReturnDock.classList.add('active');
+            else document.querySelector('.dock-item[title="Ajustes Globales"]')?.classList.add('active');
+        }
+
+        function cambiarVistaEditor(vista) {
+            if (vista === editorVistaActual && getActiveEditorIframe()?.src?.includes('.html')) {
+                syncVistaSwitchButtons(vista);
+                return;
+            }
+            editorVistaActual = vista;
+            syncVistaSwitchButtons(vista);
+            loadEditorIframe(getActiveEditorIframe(), getActiveMapeoLoader());
         }
 
         function abrirEditorEspacial(dockItem) {
-            switchTab('tab-mapeo', dockItem);
-            
-            const iframe = document.getElementById('iframe-editor-360');
-            const loader = document.getElementById('mapeo-loader');
-            
-            if(!iframe.src || iframe.src === window.location.href || !iframe.src.includes('.html')) {
-                if (loader) loader.style.display = 'flex';
-                iframe.src = getEditorIframeSrc(editorVistaActual);
-                
-                iframe.onload = () => {
-                    setTimeout(() => { pushMasterplanToEditor(); if (loader) loader.style.display = 'none'; }, 1000);
-                };
-            }
+            abrirMapeoFullscreen(dockItem);
         }
 
         window.addEventListener("message", (event) => {
+            if (event.data && event.data.type === "ADMIN_CLOSE_FULLSCREEN") {
+                cerrarMapeoFullscreen();
+                return;
+            }
             if (event.data && event.data.type === "EDITOR_READY") {
                 if (!event.data.vista || event.data.vista === editorVistaActual) {
                     pushMasterplanToEditor();
