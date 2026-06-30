@@ -13,7 +13,7 @@
       "titulo": "Lote 01 (7-A)",
       "superficie": "0,5011 HÁ",
       "precio": "UF 0",
-      "imagen": "https://github.com/iLyCoNs/fresia360/blob/main/arboles.png?raw=true",
+      "imagen": "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&q=80",
       "id": "nuevo_1782705833541",
       "numero": "01",
       "terreno": "Plano"
@@ -26,7 +26,7 @@
       "titulo": "Lote 02 (7-B)",
       "superficie": "0,5019 HÁ",
       "precio": "UF 0",
-      "imagen": "https://github.com/iLyCoNs/fresia360/blob/main/arboles.png?raw=true",
+      "imagen": "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&q=80",
       "id": "nuevo_1782705866709",
       "numero": "02",
       "terreno": "Plano"
@@ -39,7 +39,7 @@
       "titulo": "Lote 03 (7-C)",
       "superficie": "0,5019 HÁ",
       "precio": "UF 0",
-      "imagen": "https://github.com/iLyCoNs/fresia360/blob/main/arboles.png?raw=true",
+      "imagen": "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&q=80",
       "id": "nuevo_1782705943333",
       "numero": "03",
       "terreno": "Plano"
@@ -52,7 +52,7 @@
       "titulo": "Lote 04 (7-D)",
       "superficie": "0,5005 HÁ",
       "precio": "UF 0",
-      "imagen": "https://github.com/iLyCoNs/fresia360/blob/main/arboles.png?raw=true",
+      "imagen": "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&q=80",
       "id": "nuevo_1782705961579",
       "numero": "04",
       "terreno": "Plano"
@@ -65,7 +65,7 @@
       "titulo": "Lote 05 (7-E)",
       "superficie": "0,5012 HÁ",
       "precio": "UF 0",
-      "imagen": "https://github.com/iLyCoNs/fresia360/blob/main/arboles.png?raw=true",
+      "imagen": "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&q=80",
       "id": "nuevo_1782705986044",
       "numero": "05",
       "terreno": "Plano"
@@ -78,7 +78,7 @@
       "titulo": "Lote 06 (7-F)",
       "superficie": "0,5012 HÁ",
       "precio": "UF 0",
-      "imagen": "https://github.com/iLyCoNs/fresia360/blob/main/arboles.png?raw=true",
+      "imagen": "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&q=80",
       "id": "nuevo_1782706025862",
       "numero": "06",
       "terreno": "Plano"
@@ -91,7 +91,7 @@
       "titulo": "Lote 07 (7-G)",
       "superficie": "0,5004 HÁ",
       "precio": "UF 0",
-      "imagen": "https://github.com/iLyCoNs/fresia360/blob/main/arboles.png?raw=true",
+      "imagen": "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&q=80",
       "id": "nuevo_1782706042408",
       "numero": "07",
       "terreno": "Plano"
@@ -104,7 +104,7 @@
       "titulo": "Lote 08 (7-H)",
       "superficie": "0,5007 HÁ",
       "precio": "UF 0",
-      "imagen": "https://github.com/iLyCoNs/fresia360/blob/main/arboles.png?raw=true",
+      "imagen": "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&q=80",
       "id": "nuevo_1782706088082",
       "numero": "08",
       "terreno": "Plano"
@@ -117,7 +117,7 @@
       "titulo": "Lote 09 (7-I)",
       "superficie": "0,5110 HÁ",
       "precio": "UF 0",
-      "imagen": "https://github.com/iLyCoNs/fresia360/blob/main/arboles.png?raw=true",
+      "imagen": "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&q=80",
       "id": "nuevo_1782706122019",
       "numero": "09",
       "terreno": "Plano"
@@ -130,19 +130,10 @@
       "titulo": "Lote 10 (7-J)",
       "superficie": "0,7101 HÁ",
       "precio": "UF 0",
-      "imagen": "https://github.com/iLyCoNs/fresia360/blob/main/arboles.png?raw=true",
+      "imagen": "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&q=80",
       "id": "nuevo_1782706140803",
       "numero": "10",
       "terreno": "Plano"
-    },
-    {
-      "pitch": -64.94,
-      "yaw": 175.96,
-      "tipo": "vista360",
-      "titulo": "Modelo TinyHouse",
-      "url": "https://ilycons.github.io/fresia360/suelo.html",
-      "id": "nuevo_1782773968315",
-      "numero": "00"
     }
   ],
   "horizontes": [
@@ -251,7 +242,7 @@
   "trazos": [
     {
       "id": "str_1782705325171_0",
-      "tipo": "solida",
+      "tipo": "masterplan_fill",
       "puntos": [
         [
           -53.167,
@@ -273,7 +264,7 @@
     },
     {
       "id": "str_1782705325171_1",
-      "tipo": "solida",
+      "tipo": "masterplan_fill",
       "puntos": [
         [
           -60.065,
@@ -295,7 +286,7 @@
     },
     {
       "id": "str_1782705325171_2",
-      "tipo": "solida",
+      "tipo": "masterplan_fill",
       "puntos": [
         [
           -66.156,
@@ -317,7 +308,7 @@
     },
     {
       "id": "str_1782705325171_3",
-      "tipo": "solida",
+      "tipo": "masterplan_fill",
       "puntos": [
         [
           -73.475,
@@ -339,7 +330,7 @@
     },
     {
       "id": "str_1782705325171_4",
-      "tipo": "solida",
+      "tipo": "masterplan_fill",
       "puntos": [
         [
           -80.891,
@@ -361,7 +352,7 @@
     },
     {
       "id": "str_1782705325171_5",
-      "tipo": "solida",
+      "tipo": "masterplan_fill",
       "puntos": [
         [
           -86.816,
@@ -383,7 +374,7 @@
     },
     {
       "id": "str_1782705325171_6",
-      "tipo": "solida",
+      "tipo": "masterplan_fill",
       "puntos": [
         [
           -82.254,
@@ -405,7 +396,7 @@
     },
     {
       "id": "str_1782705325171_7",
-      "tipo": "solida",
+      "tipo": "masterplan_fill",
       "puntos": [
         [
           -74.803,
@@ -427,7 +418,7 @@
     },
     {
       "id": "str_1782705325171_8",
-      "tipo": "solida",
+      "tipo": "masterplan_fill",
       "puntos": [
         [
           -67.562,
@@ -449,7 +440,7 @@
     },
     {
       "id": "str_1782705325171_9",
-      "tipo": "solida",
+      "tipo": "masterplan_fill",
       "puntos": [
         [
           -60.967,
