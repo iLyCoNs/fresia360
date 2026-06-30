@@ -25,11 +25,15 @@
         g.lote-interactivo[data-status="vendido"] path { fill: rgba(var(--c-vend), var(--o-vend)); stroke: rgba(255, 255, 255, 0.4); stroke-width: var(--stroke-dyn); }
         g.lote-interactivo[data-status="no_disponible"] path { fill: rgba(var(--c-nodisp), var(--o-nodisp)); stroke: rgba(255, 255, 255, 0.5); stroke-width: var(--stroke-dyn); }
         .linea-punteada { stroke-dasharray: 8 8; } .linea-neon { stroke: #06b6d4 !important; filter: drop-shadow(0 0 6px #06b6d4); }
-        .linea-divisoria { fill: none !important; stroke: rgba(255,255,255,0.85) !important; stroke-width: calc(var(--stroke-dyn) * 0.8) !important; stroke-dasharray: 8 8; pointer-events: none; }
-        /* --- CAPAS AUTO-MACRO --- */
+        .linea-divisoria { fill: none !important; stroke: rgba(255,255,255,0.72) !important; stroke-width: calc(var(--stroke-dyn) * 0.42) !important; stroke-dasharray: 3 5; stroke-linecap: round; pointer-events: none; }
+        /* --- CAPAS AUTO-MACRO (Premium) --- */
         g[data-tipo="divisoria"] path, g[data-tipo="borde-macro"] path { fill: none !important; pointer-events: none !important; }
-        g[data-tipo="area-invisible"] path { stroke: transparent !important; }
-        .linea-borde-macro { stroke: #ffffff !important; stroke-width: var(--stroke-dyn) !important; stroke-linejoin: round; stroke-linecap: round; }
+        g[data-tipo="area-invisible"] path { stroke: transparent !important; fill-opacity: 1; }
+        g[data-tipo="area-invisible"].lote-interactivo:hover path, g[data-tipo="area-invisible"].lote-interactivo.hovered path { stroke: transparent !important; }
+        .linea-borde-macro { stroke: rgba(255,255,255,0.94) !important; stroke-width: calc(var(--stroke-dyn) * 0.48) !important; stroke-linejoin: round; stroke-linecap: round; filter: drop-shadow(0 0 1px rgba(255,255,255,0.35)); pointer-events: none; }
+        body.auto-macro-active g[data-tipo="borde-macro"] path { stroke-width: calc(var(--stroke-dyn) * 0.44) !important; }
+        body.auto-macro-active g[data-tipo="divisoria"] path { stroke-width: calc(var(--stroke-dyn) * 0.38) !important; stroke-dasharray: 2.5 4.5; }
+        .linea-area-fill { stroke: transparent !important; pointer-events: auto; }
         .linea-corte { stroke: #f59e0b !important; stroke-width: calc(var(--stroke-dyn) * 1.5) !important; stroke-dasharray: 6 6; filter: drop-shadow(0 0 8px #f59e0b); pointer-events: none; }
         g.lote-interactivo.hovered path, g.lote-interactivo:hover path { fill: transparent !important; stroke: #ffffff !important; stroke-width: var(--stroke-dyn-hover) !important; filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.9)); }
         .linea-calle-borde { fill: none; stroke: rgba(255, 255, 255, 0.6); stroke-width: calc(var(--stroke-dyn) * 3); pointer-events: none; }
@@ -342,6 +346,70 @@
 
         function getMockEvent(e) { let cx = e.clientX, cy = e.clientY; if(cx === undefined && e.changedTouches && e.changedTouches.length > 0) { cx = e.changedTouches[0].clientX; cy = e.changedTouches[0].clientY; } return { clientX: cx, clientY: cy }; }
 
+        function isAutoMacroLotePoly(line) {
+            return line && line.puntos && line.puntos.length >= 3 && (line.tipo === 'solida' || line.tipo === 'punteada' || line.tipo === 'area-invisible');
+        }
+        function autoMacroSnap(v) { return Math.round(v * 100) / 100; }
+        function autoMacroEdgeKey(p1, p2) {
+            const a = `${autoMacroSnap(p1[0])},${autoMacroSnap(p1[1])}`, b = `${autoMacroSnap(p2[0])},${autoMacroSnap(p2[1])}`;
+            return a < b ? `${a}|${b}` : `${b}|${a}`;
+        }
+        function mergeFuzzyAutoMacroEdges(edgeMap) {
+            const keys = Array.from(edgeMap.keys());
+            for (let i = 0; i < keys.length; i++) {
+                for (let j = i + 1; j < keys.length; j++) {
+                    const e1 = edgeMap.get(keys[i]), e2 = edgeMap.get(keys[j]);
+                    if (!e1 || !e2) continue;
+                    const d11 = Math.hypot(e1.p1[0]-e2.p1[0], e1.p1[1]-e2.p1[1]);
+                    const d22 = Math.hypot(e1.p2[0]-e2.p2[0], e1.p2[1]-e2.p2[1]);
+                    const d12 = Math.hypot(e1.p1[0]-e2.p2[0], e1.p1[1]-e2.p2[1]);
+                    const d21 = Math.hypot(e1.p2[0]-e2.p1[0], e1.p2[1]-e2.p1[1]);
+                    const tol = 0.08;
+                    if ((d11 < tol && d22 < tol) || (d12 < tol && d21 < tol)) {
+                        e1.count += e2.count;
+                        e1.p1 = [(e1.p1[0]+e2.p1[0])/2, (e1.p1[1]+e2.p1[1])/2];
+                        e1.p2 = [(e1.p2[0]+e2.p2[0])/2, (e1.p2[1]+e2.p2[1])/2];
+                        edgeMap.delete(keys[j]);
+                    }
+                }
+            }
+        }
+        function buildAutoMacroFromLotes(lotes) {
+            const edgeMap = new Map();
+            lotes.forEach(l => {
+                const pts = l.puntos;
+                for (let i = 0; i < pts.length; i++) {
+                    const p1 = pts[i], p2 = pts[(i + 1) % pts.length];
+                    if (Math.hypot(p1[0]-p2[0], p1[1]-p2[1]) < 0.002) continue;
+                    const key = autoMacroEdgeKey(p1, p2);
+                    if (!edgeMap.has(key)) edgeMap.set(key, { p1: [...p1], p2: [...p2], count: 0 });
+                    edgeMap.get(key).count++;
+                }
+            });
+            mergeFuzzyAutoMacroEdges(edgeMap);
+            const macroLines = []; let idx = 0; const ts = Date.now();
+            edgeMap.forEach(edge => {
+                if (edge.count >= 2) macroLines.push({ id: 'div_auto_'+ts+'_'+idx++, tipo: 'divisoria', puntos: [edge.p1, edge.p2] });
+                else macroLines.push({ id: 'brd_auto_'+ts+'_'+idx++, tipo: 'borde-macro', puntos: [edge.p1, edge.p2] });
+            });
+            const invisibleFills = lotes.map(l => ({ ...l, tipo: 'area-invisible' }));
+            return { invisibleFills, macroLines };
+        }
+        function runAutoMacroTransform() {
+            const lotes = allDrawnLines.filter(isAutoMacroLotePoly);
+            if (lotes.length < 2) return false;
+            const others = allDrawnLines.filter(l => !isAutoMacroLotePoly(l) && l.tipo !== 'divisoria' && l.tipo !== 'borde-macro');
+            const { invisibleFills, macroLines } = buildAutoMacroFromLotes(lotes);
+            allDrawnLines = [...others, ...invisibleFills, ...macroLines];
+            document.body.classList.add('auto-macro-active');
+            return true;
+        }
+        function initAutoMacroFromData() {
+            if (allDrawnLines.some(l => l.tipo === 'divisoria' || l.tipo === 'borde-macro') && allDrawnLines.some(l => l.tipo === 'area-invisible')) {
+                document.body.classList.add('auto-macro-active');
+            }
+        }
+
         document.addEventListener("DOMContentLoaded", async () => {
             // Detección de Modo Embebido para limpiar UI
             if (window.self !== window.top) {
@@ -349,7 +417,7 @@
             }
             if (isTouchDevice()) { isWebGLSupported = true; viewerGpuReady = false; } else { isWebGLSupported = detectWebGL(); }
             const splashBar = document.getElementById('js-progress-bar'); if(splashBar) splashBar.style.width = '30%';
-            await fetchMasterData(); if(splashBar) splashBar.style.width = '60%'; await fetchValorUFOnline();
+            await fetchMasterData(); if(splashBar) splashBar.style.width = '60%'; await fetchValorUFOnline(); initAutoMacroFromData();
             snapCursor = document.getElementById('snap-cursor'); ghostPin = document.getElementById('ghost-pin');
             const container = document.getElementById('panorama-container');
             const resizeObserver = new ResizeObserver(entries => { for (let entry of entries) { const rect = entry.target.getBoundingClientRect(); DOMCache.viewport.w = rect.width; DOMCache.viewport.h = rect.height; DOMCache.viewport.left = rect.left; DOMCache.viewport.top = rect.top; } if (isTouchDevice() && visor360 && viewerGpuReady) { const renderer = visor360.getRenderer(); if (renderer && typeof renderer.resize === 'function') renderer.resize(); } });
@@ -391,8 +459,8 @@
 
         function syncSVGElements() {
             if(!isSvgRenderAllowed()) return; const svg = document.getElementById('loteo-svg'); if(!svg) return;
-            let lBordes = document.getElementById('layer-calles-bordes'), lAsfalto = document.getElementById('layer-calles-asfalto'), lLotes = document.getElementById('layer-lotes');
-            if(!lBordes) { svg.innerHTML = '<g id="layer-calles-bordes"></g><g id="layer-calles-asfalto"></g><g id="layer-lotes"></g>'; lBordes = document.getElementById('layer-calles-bordes'); lAsfalto = document.getElementById('layer-calles-asfalto'); lLotes = document.getElementById('layer-lotes'); }
+            let lBordes = document.getElementById('layer-calles-bordes'), lAsfalto = document.getElementById('layer-calles-asfalto'), lLotes = document.getElementById('layer-lotes'), lAristas = document.getElementById('layer-aristas');
+            if(!lBordes) { svg.innerHTML = '<g id="layer-calles-bordes"></g><g id="layer-calles-asfalto"></g><g id="layer-lotes"></g><g id="layer-aristas"></g>'; lBordes = document.getElementById('layer-calles-bordes'); lAsfalto = document.getElementById('layer-calles-asfalto'); lLotes = document.getElementById('layer-lotes'); lAristas = document.getElementById('layer-aristas'); }
             const currentLineIds = allDrawnLines.map(l => l.id); if (currentLinePoints.length > 0) currentLineIds.push(currentTempLineId);
             Array.from(svg.querySelectorAll('[data-line-id]')).forEach(el => { if (!currentLineIds.includes(el.dataset.lineId)) el.remove(); });
             DOMCache.paths = {}; const allLinesData = [...allDrawnLines]; if (currentLinePoints.length > 0) allLinesData.push({ id: currentTempLineId, tipo: currentLineType, puntos: currentLinePoints });
@@ -402,10 +470,15 @@
                     if (line.tipo === 'calle') {
                         const pBorde = document.createElementNS("http://www.w3.org/2000/svg", "path"); pBorde.setAttribute("class", "linea-calle-borde"); pBorde.dataset.lineId = line.id; lBordes.appendChild(pBorde);
                         const pAsfalto = document.createElementNS("http://www.w3.org/2000/svg", "path"); pAsfalto.setAttribute("class", "linea-calle-asfalto"); pAsfalto.dataset.lineId = line.id; pAsfalto.addEventListener('mousedown', (e) => { if (currentLineType === 'eraser') { e.stopPropagation(); if (line.id === currentTempLineId) currentLinePoints = []; else allDrawnLines = allDrawnLines.filter(l => l.id !== line.id); refreshAllHotspots(); saveToLocal(); } }); lAsfalto.appendChild(pAsfalto); DOMCache.paths[line.id] = { base: [pBorde, pAsfalto] };
+                    } else if (line.tipo === 'divisoria' || line.tipo === 'borde-macro') {
+                        const gMacro = document.createElementNS("http://www.w3.org/2000/svg", "g"); gMacro.dataset.lineId = line.id; gMacro.dataset.tipo = line.tipo;
+                        const pMacro = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                        pMacro.setAttribute("class", line.tipo === 'divisoria' ? 'linea-divisoria' : 'linea-borde-macro');
+                        gMacro.appendChild(pMacro); lAristas.appendChild(gMacro); DOMCache.paths[line.id] = { base: [pMacro] };
                     } else {
                         const g = document.createElementNS("http://www.w3.org/2000/svg", "g"); g.dataset.lineId = line.id; g.dataset.tipo = line.tipo; g.classList.add('lote-interactivo'); 
                         const pBase = document.createElementNS("http://www.w3.org/2000/svg", "path"); 
-                        if (line.tipo === 'neon') pBase.setAttribute("class", "linea-neon"); else if (line.tipo === 'punteada') pBase.setAttribute("class", "linea-punteada"); else if (line.tipo === 'cortar') pBase.setAttribute("class", "linea-corte"); else if (line.tipo === 'divisoria') pBase.setAttribute("class", "linea-divisoria"); else if (line.tipo === 'borde-macro') pBase.setAttribute("class", "linea-borde-macro"); else if (line.tipo === 'area-invisible') pBase.setAttribute("class", "linea-solida"); else pBase.setAttribute("class", "linea-solida");
+                        if (line.tipo === 'neon') pBase.setAttribute("class", "linea-neon"); else if (line.tipo === 'punteada') pBase.setAttribute("class", "linea-punteada"); else if (line.tipo === 'cortar') pBase.setAttribute("class", "linea-corte"); else if (line.tipo === 'area-invisible') pBase.setAttribute("class", "linea-area-fill"); else pBase.setAttribute("class", "linea-solida");
                         g.appendChild(pBase); g.addEventListener('mousedown', (e) => { if (currentLineType === 'eraser') { e.stopPropagation(); if (line.id === currentTempLineId) currentLinePoints = []; else allDrawnLines = allDrawnLines.filter(l => l.id !== line.id); refreshAllHotspots(); saveToLocal(); } }); g.addEventListener('touchstart', () => { g.classList.add('hovered'); }, {passive: true}); g.addEventListener('touchend', () => { setTimeout(() => g.classList.remove('hovered'), 1500); }, {passive: true}); lLotes.appendChild(g); DOMCache.paths[line.id] = { gNode: g, base: [pBase] };
                     }
                 } else { if (line.tipo === 'calle') { DOMCache.paths[line.id] = { base: Array.from(svg.querySelectorAll(`path[data-line-id="${line.id}"]`)) }; } else { const gNode = svg.querySelector(`g[data-line-id="${line.id}"]`); if (gNode) { DOMCache.paths[line.id] = { gNode: gNode, base: Array.from(gNode.querySelectorAll('path')) }; } } }
@@ -739,43 +812,10 @@
             document.querySelectorAll('#dev-toolbar-pins .dev-btn:not(.action):not(.export):not(.export-ai):not(.nuke)').forEach(btn => { if(btn.id !== 'btn-set-drone' && btn.id !== 'btn-set-north' && btn.id !== 'btn-edit-titles') { btn.addEventListener('click', (e) => { currentPinTypeMap = e.target.dataset.pintype; document.querySelectorAll('#dev-toolbar-pins .dev-btn:not(.action):not(.export):not(.export-ai):not(.nuke)').forEach(b => b.classList.remove('active')); e.target.classList.add('active'); }); } });
             document.getElementById('btn-heatmap')?.addEventListener('click', function() { isHeatmapActive = !isHeatmapActive; this.classList.toggle('active', isHeatmapActive); document.body.classList.toggle('heatmap-mode', isHeatmapActive); updateSVGPaths(); });
             document.getElementById('btn-auto-macro')?.addEventListener('click', () => {
-                let lotes = allDrawnLines.filter(l => l.tipo === 'solida' || l.tipo === 'punteada');
+                const lotes = allDrawnLines.filter(isAutoMacroLotePoly);
                 if(lotes.length < 2) return alert("Dibuja al menos 2 lotes cerrados primero.");
-                if(!confirm("¿Transformar lotes actuales a formato Macro-Lote (bordes externos sólidos e interior punteado)?\nNota: Haz esto solo cuando hayas terminado de subdividir.")) return;
-
-                let edges = [];
-                lotes.forEach(l => {
-                    let pts = l.puntos;
-                    for(let i=0; i<pts.length; i++) {
-                        edges.push({ p1: pts[i], p2: pts[(i+1)%pts.length], parentId: l.id, isShared: false });
-                    }
-                });
-
-                let tolerance = 1.0; 
-                let newLines = [];
-                for(let i=0; i<edges.length; i++) {
-                    if(edges[i].isShared) continue;
-                    for(let j=i+1; j<edges.length; j++) {
-                        if(edges[j].isShared || edges[i].parentId === edges[j].parentId) continue;
-                        let d1 = Math.hypot(edges[i].p1[0]-edges[j].p1[0], edges[i].p1[1]-edges[j].p1[1]);
-                        let d2 = Math.hypot(edges[i].p2[0]-edges[j].p2[0], edges[i].p2[1]-edges[j].p2[1]);
-                        let d3 = Math.hypot(edges[i].p1[0]-edges[j].p2[0], edges[i].p1[1]-edges[j].p2[1]);
-                        let d4 = Math.hypot(edges[i].p2[0]-edges[j].p1[0], edges[i].p2[1]-edges[j].p1[1]);
-
-                        if ((d1 < tolerance && d2 < tolerance) || (d3 < tolerance && d4 < tolerance)) {
-                            edges[i].isShared = true;
-                            edges[j].isShared = true;
-                            newLines.push({ id: 'div_auto_'+Date.now()+'_'+i, tipo: 'divisoria', puntos: [edges[i].p1, edges[i].p2] });
-                        }
-                    }
-                }
-
-                edges.forEach((e, idx) => {
-                    if(!e.isShared) newLines.push({ id: 'brd_auto_'+Date.now()+'_'+idx, tipo: 'borde-macro', puntos: [e.p1, e.p2] });
-                });
-
-                allDrawnLines.forEach(l => { if(l.tipo === 'solida' || l.tipo === 'punteada') l.tipo = 'area-invisible'; });
-                allDrawnLines = allDrawnLines.concat(newLines);
+                if(!confirm("✨ AUTO-MACRO\n\n¿Convertir los lotes a estilo premium?\n• Perímetro: líneas sólidas finas\n• Divisiones internas: líneas punteadas\n\nCada lote conserva su área individual (hover/estado).")) return;
+                if (!runAutoMacroTransform()) return;
                 refreshAllHotspots();
                 saveToLocal();
                 flashScreenSuccess();
