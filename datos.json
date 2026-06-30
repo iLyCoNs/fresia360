@@ -142,26 +142,28 @@
       "yaw": -23.35,
       "titulo": "Volcán Osorno",
       "tipo": "horizonte",
-      "distancia": "110.3 KM",
-      "tiempo": "127 MIN",
+      "distancia": "99.0 KM",
+      "tiempo": "175 MIN",
       "id": "nuevo_1782607581831",
       "numero": "00",
-      "coordenadasDestino": "-41.103, -72.486",
+      "coordenadasDestino": "-41.12646038557887, -72.53396716813207",
       "rutaFactorTrafico": 1,
       "rutaEtiquetaTrafico": "Flujo normal",
       "rutaFuente": "osrm",
-      "rutaCalculadaEn": 1782846224449
+      "rutaCalculadaEn": 1782846224449,
+      "rutaEscenarioTrafico": "auto"
     },
     {
       "pitch": 1.49,
       "yaw": -3.57,
       "titulo": "Volcán Calbuco",
       "tipo": "horizonte",
-      "distancia": "83.2",
-      "tiempo": "59",
+      "distancia": "86.0 KM",
+      "tiempo": "216 MIN",
       "id": "nuevo_1782607757155",
       "numero": "00",
-      "coordenadasDestino": "-41.326, -72.613"
+      "coordenadasDestino": "-41.32779192184255, -72.62408028092374",
+      "rutaEscenarioTrafico": "auto"
     },
     {
       "pitch": -1.42,
@@ -179,22 +181,24 @@
       "yaw": 50.45,
       "titulo": "Puerto Montt",
       "tipo": "horizonte",
-      "distancia": "57.6",
-      "tiempo": "41",
+      "distancia": "56.6 KM",
+      "tiempo": "52 MIN",
       "id": "nuevo_1782607970987",
       "numero": "00",
-      "coordenadasDestino": ""
+      "coordenadasDestino": "-41.467494821025625, -72.94471971631184",
+      "rutaEscenarioTrafico": "normal"
     },
     {
       "pitch": 0.24,
       "yaw": -107.84,
       "titulo": "Osorno",
       "tipo": "horizonte",
-      "distancia": "102.2",
-      "tiempo": "72",
+      "distancia": "99.9 KM",
+      "tiempo": "92 MIN",
       "id": "nuevo_1782608047991",
       "numero": "00",
-      "coordenadasDestino": ""
+      "coordenadasDestino": "-40.5793336570124, -73.12413390239718",
+      "rutaEscenarioTrafico": "normal"
     },
     {
       "pitch": -0.93,
@@ -213,15 +217,16 @@
       "tipo": "ruta",
       "titulo": "RUTA  V-362",
       "descripcion": "Acceso Principal",
-      "coordenadasDestino": "-41.227, -73.298",
+      "coordenadasDestino": "-41.219934285015434, -73.30798358765156",
       "id": "nuevo_1782709547430",
       "numero": "362",
-      "distancia": "1.6 KM",
+      "distancia": "1.3 KM",
       "tiempo": "3 MIN",
-      "rutaFactorTrafico": 1,
-      "rutaEtiquetaTrafico": "Flujo normal",
+      "rutaFactorTrafico": 1.48,
+      "rutaEtiquetaTrafico": "Hora punta tarde",
       "rutaFuente": "osrm",
-      "rutaCalculadaEn": 1782846224895
+      "rutaCalculadaEn": 1782856967684,
+      "rutaEscenarioTrafico": "auto"
     },
     {
       "pitch": -26.77,
@@ -229,26 +234,28 @@
       "tipo": "ruta",
       "titulo": "RUTA V-30 A FRESIA",
       "descripcion": "Entrar a V-362",
-      "coordenadasDestino": "-41.198, -73.355",
+      "coordenadasDestino": "-41.219409293551784, -73.3095008740727",
       "id": "nuevo_1782709687467",
       "numero": "30",
-      "distancia": "6.3 KM",
-      "tiempo": "7 MIN",
-      "rutaFactorTrafico": 1,
-      "rutaEtiquetaTrafico": "Flujo normal",
+      "distancia": "1.7 KM",
+      "tiempo": "4 MIN",
+      "rutaFactorTrafico": 1.48,
+      "rutaEtiquetaTrafico": "Hora punta tarde",
       "rutaFuente": "osrm",
-      "rutaCalculadaEn": 1782846225342
+      "rutaCalculadaEn": 1782856968132,
+      "rutaEscenarioTrafico": "auto"
     },
     {
       "pitch": -2.05,
       "yaw": -149.27,
       "titulo": "FRESIA",
       "tipo": "horizonte",
-      "distancia": "16.5",
-      "tiempo": "18",
+      "distancia": "14.1 KM",
+      "tiempo": "21 MIN",
       "id": "nuevo_1782709774551",
-      "numero": "??",
-      "coordenadasDestino": ""
+      "numero": "00",
+      "coordenadasDestino": "-41.15267979576247, -73.42133206030601",
+      "rutaEscenarioTrafico": "auto"
     }
   ],
   "trazos": [
@@ -539,7 +546,7 @@
       ]
     },
     {
-      "id": "brd_auto_1782846293882_0",
+      "id": "brd_auto_1782856978468_0",
       "tipo": "borde-macro",
       "puntos": [
         [
@@ -554,7 +561,7 @@
       "franjaGrupo": "franja_1782846267891"
     },
     {
-      "id": "div_auto_1782846293882_1",
+      "id": "div_auto_1782856978468_1",
       "tipo": "divisoria",
       "puntos": [
         [
@@ -569,7 +576,7 @@
       "franjaGrupo": "franja_1782846267891"
     },
     {
-      "id": "brd_auto_1782846293882_2",
+      "id": "brd_auto_1782856978468_2",
       "tipo": "borde-macro",
       "puntos": [
         [
@@ -584,7 +591,7 @@
       "franjaGrupo": "franja_1782846267891"
     },
     {
-      "id": "brd_auto_1782846293882_3",
+      "id": "brd_auto_1782856978468_3",
       "tipo": "borde-macro",
       "puntos": [
         [
@@ -599,7 +606,7 @@
       "franjaGrupo": "franja_1782846267891"
     },
     {
-      "id": "brd_auto_1782846293882_4",
+      "id": "brd_auto_1782856978468_4",
       "tipo": "borde-macro",
       "puntos": [
         [
@@ -614,7 +621,7 @@
       "franjaGrupo": "franja_1782846267891"
     },
     {
-      "id": "div_auto_1782846293882_5",
+      "id": "div_auto_1782856978468_5",
       "tipo": "divisoria",
       "puntos": [
         [
@@ -629,7 +636,7 @@
       "franjaGrupo": "franja_1782846267891"
     },
     {
-      "id": "brd_auto_1782846293882_6",
+      "id": "brd_auto_1782856978468_6",
       "tipo": "borde-macro",
       "puntos": [
         [
@@ -644,7 +651,7 @@
       "franjaGrupo": "franja_1782846267891"
     },
     {
-      "id": "brd_auto_1782846293882_7",
+      "id": "brd_auto_1782856978468_7",
       "tipo": "borde-macro",
       "puntos": [
         [
@@ -659,7 +666,7 @@
       "franjaGrupo": "franja_1782846267891"
     },
     {
-      "id": "div_auto_1782846293882_8",
+      "id": "div_auto_1782856978468_8",
       "tipo": "divisoria",
       "puntos": [
         [
@@ -674,7 +681,7 @@
       "franjaGrupo": "franja_1782846267891"
     },
     {
-      "id": "brd_auto_1782846293882_9",
+      "id": "brd_auto_1782856978468_9",
       "tipo": "borde-macro",
       "puntos": [
         [
@@ -689,7 +696,7 @@
       "franjaGrupo": "franja_1782846267891"
     },
     {
-      "id": "brd_auto_1782846293882_10",
+      "id": "brd_auto_1782856978468_10",
       "tipo": "borde-macro",
       "puntos": [
         [
@@ -704,7 +711,7 @@
       "franjaGrupo": "franja_1782846267891"
     },
     {
-      "id": "div_auto_1782846293882_11",
+      "id": "div_auto_1782856978468_11",
       "tipo": "divisoria",
       "puntos": [
         [
@@ -719,7 +726,7 @@
       "franjaGrupo": "franja_1782846267891"
     },
     {
-      "id": "brd_auto_1782846293882_12",
+      "id": "brd_auto_1782856978468_12",
       "tipo": "borde-macro",
       "puntos": [
         [
@@ -734,7 +741,7 @@
       "franjaGrupo": "franja_1782846267891"
     },
     {
-      "id": "brd_auto_1782846293882_13",
+      "id": "brd_auto_1782856978468_13",
       "tipo": "borde-macro",
       "puntos": [
         [
@@ -749,7 +756,7 @@
       "franjaGrupo": "franja_1782846267891"
     },
     {
-      "id": "div_auto_1782846293882_14",
+      "id": "div_auto_1782856978468_14",
       "tipo": "divisoria",
       "puntos": [
         [
@@ -764,7 +771,7 @@
       "franjaGrupo": "franja_1782846267891"
     },
     {
-      "id": "brd_auto_1782846293882_15",
+      "id": "brd_auto_1782856978468_15",
       "tipo": "borde-macro",
       "puntos": [
         [
@@ -779,7 +786,7 @@
       "franjaGrupo": "franja_1782846267891"
     },
     {
-      "id": "brd_auto_1782846293882_16",
+      "id": "brd_auto_1782856978468_16",
       "tipo": "borde-macro",
       "puntos": [
         [
@@ -794,7 +801,7 @@
       "franjaGrupo": "franja_1782846267891"
     },
     {
-      "id": "div_auto_1782846293882_17",
+      "id": "div_auto_1782856978468_17",
       "tipo": "divisoria",
       "puntos": [
         [
@@ -809,7 +816,7 @@
       "franjaGrupo": "franja_1782846267891"
     },
     {
-      "id": "brd_auto_1782846293882_18",
+      "id": "brd_auto_1782856978468_18",
       "tipo": "borde-macro",
       "puntos": [
         [
@@ -824,7 +831,7 @@
       "franjaGrupo": "franja_1782846267891"
     },
     {
-      "id": "brd_auto_1782846293882_19",
+      "id": "brd_auto_1782856978468_19",
       "tipo": "borde-macro",
       "puntos": [
         [
@@ -839,7 +846,7 @@
       "franjaGrupo": "franja_1782846267891"
     },
     {
-      "id": "div_auto_1782846293882_20",
+      "id": "div_auto_1782856978468_20",
       "tipo": "divisoria",
       "puntos": [
         [
@@ -854,7 +861,7 @@
       "franjaGrupo": "franja_1782846267891"
     },
     {
-      "id": "brd_auto_1782846293882_21",
+      "id": "brd_auto_1782856978468_21",
       "tipo": "borde-macro",
       "puntos": [
         [
@@ -869,7 +876,7 @@
       "franjaGrupo": "franja_1782846267891"
     },
     {
-      "id": "brd_auto_1782846293882_22",
+      "id": "brd_auto_1782856978468_22",
       "tipo": "borde-macro",
       "puntos": [
         [
@@ -884,7 +891,7 @@
       "franjaGrupo": "franja_1782846267891"
     },
     {
-      "id": "div_auto_1782846293882_23",
+      "id": "div_auto_1782856978468_23",
       "tipo": "divisoria",
       "puntos": [
         [
@@ -899,7 +906,7 @@
       "franjaGrupo": "franja_1782846267891"
     },
     {
-      "id": "brd_auto_1782846293882_24",
+      "id": "brd_auto_1782856978468_24",
       "tipo": "borde-macro",
       "puntos": [
         [
@@ -914,7 +921,7 @@
       "franjaGrupo": "franja_1782846267891"
     },
     {
-      "id": "brd_auto_1782846293882_25",
+      "id": "brd_auto_1782856978468_25",
       "tipo": "borde-macro",
       "puntos": [
         [
@@ -929,7 +936,7 @@
       "franjaGrupo": "franja_1782846267891"
     },
     {
-      "id": "div_auto_1782846293882_26",
+      "id": "div_auto_1782856978468_26",
       "tipo": "divisoria",
       "puntos": [
         [
@@ -944,7 +951,7 @@
       "franjaGrupo": "franja_1782846267891"
     },
     {
-      "id": "brd_auto_1782846293882_27",
+      "id": "brd_auto_1782856978468_27",
       "tipo": "borde-macro",
       "puntos": [
         [
@@ -959,7 +966,7 @@
       "franjaGrupo": "franja_1782846267891"
     },
     {
-      "id": "brd_auto_1782846293882_28",
+      "id": "brd_auto_1782856978468_28",
       "tipo": "borde-macro",
       "puntos": [
         [
@@ -974,7 +981,7 @@
       "franjaGrupo": "franja_1782846267891"
     },
     {
-      "id": "brd_auto_1782846293882_29",
+      "id": "brd_auto_1782856978468_29",
       "tipo": "borde-macro",
       "puntos": [
         [
@@ -989,7 +996,7 @@
       "franjaGrupo": "franja_1782846267891"
     },
     {
-      "id": "brd_auto_1782846293882_30",
+      "id": "brd_auto_1782856978468_30",
       "tipo": "borde-macro",
       "puntos": [
         [
