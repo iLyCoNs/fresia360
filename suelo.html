@@ -75,6 +75,16 @@
         .linea-calle-borde { fill: none; stroke: rgba(255, 255, 255, 0.6); pointer-events: none; stroke-linecap: butt; stroke-linejoin: round; }
         .linea-calle-asfalto { fill: none; stroke: rgba(30, 35, 45, 0.85); pointer-events: auto; cursor: pointer; stroke-linecap: butt; stroke-linejoin: round; }
         .linea-calle-asfalto:hover { filter: brightness(1.15); }
+        .linea-pines-guia { fill: none; stroke: #a855f7; stroke-width: calc(var(--stroke-dyn) * 2); stroke-dasharray: 10 7; pointer-events: none; filter: drop-shadow(0 0 8px rgba(168, 85, 247, 0.75)); stroke-linecap: round; stroke-linejoin: round; }
+        body.linea-pines-active { cursor: crosshair !important; }
+        #linea-pines-panel { position: fixed; left: 16px; bottom: 96px; z-index: 999999; width: 248px; background: rgba(12, 16, 26, 0.96); border: 1px solid rgba(168, 85, 247, 0.35); border-radius: 14px; padding: 12px 14px; box-shadow: 0 16px 40px rgba(0,0,0,0.55); visibility: hidden; opacity: 0; pointer-events: none; transition: opacity 0.2s, visibility 0.2s; }
+        #linea-pines-panel.open { visibility: visible; opacity: 1; pointer-events: auto; }
+        #linea-pines-panel h4 { margin: 0 0 6px; font-size: 11px; font-weight: 800; color: #e9d5ff; letter-spacing: 0.4px; }
+        #linea-pines-status { display: block; font-size: 9px; font-weight: 700; color: #94a3b8; line-height: 1.4; margin-bottom: 6px; }
+        #linea-pines-status.is-ready { color: #c084fc; }
+        .linea-pines-hint { margin: 0; font-size: 8px; line-height: 1.45; color: #64748b; font-weight: 600; }
+        body.is-embedded #linea-pines-panel { bottom: 72px; left: 8px; width: min(248px, calc(100vw - 16px)); }
+        #dev-toolbar-pins #btn-linea-pines.active { background: rgba(168, 85, 247, 0.28); border-color: rgba(196, 181, 253, 0.55); color: #e9d5ff; box-shadow: 0 0 0 1px rgba(168, 85, 247, 0.35), 0 4px 14px rgba(168, 85, 247, 0.2); }
         .calle-servidumbre-label { position: absolute; transform: translate(-50%, -50%); transform-origin: center center; background: rgba(22, 27, 38, 0.94); color: #f1f5f9; font-size: 7px; font-weight: 800; letter-spacing: 0.55px; text-transform: uppercase; padding: 4px 7px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.28); white-space: nowrap; pointer-events: none; z-index: 99998; box-shadow: 0 2px 12px rgba(0,0,0,0.5); line-height: 1.2; }
         .calle-move-handle { position: absolute; transform: translate(-50%, -50%); width: 28px; height: 28px; border-radius: 50%; background: rgba(59,130,246,0.92); border: 2px solid #fff; color: #fff; font-size: 14px; font-weight: 900; display: flex; align-items: center; justify-content: center; cursor: grab; pointer-events: auto; z-index: 100001; box-shadow: 0 4px 14px rgba(59,130,246,0.45); line-height: 1; user-select: none; }
         .calle-move-handle.is-dragging { cursor: grabbing; background: rgba(16,185,129,0.95); box-shadow: 0 0 0 6px rgba(16,185,129,0.2); }
@@ -437,6 +447,7 @@
                 </div>
             </div>
         </div>
+        <div id="linea-pines-panel"><h4>📍 Línea Pines</h4><span id="linea-pines-status">Clic en el mapa: punto inicial y final de la fila</span><p class="linea-pines-hint">Pulsa <strong>Enter</strong> para alinear los smart pins al centro de cada lote franja. El trazo desaparece al confirmar.</p></div>
         <div id="calle-tool-panel"><h4>🛣️ Servidumbre de paso</h4><label>Grosor <span id="calle-ui-ancho-val">8.0</span></label><input type="range" id="calle-ui-ancho" min="2" max="28" step="0.5" value="8"><div id="calle-width-preview"><div id="calle-width-preview-bar"></div></div><label>Transparencia <span id="calle-ui-alpha-val">85%</span></label><input type="range" id="calle-ui-alpha" min="0.15" max="1" step="0.05" value="0.85"><label>Tamaño texto <span id="calle-ui-label-val">1.0×</span></label><input type="range" id="calle-ui-label" min="0.5" max="2.5" step="0.1" value="1"><label class="calle-ui-check"><input type="checkbox" id="calle-ui-show-label" checked> Etiqueta SERVIDUMBRE DE PASO</label><label class="calle-ui-check"><input type="checkbox" id="calle-ui-snap-franja"> Pegar a borde franja (opcional)</label><button type="button" id="btn-calle-finish">✓ Terminar calle</button><span id="calle-draw-status">Coloca al menos 2 puntos en el mapa</span><p class="calle-ui-hint">Termina con el botón verde, doble clic, Enter o clic en el último punto (verde). Luego arrastra ✥ para mover la calle.</p></div>
         <div id="franja-lotes-modal"><div class="modal-content franja-modal-box"><h3>🏘️ Franja de Lotes</h3><p class="franja-modal-hint">Indica cuántos lotes y el tamaño de cada uno en m². El ancho en el mapa será proporcional (ej. 7000 m² = 40% más ancho que 5000 m²).</p><div class="franja-modal-count-row"><input type="number" id="franja-modal-count" min="1" max="40" value="10"><button type="button" id="franja-modal-apply-count">Actualizar</button></div><div class="franja-scale-preview" id="franja-modal-scale-preview"></div><div class="franja-modal-rows" id="franja-modal-rows"></div><div class="franja-modal-tools"><button type="button" id="franja-modal-equal">Igualar todos</button><button type="button" id="franja-modal-last-big">Último +40% (7000)</button></div><div class="modal-btns"><button class="btn-cancel" id="franja-modal-cancel">Cancelar</button><button class="btn-save" id="franja-modal-confirm">Crear franja</button></div></div></div>
         <div id="global-event-interceptor" style="position: absolute; top:0; left:0; width:100%; height:100%; pointer-events: none; z-index: 9999999;"></div>
@@ -449,7 +460,7 @@
             <div class="lotes-list" id="js-lotes-list"></div>
         </div>
         <div id="dev-toolbar-draw" class="dev-toolbar"><div class="macos-header"><div class="macos-dots"><i></i><i></i><i></i></div><div class="dev-toolbar-title">MODO ARQUITECTO (DIBUJO LIBRE)</div><div style="width: 42px;"></div></div><div class="dev-tools-row"><button class="dev-btn active" id="btn-draw-solid">Sólida</button><button class="dev-btn" id="btn-draw-dash">Punteada</button><button class="dev-btn" id="btn-draw-street" title="Servidumbre: panel de grosor. Botón Terminar calle o Enter al tener 2+ puntos. ✥ mueve la calle.">🛣️ Calle</button><button class="dev-btn" id="btn-draw-cut" style="color: #f59e0b;" title="Apunta hacia donde quieres cortar">✂️ Subdividir</button><button class="dev-btn" id="btn-draw-divisoria" title="Dibuja una línea punteada interna (no se cierra automáticamente)">📏 Divisoria</button><button class="dev-btn btn-franja-lotes" id="btn-draw-franja" style="color: #10b981; font-weight: 800;" title="2 clics: dibuja el rectángulo → cantidad de lotes y m² de cada uno (ancho proporcional)">Franja Lotes</button><button class="dev-btn" id="btn-straighten-franja" style="color: #f59e0b; font-weight: 800;" title="Endereza franja(s): bordes y divisiones en líneas rectas para levantamiento">📏 Enderezar</button><div style="width: 1px; height: 20px; background: rgba(255,255,255,0.2); margin: 0 5px;"></div><button class="dev-btn" id="btn-auto-macro" style="color: #a855f7; font-weight: 800;" title="Convierte lotes adyacentes en un Macro-Lote">✨ AUTO-MACRO</button><button class="dev-btn" id="btn-eraser" style="color: #fca5a5;">🧹 Goma</button><div style="width: 1px; height: 20px; background: rgba(255,255,255,0.2); margin: 0 5px;"></div><button class="dev-btn action" id="btn-undo-point" title="Borrar último vértice trazado">Deshacer Punto</button><button class="dev-btn nuke" id="btn-nuke">🗑️ Limpiar Todo</button><button class="dev-btn export-ai" title="Guardar directamente en el servidor">☁️ GUARDAR EN LA NUBE</button></div></div>
-        <div id="dev-toolbar-pins" class="dev-toolbar"><div class="macos-header"><div class="macos-dots"><i></i><i></i><i></i></div><div class="dev-toolbar-title">MODO PINES (MAPEO)</div><div style="width: 42px;"></div></div><div class="dev-tools-row"><button class="dev-btn active btn-pin-disp" data-pintype="disponible">Disp.</button><button class="dev-btn btn-pin-res" data-pintype="reservado">Res.</button><button class="dev-btn btn-pin-vend" data-pintype="vendido">Vend.</button><button class="dev-btn btn-pin-nodisp" data-pintype="no_disponible">No Disp.</button><div style="width: 1px; height: 20px; background: rgba(255,255,255,0.2); margin: 0 5px;"></div><button class="dev-btn btn-pin-360" data-pintype="vista360">Pin 360</button><button class="dev-btn btn-pin-casa" data-pintype="casa360">Casa 360</button><button class="dev-btn btn-pin-hor" data-pintype="horizonte">Horizonte</button><button class="dev-btn btn-pin-ruta" data-pintype="ruta">Ruta</button><button class="dev-btn" id="btn-set-drone" style="color: #f59e0b;" title="Establecer Coordenadas Base (Lat, Lng)">📍 Origen Drone</button><button class="dev-btn" id="btn-set-north" style="color: #34d399;" title="Fijar la vista actual como el Norte Magnético">🧭 Fijar Norte</button><div style="width: 1px; height: 20px; background: rgba(255,255,255,0.2); margin: 0 5px;"></div><button class="dev-btn action" id="btn-heatmap" title="Activa Telemetría Visual">🔥 Mapa Calor</button><button class="dev-btn" id="btn-edit-titles" style="color: #cbd5e1;" title="Editar Título y Subtítulo Central">📝 Títulos</button><button class="dev-btn nuke" id="btn-nuke-pins">🗑️ Limpiar Todo</button><button class="dev-btn export-ai" title="Guardar directamente en el servidor">☁️ GUARDAR EN LA NUBE</button></div></div>
+        <div id="dev-toolbar-pins" class="dev-toolbar"><div class="macos-header"><div class="macos-dots"><i></i><i></i><i></i></div><div class="dev-toolbar-title">MODO PINES (MAPEO)</div><div style="width: 42px;"></div></div><div class="dev-tools-row"><button class="dev-btn active btn-pin-disp" data-pintype="disponible">Disp.</button><button class="dev-btn btn-pin-res" data-pintype="reservado">Res.</button><button class="dev-btn btn-pin-vend" data-pintype="vendido">Vend.</button><button class="dev-btn btn-pin-nodisp" data-pintype="no_disponible">No Disp.</button><div style="width: 1px; height: 20px; background: rgba(255,255,255,0.2); margin: 0 5px;"></div><button class="dev-btn btn-pin-360" data-pintype="vista360">Pin 360</button><button class="dev-btn btn-pin-casa" data-pintype="casa360">Casa 360</button><button class="dev-btn btn-pin-hor" data-pintype="horizonte">Horizonte</button><button class="dev-btn btn-pin-ruta" data-pintype="ruta">Ruta</button><button class="dev-btn" id="btn-linea-pines" style="color: #a855f7; font-weight: 800;" title="Trazo guía → Enter alinea smart pins al centro de cada lote franja">📍 Línea Pines</button><button class="dev-btn" id="btn-set-drone" style="color: #f59e0b;" title="Establecer Coordenadas Base (Lat, Lng)">📍 Origen Drone</button><button class="dev-btn" id="btn-set-north" style="color: #34d399;" title="Fijar la vista actual como el Norte Magnético">🧭 Fijar Norte</button><div style="width: 1px; height: 20px; background: rgba(255,255,255,0.2); margin: 0 5px;"></div><button class="dev-btn action" id="btn-heatmap" title="Activa Telemetría Visual">🔥 Mapa Calor</button><button class="dev-btn" id="btn-edit-titles" style="color: #cbd5e1;" title="Editar Título y Subtítulo Central">📝 Títulos</button><button class="dev-btn nuke" id="btn-nuke-pins">🗑️ Limpiar Todo</button><button class="dev-btn export-ai" title="Guardar directamente en el servidor">☁️ GUARDAR EN LA NUBE</button></div></div>
         <div class="premium-dock" id="js-dock">
             <div class="dock-legend"><div class="legend-item"><div class="legend-dot dot-disp"></div><span class="legend-text">Disponible</span></div><div class="legend-item"><div class="legend-dot dot-res"></div><span class="legend-text">Reservado</span></div><div class="legend-item"><div class="legend-dot dot-vend"></div><span class="legend-text">Vendido</span></div><div class="legend-item"><div class="legend-dot dot-nodisp"></div><span class="legend-text">No Disp.</span></div></div>
             <div class="dock-btn pegman-dock-btn" id="js-pegman" title="Arrastra para 360°"><img src="https://raw.githubusercontent.com/iLyCoNs/panellum/refs/heads/main/street.png" alt="Street View" class="pegman-img"><span class="hide-mobile">Arrastra para 360°</span><span class="hide-desktop">360°</span></div>
@@ -677,7 +688,7 @@
         async function fetchValorUFOnline() { try { const response = await fetch('https://mindicador.cl/api/uf', { cache: 'no-store' }); if (response.ok) { const data = await response.json(); if(data && data.serie && data.serie.length > 0) { UF_Online = data.serie[0].valor; return; } } } catch (error) {} }
         async function fetchMasterData() { try { const response = await fetch('datos-suelo.json?v=' + new Date().getTime()); if(response.ok) { const data = await response.json(); ConfigProyecto = data.configProyecto || ConfigProyecto; OrigenDrone = data.origen || null; NorteOffset = data.norte || 0; BaseDatosLotes = data.lotes || []; PuntosHorizonte = data.horizontes || []; allDrawnLines = data.trazos || []; } else { loadFromLocal(); } } catch(e) { loadFromLocal(); } applyProjectConfig(); await syncRutasDesdeOrigen(); }
 
-        let visor360, currentPinSizeIndex = 1, isIntroAnimating = true, isDevModeDrawActive = false, isDevModePinsActive = false, currentLineType = 'solida', currentLinePoints = [], currentPinTypeMap = 'disponible', currentTempLineId = 'temp_' + Date.now(), draggingVertex = null, draggingFranjaDiv = null, draggingCalleMove = null, pickedPin = null, snapCursor = null, ghostPin = null, snappedCoords = null, activePinArgs = null, isCreatingNewPin = false, isSnapToClose = false, franjaCornerA = null, franjaPreviewQuad = null, franjaPreviewDivs = [], franjaDraftCount = 10, franjaDraftBaseM2 = 5000, franjaPendingCreate = null, draftCalleAncho = 8, draftCalleAlpha = 0.85, draftCalleLabelScale = 1, draftCalleShowLabel = true, draftCalleSnapFranja = false, calleSnapIsFranjaEdge = false, lastCalleTap = null;
+        let visor360, currentPinSizeIndex = 1, isIntroAnimating = true, isDevModeDrawActive = false, isDevModePinsActive = false, currentLineType = 'solida', currentLinePoints = [], currentPinTypeMap = 'disponible', currentTempLineId = 'temp_' + Date.now(), draggingVertex = null, draggingFranjaDiv = null, draggingCalleMove = null, pickedPin = null, snapCursor = null, ghostPin = null, snappedCoords = null, activePinArgs = null, isCreatingNewPin = false, isSnapToClose = false, franjaCornerA = null, franjaPreviewQuad = null, franjaPreviewDivs = [], franjaDraftCount = 10, franjaDraftBaseM2 = 5000, franjaPendingCreate = null, draftCalleAncho = 8, draftCalleAlpha = 0.85, draftCalleLabelScale = 1, draftCalleShowLabel = true, draftCalleSnapFranja = false, calleSnapIsFranjaEdge = false, lastCalleTap = null, isLineaPinesActive = false, lineaPinesPoints = [], lineaPinesTempId = 'linea_pins_' + Date.now();
         function revealLoteoOverlay() {
             isIntroAnimating = false;
             document.body.classList.add('loteo-overlay-ready');
@@ -754,6 +765,171 @@
         }
         function isMacroEdgeType(tipo) { return tipo === 'divisoria' || tipo === 'borde-macro' || tipo === 'arista_solida' || tipo === 'arista_punteada'; }
         function lerpPY(a, b, t) { return [a[0] + (b[0]-a[0])*t, a[1] + (b[1]-a[1])*t]; }
+        function polyCentroid(pts) {
+            if (!pts || !pts.length) return null;
+            let p = 0, y = 0;
+            pts.forEach(t => { p += t[0]; y += t[1]; });
+            return [p / pts.length, y / pts.length];
+        }
+        function projectionT(p, a, b) {
+            const dx = b[0] - a[0], dy = b[1] - a[1];
+            const len2 = dx * dx + dy * dy;
+            if (len2 < 1e-12) return 0;
+            return ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / len2;
+        }
+        function projectPointOnSegment(p, a, b) {
+            const t = Math.max(0, Math.min(1, projectionT(p, a, b)));
+            return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
+        }
+        function intersectSegments2D(a1, a2, b1, b2) {
+            const x1 = a1[0], y1 = a1[1], x2 = a2[0], y2 = a2[1];
+            const x3 = b1[0], y3 = b1[1], x4 = b2[0], y4 = b2[1];
+            const den = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
+            if (Math.abs(den) < 1e-14) return null;
+            const t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / den;
+            const u = -((x1 - x2) * (y1 - y3) - (y1 - y2) * (x1 - x3)) / den;
+            if (t >= 0 && t <= 1 && u >= 0 && u <= 1) return [x1 + t * (x2 - x1), y1 + t * (y2 - y1)];
+            return null;
+        }
+        function lineIntersectsPolygon(lineA, lineB, poly) {
+            if (!poly || poly.length < 3) return false;
+            for (let i = 0; i < poly.length; i++) {
+                const j = (i + 1) % poly.length;
+                if (intersectSegments2D(lineA, lineB, poly[i], poly[j])) return true;
+            }
+            const c = polyCentroid(poly);
+            if (!c) return false;
+            const proj = projectPointOnSegment(c, lineA, lineB);
+            return Math.hypot(c[0] - proj[0], c[1] - proj[1]) < 1.5;
+        }
+        function lineNearFranjaLot(lineA, lineB, lot) {
+            if (lineIntersectsPolygon(lineA, lineB, lot.puntos)) return true;
+            const c = polyCentroid(lot.puntos);
+            if (!c) return false;
+            const proj = projectPointOnSegment(c, lineA, lineB);
+            const perp = Math.hypot(c[0] - proj[0], c[1] - proj[1]);
+            const t = projectionT(c, lineA, lineB);
+            return perp < 14 && t >= -0.08 && t <= 1.08;
+        }
+        function getFranjaLotPinPosition(lot, lineA, lineB) {
+            const pts = lot.puntos;
+            if (pts.length >= 4) {
+                const topMid = lerpPY(pts[0], pts[1], 0.5);
+                const botMid = lerpPY(pts[3], pts[2], 0.5);
+                const hit = intersectSegments2D(topMid, botMid, lineA, lineB);
+                if (hit) return hit;
+            }
+            const c = polyCentroid(pts);
+            if (!c) return lineA;
+            return projectPointOnSegment(c, lineA, lineB);
+        }
+        function findPinForFranjaNumero(numero) {
+            const n = parseInt(numero, 10);
+            return BaseDatosLotes.find(p => p.tipo === 'lote' && (
+                p.numero === numero || p.numero === String(n) ||
+                (p.titulo && String(p.titulo).trim() === String(numero).trim()) ||
+                (p.titulo && parseInt(String(p.titulo).replace(/\D/g, ''), 10) === n)
+            ));
+        }
+        function syncLineaPinesPanelUI() {
+            const status = document.getElementById('linea-pines-status');
+            const n = lineaPinesPoints.length;
+            const ready = n >= 2;
+            if (status) {
+                status.classList.toggle('is-ready', ready);
+                status.textContent = ready
+                    ? `${n} puntos — pulsa Enter para alinear los pines`
+                    : (n === 1 ? '1 punto — coloca el final de la línea guía' : 'Clic en el mapa: punto inicial y final de la fila');
+            }
+        }
+        function deactivateLineaPines() {
+            isLineaPinesActive = false;
+            lineaPinesPoints = [];
+            lineaPinesTempId = 'linea_pins_' + Date.now();
+            window.lastMouseX = undefined;
+            window.lastMouseY = undefined;
+            document.getElementById('btn-linea-pines')?.classList.remove('active');
+            document.body.classList.remove('linea-pines-active');
+            document.getElementById('linea-pines-panel')?.classList.remove('open');
+            syncLineaPinesPanelUI();
+        }
+        function activateLineaPines() {
+            isLineaPinesActive = true;
+            lineaPinesPoints = [];
+            lineaPinesTempId = 'linea_pins_' + Date.now();
+            document.getElementById('btn-linea-pines')?.classList.add('active');
+            document.body.classList.add('linea-pines-active');
+            document.getElementById('linea-pines-panel')?.classList.add('open');
+            document.querySelectorAll('#dev-toolbar-pins .dev-btn[data-pintype]').forEach(b => b.classList.remove('active'));
+            syncLineaPinesPanelUI();
+            refreshAllHotspots(true);
+        }
+        function clearLineaPinesDraft() {
+            lineaPinesPoints = [];
+            lineaPinesTempId = 'linea_pins_' + Date.now();
+            window.lastMouseX = undefined;
+            window.lastMouseY = undefined;
+            syncLineaPinesPanelUI();
+            refreshAllHotspots(true);
+        }
+        function handleLineaPinesClick(mock) {
+            const coords = visor360.mouseEventToCoords(mock);
+            if (!coords || isNaN(coords[0])) return;
+            lineaPinesPoints.push([coords[0], coords[1]]);
+            syncLineaPinesPanelUI();
+            syncSVGElements();
+            updateSVGPaths();
+            refreshAllHotspots(true);
+        }
+        function applyLineaPinesAlign() {
+            if (lineaPinesPoints.length < 2) {
+                alert('⚠️ Coloca al menos 2 puntos para definir la línea de alineación.');
+                return false;
+            }
+            const lineA = lineaPinesPoints[0];
+            const lineB = lineaPinesPoints[lineaPinesPoints.length - 1];
+            migrateFranjaGroupsFromData();
+            const lots = allDrawnLines.filter(l => l.tipo === 'area-invisible' && l.franjaGrupo && l.franjaNumero && l.puntos.length >= 3);
+            if (!lots.length) {
+                alert('⚠️ No hay lotes de franja.\n\nCrea una franja con 🏘️ Franja Lotes (Modo Arquitecto) primero.');
+                return false;
+            }
+            const matched = lots.filter(lot => lineNearFranjaLot(lineA, lineB, lot)).map(lot => {
+                const pinPt = getFranjaLotPinPosition(lot, lineA, lineB);
+                return { lot, pinPt, t: projectionT(pinPt, lineA, lineB) };
+            });
+            if (!matched.length) {
+                alert('⚠️ La línea no cruza ningún lote de franja.\n\nAjusta el trazo para que atraviese la hilera de lotes.');
+                return false;
+            }
+            matched.sort((a, b) => a.t - b.t || (a.lot.franjaIdx || 0) - (b.lot.franjaIdx || 0));
+            const defaultStatus = ['disponible', 'reservado', 'vendido', 'no_disponible'].includes(currentPinTypeMap) ? currentPinTypeMap : 'disponible';
+            matched.forEach(({ lot, pinPt }) => {
+                const numero = lot.franjaNumero;
+                const pitch = parseFloat(pinPt[0].toFixed(3));
+                const yaw = parseFloat(pinPt[1].toFixed(3));
+                let pin = findPinForFranjaNumero(numero);
+                if (pin) {
+                    pin.pitch = pitch;
+                    pin.yaw = yaw;
+                } else {
+                    BaseDatosLotes.push({
+                        id: 'lp_' + lot.franjaGrupo + '_' + (lot.franjaIdx ?? 0) + '_' + Date.now(),
+                        tipo: 'lote',
+                        titulo: numero,
+                        numero: numero,
+                        status: defaultStatus,
+                        pitch,
+                        yaw
+                    });
+                }
+            });
+            clearLineaPinesDraft();
+            saveToLocal();
+            refreshAllHotspots();
+            flashScreenSuccess();
+            return true;
+        }
         function getPanoramaScreenProjector() {
             if (!visor360) return null;
             const ctnr = document.getElementById('panorama-container');
@@ -2084,6 +2260,11 @@
                     }
                 });
             }
+            if (isSvgRenderAllowed() && isDevModePinsActive && isLineaPinesActive) {
+                lineaPinesPoints.forEach((coord, idx) => {
+                    hotspots.push({ "id": "linea_pins_pt_" + idx, "pitch": coord[0], "yaw": coord[1], "createTooltipFunc": renderHiddenVertex, "createTooltipArgs": { lineId: lineaPinesTempId, type: 'linea-pines-guia', isGuide: false, idx: idx, hsId: "linea_pins_pt_" + idx } });
+                });
+            }
             if(isSvgRenderAllowed() && isDevModeDrawActive) {
                 allDrawnLines.forEach((linea) => {
                     if (linea.tipo === 'franja-grupo') {
@@ -2128,9 +2309,15 @@
             if(!isSvgRenderAllowed()) return; const svg = document.getElementById('loteo-svg'); if(!svg) return;
             let lBordes = document.getElementById('layer-calles-bordes'), lAsfalto = document.getElementById('layer-calles-asfalto'), lLotes = document.getElementById('layer-lotes'), lAristas = document.getElementById('layer-aristas');
             if(!lBordes) { svg.innerHTML = '<g id="layer-calles-bordes"></g><g id="layer-calles-asfalto"></g><g id="layer-lotes"></g><g id="layer-aristas"></g>'; lBordes = document.getElementById('layer-calles-bordes'); lAsfalto = document.getElementById('layer-calles-asfalto'); lLotes = document.getElementById('layer-lotes'); lAristas = document.getElementById('layer-aristas'); }
-            const currentLineIds = allDrawnLines.map(l => l.id); if (currentLinePoints.length > 0) currentLineIds.push(currentTempLineId); if (franjaPreviewQuad) currentLineIds.push('franja_preview_quad'); franjaPreviewDivs.forEach(d => currentLineIds.push(d.id));
+            const currentLineIds = allDrawnLines.map(l => l.id);
+            if (currentLinePoints.length > 0) currentLineIds.push(currentTempLineId);
+            if (isLineaPinesActive && lineaPinesPoints.length > 0) currentLineIds.push(lineaPinesTempId);
+            if (franjaPreviewQuad) currentLineIds.push('franja_preview_quad'); franjaPreviewDivs.forEach(d => currentLineIds.push(d.id));
             Array.from(svg.querySelectorAll('[data-line-id]')).forEach(el => { if (!currentLineIds.includes(el.dataset.lineId)) el.remove(); });
-            DOMCache.paths = {}; const allLinesData = [...allDrawnLines]; if (currentLinePoints.length > 0) allLinesData.push({ id: currentTempLineId, tipo: currentLineType, puntos: currentLinePoints }); if (franjaPreviewQuad) allLinesData.push({ id: 'franja_preview_quad', tipo: 'franja-preview', puntos: franjaPreviewQuad }); franjaPreviewDivs.forEach(d => allLinesData.push(d));
+            DOMCache.paths = {}; const allLinesData = [...allDrawnLines];
+            if (currentLinePoints.length > 0) allLinesData.push({ id: currentTempLineId, tipo: currentLineType, puntos: currentLinePoints });
+            if (isLineaPinesActive && lineaPinesPoints.length > 0) allLinesData.push({ id: lineaPinesTempId, tipo: 'linea-pines-guia', puntos: lineaPinesPoints });
+            if (franjaPreviewQuad) allLinesData.push({ id: 'franja_preview_quad', tipo: 'franja-preview', puntos: franjaPreviewQuad }); franjaPreviewDivs.forEach(d => allLinesData.push(d));
             allLinesData.forEach(line => {
                 const existingElements = svg.querySelectorAll(`[data-line-id="${line.id}"]`);
                 if (existingElements.length === 0) {
@@ -2152,6 +2339,12 @@
                         const pPrev = document.createElementNS("http://www.w3.org/2000/svg", "path");
                         pPrev.setAttribute("class", line.tipo === 'franja-preview-div' ? 'linea-divisoria' : 'linea-franja-preview');
                         gPrev.appendChild(pPrev); (line.tipo === 'franja-preview-div' ? lAristas : lLotes).appendChild(gPrev); DOMCache.paths[line.id] = { base: [pPrev] };
+                    } else if (line.tipo === 'linea-pines-guia') {
+                        const pGuide = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                        pGuide.setAttribute("class", "linea-pines-guia");
+                        pGuide.dataset.lineId = line.id;
+                        lAristas.appendChild(pGuide);
+                        DOMCache.paths[line.id] = { base: [pGuide] };
                     } else {
                         const g = document.createElementNS("http://www.w3.org/2000/svg", "g"); g.dataset.lineId = line.id; g.dataset.tipo = line.tipo; g.classList.add('lote-interactivo'); 
                         const pBase = document.createElementNS("http://www.w3.org/2000/svg", "path"); 
@@ -2185,9 +2378,14 @@
             function getCam(pitch, yaw) { const p = pitch * Math.PI / 180, y = yaw * Math.PI / 180, sin_p = Math.sin(p), cos_p = Math.cos(p); let y_diff = y - cy; while (y_diff > Math.PI) y_diff -= 2 * Math.PI; while (y_diff < -Math.PI) y_diff += 2 * Math.PI; const sin_yd = Math.sin(y_diff), cos_yd = Math.cos(y_diff); return { x: cos_p * sin_yd, y: sin_p * cos_cp - cos_p * cos_yd * sin_cp, z: sin_p * sin_cp + cos_p * cos_yd * cos_cp }; }
             Object.keys(DOMCache.paths).forEach(lineId => {
                 const cacheObj = DOMCache.paths[lineId]; if (!cacheObj) return;
-                let lineData = allDrawnLines.find(l => l.id === lineId); if (!lineData && lineId === currentTempLineId) lineData = { tipo: currentLineType, puntos: currentLinePoints, calleAncho: currentLineType === 'calle' ? draftCalleAncho : undefined, calleAlpha: currentLineType === 'calle' ? draftCalleAlpha : undefined, calleLabelScale: currentLineType === 'calle' ? draftCalleLabelScale : undefined, calleShowLabel: currentLineType === 'calle' ? draftCalleShowLabel : undefined }; if (!lineData && lineId === 'franja_preview_quad' && franjaPreviewQuad) lineData = { tipo: 'franja-preview', puntos: franjaPreviewQuad }; if (!lineData && lineId.startsWith('franja_preview_div_')) lineData = franjaPreviewDivs.find(d => d.id === lineId); if (!lineData) return;
+                let lineData = allDrawnLines.find(l => l.id === lineId);
+                if (!lineData && lineId === currentTempLineId) lineData = { tipo: currentLineType, puntos: currentLinePoints, calleAncho: currentLineType === 'calle' ? draftCalleAncho : undefined, calleAlpha: currentLineType === 'calle' ? draftCalleAlpha : undefined, calleLabelScale: currentLineType === 'calle' ? draftCalleLabelScale : undefined, calleShowLabel: currentLineType === 'calle' ? draftCalleShowLabel : undefined };
+                if (!lineData && lineId === lineaPinesTempId) lineData = { tipo: 'linea-pines-guia', puntos: lineaPinesPoints };
+                if (!lineData && lineId === 'franja_preview_quad' && franjaPreviewQuad) lineData = { tipo: 'franja-preview', puntos: franjaPreviewQuad };
+                if (!lineData && lineId.startsWith('franja_preview_div_')) lineData = franjaPreviewDivs.find(d => d.id === lineId);
+                if (!lineData) return;
                 if (cacheObj.gNode && lineData.tipo !== 'calle' && lineData.tipo !== 'franja-grupo') { if (lineData.puntos && lineData.puntos.length > 0) { let polyStatus = 'disponible'; if (lineData.franjaNumero || lineData.tipo === 'area-invisible') polyStatus = 'disponible'; else { let cP = 0, cY = 0; lineData.puntos.forEach(pt => { cP += pt[0]; cY += pt[1]; }); cP /= lineData.puntos.length; cY /= lineData.puntos.length; let closestPin = null; let minDist = 30; BaseDatosLotes.forEach(pin => { if(pin.tipo === 'lote') { let dist = Math.pow(pin.pitch - cP, 2) + Math.pow(pin.yaw - cY, 2); if(dist < minDist) { minDist = dist; closestPin = pin; } } }); if (closestPin) polyStatus = closestPin.status; } cacheObj.gNode.setAttribute('data-status', polyStatus); } }
-                let dBase = '', isClosed = (lineData.tipo !== 'calle' && lineData.tipo !== 'cortar' && lineData.tipo !== 'divisoria' && lineData.tipo !== 'borde-macro' && lineData.tipo !== 'franja-preview-div' && lineId !== currentTempLineId), pts = lineData.puntos, hasVisiblePoints = false;
+                let dBase = '', isClosed = (lineData.tipo !== 'calle' && lineData.tipo !== 'cortar' && lineData.tipo !== 'divisoria' && lineData.tipo !== 'borde-macro' && lineData.tipo !== 'franja-preview-div' && lineData.tipo !== 'linea-pines-guia' && lineId !== currentTempLineId && lineId !== lineaPinesTempId), pts = lineData.puntos, hasVisiblePoints = false;
                 for (let i = 0; i < pts.length; i++) {
                     let p1 = pts[i], p2 = pts[(i + 1) % pts.length];
                     if (!isClosed && i === pts.length - 1) break;
@@ -2199,7 +2397,7 @@
                     if(isNaN(s1.x) || isNaN(s2.x)) continue; 
                     if (dBase === '') { dBase += `M ${s1.x},${s1.y} L ${s2.x},${s2.y} `; } else { if (!in1) dBase += `M ${s1.x},${s1.y} `; dBase += `L ${s2.x},${s2.y} `; }
                 }
-                if (!isClosed && lineId === currentTempLineId && window.lastMouseX !== undefined) { let mx = window.lastMouseX - DOMCache.viewport.left, my = window.lastMouseY - DOMCache.viewport.top; if(dBase === '' && pts.length > 0) { let c1 = getCam(pts[0][0], pts[0][1]); if(c1.z > 0) dBase += `M ${cx + (c1.x / c1.z) * f},${cy_screen - (c1.y / c1.z) * f} `; } dBase += `L ${mx},${my} `; hasVisiblePoints = true; }
+                if (!isClosed && (lineId === currentTempLineId || lineId === lineaPinesTempId) && window.lastMouseX !== undefined) { let mx = window.lastMouseX - DOMCache.viewport.left, my = window.lastMouseY - DOMCache.viewport.top; if(dBase === '' && pts.length > 0) { let c1 = getCam(pts[0][0], pts[0][1]); if(c1.z > 0) dBase += `M ${cx + (c1.x / c1.z) * f},${cy_screen - (c1.y / c1.z) * f} `; } dBase += `L ${mx},${my} `; hasVisiblePoints = true; }
                 if (isClosed && dBase.trim() !== '') dBase += ' Z'; if (!hasVisiblePoints && isClosed) dBase = 'M -999 -999';
                 if (cacheObj.base) {
                     cacheObj.base.forEach(path => path.setAttribute("d", dBase.trim() !== '' ? dBase : 'M -999 -999'));
@@ -2399,6 +2597,9 @@
                         if (currentLineType !== 'calle' && currentLinePoints.length >= 3) { let dOrg = Math.sqrt(Math.pow(p-currentLinePoints[0][0],2)+Math.pow(y-currentLinePoints[0][1],2)); if (dOrg < SNAP_DISTANCE) isClosingShape = true; }
                         if (!isClosingShape && currentLineType !== 'calle' && snappedCoords && currentLinePoints.length >= 2 && Math.abs(p-currentLinePoints[0][0]) < 0.01 && Math.abs(y-currentLinePoints[0][1]) < 0.01) isClosingShape = true;
                         if (isClosingShape) { anclarTrazoActivo(); } else { currentLinePoints.push([p, y]); let _hid = 'temp_base_pt_'+Date.now(); visor360.addHotSpot({ pitch: p, yaw: y, id: _hid, createTooltipFunc: renderHiddenVertex, createTooltipArgs: { lineId: currentTempLineId, type: currentLineType, isGuide: true, idx: currentLinePoints.length-1, hsId: _hid }, }); syncSVGElements(); updateSVGPaths(); }
+                    } else if (isDevModePinsActive && isLineaPinesActive && !pickedPin) {
+                        if (e.target && e.target.closest('.qa-btn')) return;
+                        handleLineaPinesClick(mock);
                     } else if (isDevModePinsActive && !pickedPin) {
                         if (e.target && e.target.closest('.qa-btn')) return; const coords = visor360.mouseEventToCoords(mock); if (!coords) return; const p = coords[0].toFixed(2), y = coords[1].toFixed(2); let baseArgs = { pitch: parseFloat(p), yaw: parseFloat(y) };
                         if (currentPinTypeMap === 'horizonte' || currentPinTypeMap === 'ruta') {
@@ -2448,6 +2649,11 @@
                     return;
                 }
                 if (isDevModePinsActive && pickedPin) { if (e.cancelable) e.preventDefault(); const gPin = document.getElementById('ghost-pin'); gPin.classList.add('active'); gPin.style.left = mock.clientX + 'px'; gPin.style.top = mock.clientY + 'px'; return; }
+                if (isDevModePinsActive && isLineaPinesActive && visor360) {
+                    window.lastMouseX = mock.clientX; window.lastMouseY = mock.clientY;
+                    updateSVGPaths();
+                    return;
+                }
                 if (isDevModeDrawActive && currentLineType === 'franja' && franjaCornerA) {
                     window.lastMouseX = mock.clientX; window.lastMouseY = mock.clientY;
                     updateFranjaPreview(mock.clientX, mock.clientY);
@@ -2682,15 +2888,33 @@
             }
         }
         function toggleDrawMode(forceActive) { isDevModeDrawActive = forceActive; if (!forceActive) { clearFranjaDraft(); closeCalleToolPanel(); } document.getElementById('dev-toolbar-draw')?.classList.toggle('show', isDevModeDrawActive); document.body.classList.toggle('dev-mode-active', isDevModeDrawActive); refreshAllHotspots(); }
-        function togglePinsMode(forceActive) { isDevModePinsActive = forceActive; document.getElementById('dev-toolbar-pins')?.classList.toggle('show', isDevModePinsActive); document.body.classList.toggle('dev-mode-pins-active', isDevModePinsActive); refreshAllHotspots(); }
+        function togglePinsMode(forceActive) { isDevModePinsActive = forceActive; if (!forceActive) deactivateLineaPines(); document.getElementById('dev-toolbar-pins')?.classList.toggle('show', isDevModePinsActive); document.body.classList.toggle('dev-mode-pins-active', isDevModePinsActive); refreshAllHotspots(); }
 
         function setupDevModes() {
             document.querySelectorAll('.dev-toolbar').forEach(tb => { tb.addEventListener('mousedown', e => e.stopPropagation()); tb.addEventListener('mouseup', e => e.stopPropagation()); tb.addEventListener('touchstart', e => e.stopPropagation(), {passive: true}); tb.addEventListener('touchend', e => e.stopPropagation()); });
             document.addEventListener('keydown', (e) => {
                 if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT')) return;
+                if (isLineaPinesActive && lineaPinesPoints.length >= 2 && (e.code === 'Enter' || e.code === 'NumpadEnter')) {
+                    e.preventDefault();
+                    applyLineaPinesAlign();
+                    return;
+                }
                 if (e.code === 'Enter' && isDevModeDrawActive && currentLineType === 'calle' && currentLinePoints.length >= 2) {
                     e.preventDefault();
                     finishCalleDrawing();
+                    return;
+                }
+                if (e.code === 'Escape' && isLineaPinesActive) {
+                    e.preventDefault();
+                    clearLineaPinesDraft();
+                    refreshAllHotspots(true);
+                    return;
+                }
+                if (e.ctrlKey && e.code === 'KeyZ' && isLineaPinesActive && lineaPinesPoints.length > 0) {
+                    e.preventDefault();
+                    lineaPinesPoints.pop();
+                    syncLineaPinesPanelUI();
+                    refreshAllHotspots(true);
                     return;
                 }
                 if (e.ctrlKey && e.code === 'Space') { e.preventDefault(); if(isDevModePinsActive) togglePinsMode(false); toggleDrawMode(!isDevModeDrawActive); } if (e.ctrlKey && (e.code === 'KeyP' || e.key.toLowerCase() === 'p')) { e.preventDefault(); if(isDevModeDrawActive) toggleDrawMode(false); togglePinsMode(!isDevModePinsActive); } if (e.ctrlKey && (e.code === 'KeyZ' || e.key.toLowerCase() === 'z')) { e.preventDefault(); if (isDevModeDrawActive) { if (currentLinePoints.length > 0) document.getElementById('btn-undo-point')?.click(); else if (allDrawnLines.length > 0) document.getElementById('btn-delete-last-line')?.click(); } }
@@ -2742,7 +2966,15 @@
             document.getElementById('btn-set-drone')?.addEventListener('click', () => { let val = prompt("Fijar Coordenada del Drone (Lat, Lng)\nEj: -41.3245, -72.9832", OrigenDrone ? `${OrigenDrone.lat}, ${OrigenDrone.lng}` : ""); if (val && val.includes(',')) { let parts = val.split(','); OrigenDrone = { lat: parseFloat(parts[0].trim()), lng: parseFloat(parts[1].trim()) }; saveToLocal(); document.getElementById('js-gmap-iframe').src = `https://maps.google.com/maps?q=${OrigenDrone.lat},${OrigenDrone.lng}&t=k&z=16&ie=UTF8&iwloc=&output=embed`; document.getElementById('js-directions-btn').href = `https://www.google.com/maps/dir/?api=1&destination=${OrigenDrone.lat},${OrigenDrone.lng}`; syncRutasDesdeOrigen({ refreshAll: true }).then(() => alert("📍 Origen Drone fijado.\nDistancias de pins ruta/horizonte recalculadas con tráfico.")); } });
             document.getElementById('btn-set-north')?.addEventListener('click', () => { if(!visor360) return; NorteOffset = visor360.getYaw(); saveToLocal(); alert("🧭 Brújula calibrada: El Norte Magnético apunta ahora a tu vista actual.\n(El parámetro 'norte' será incluido al Copiar Datos IA)."); const compassDial = document.getElementById('js-compass'); if(compassDial) compassDial.style.transform = `rotate(${-(visor360.getYaw() - NorteOffset)}deg)`; });
             document.getElementById('btn-edit-titles')?.addEventListener('click', () => { let t = prompt("Título del Proyecto (H1):", ConfigProyecto.titulo); let s = prompt("Subtítulo del Proyecto (p):", ConfigProyecto.subtitulo); if (t !== null && s !== null) { ConfigProyecto.titulo = t || 'PROYECTO INMOBILIARIO'; ConfigProyecto.subtitulo = s || ''; applyProjectConfig(); saveToLocal(); alert("Títulos actualizados temporalmente.\nAl hacer clic en 'COPIAR DATOS IA' se incluirán en el archivo JSON definitivo."); } });
-            document.querySelectorAll('#dev-toolbar-pins .dev-btn:not(.action):not(.export):not(.export-ai):not(.nuke)').forEach(btn => { if(btn.id !== 'btn-set-drone' && btn.id !== 'btn-set-north' && btn.id !== 'btn-edit-titles') { btn.addEventListener('click', (e) => { currentPinTypeMap = e.target.dataset.pintype; document.querySelectorAll('#dev-toolbar-pins .dev-btn:not(.action):not(.export):not(.export-ai):not(.nuke)').forEach(b => b.classList.remove('active')); e.target.classList.add('active'); }); } });
+            document.getElementById('linea-pines-panel')?.addEventListener('mousedown', e => e.stopPropagation());
+            document.getElementById('linea-pines-panel')?.addEventListener('touchstart', e => e.stopPropagation(), { passive: true });
+            document.getElementById('btn-linea-pines')?.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (isLineaPinesActive) deactivateLineaPines();
+                else activateLineaPines();
+                refreshAllHotspots(true);
+            });
+            document.querySelectorAll('#dev-toolbar-pins .dev-btn:not(.action):not(.export):not(.export-ai):not(.nuke)').forEach(btn => { if(btn.id !== 'btn-set-drone' && btn.id !== 'btn-set-north' && btn.id !== 'btn-edit-titles' && btn.id !== 'btn-linea-pines') { btn.addEventListener('click', (e) => { deactivateLineaPines(); currentPinTypeMap = e.target.dataset.pintype; document.querySelectorAll('#dev-toolbar-pins .dev-btn:not(.action):not(.export):not(.export-ai):not(.nuke)').forEach(b => b.classList.remove('active')); e.target.classList.add('active'); }); } });
             document.getElementById('btn-heatmap')?.addEventListener('click', function() { isHeatmapActive = !isHeatmapActive; this.classList.toggle('active', isHeatmapActive); document.body.classList.toggle('heatmap-mode', isHeatmapActive); updateSVGPaths(); });
             document.getElementById('btn-auto-macro')?.addEventListener('click', () => {
                 const plan = collectLotesForAutoMacro();
