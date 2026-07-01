@@ -14,6 +14,11 @@ const FRESIA_CFG = Object.assign({
     mergeRemoteSueloFields: true
 }, window.FRESIA_VIEWER_CONFIG || {});
 const PANORAMA_FILE = FRESIA_CFG.panorama;
+(function primeAdminEditorMode() {
+    if (new URLSearchParams(window.location.search).get('admin') !== 'true') return;
+    const apply = () => document.body.classList.add('is-admin-editor');
+    if (document.body) apply(); else document.addEventListener('DOMContentLoaded', apply, { once: true });
+})();
 
 let ConfigProyecto = { titulo: "PROYECTO INMOBILIARIO", subtitulo: "Masterplan Interactivo 360°" };
 let OrigenDrone = null, NorteOffset = 0, BaseDatosLotes = [], PuntosHorizonte = [], allDrawnLines = [], UF_Online = 0;
@@ -1874,12 +1879,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     resizeObserver.observe(container); const initialRect = container.getBoundingClientRect(); DOMCache.viewport.w = initialRect.width; DOMCache.viewport.h = initialRect.height; DOMCache.viewport.left = initialRect.left; DOMCache.viewport.top = initialRect.top;
     const svgEl = document.createElementNS("http://www.w3.org/2000/svg", "svg"); svgEl.id = "loteo-svg"; document.body.appendChild(svgEl);
     setupUI(); setupFilters(); renderSidebarList(BaseDatosLotes); setupPegmanEngine(); setupGesturalBackdoor();
-    initPannellum(); runSplashScreen(); setupDevModes(); setupModalEditor(); setupInAppModal(); setupGlobalDelegation(); setupSunEngine(); setupNavPinTouchInteractions();
+    initPannellum(); runSplashScreen(); setupDevModes(); setupAdminPostMessageBridge(); setupModalEditor(); setupInAppModal(); setupGlobalDelegation(); setupSunEngine(); setupNavPinTouchInteractions();
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('admin') === 'true') {
+        document.body.classList.add('is-admin-editor');
         document.querySelector('.premium-header')?.style.setProperty('display','none'); document.querySelector('.premium-dock')?.style.setProperty('display','none'); document.getElementById('promo-banner-hud')?.style.setProperty('display','none'); document.getElementById('js-poi-trigger')?.style.setProperty('display','none');
         document.querySelectorAll('.export-ai').forEach(btn => { btn.innerText = "💾 GUARDAR EN NUBE"; btn.title = "Envía los trazos directamente a GitHub mediante el Panel"; });
-        setTimeout(() => { togglePinsMode(true); }, 3500);
+        setTimeout(() => { togglePinsMode(true); window.parent.postMessage({ type: 'EDITOR_READY', vista: FRESIA_CFG.vista }, '*'); }, 3500);
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && window.self !== window.top) {
                 e.preventDefault();
@@ -2555,6 +2561,21 @@ function anclarTrazoActivo() {
 }
 function toggleDrawMode(forceActive) { isDevModeDrawActive = forceActive; if (!forceActive) { clearFranjaDraft(); closeCalleToolPanel(); } document.getElementById('dev-toolbar-draw')?.classList.toggle('show', isDevModeDrawActive); document.body.classList.toggle('dev-mode-active', isDevModeDrawActive); refreshAllHotspots(); }
 function togglePinsMode(forceActive) { isDevModePinsActive = forceActive; if (!forceActive) deactivateLineaPines(); document.getElementById('dev-toolbar-pins')?.classList.toggle('show', isDevModePinsActive); document.body.classList.toggle('dev-mode-pins-active', isDevModePinsActive); refreshAllHotspots(); }
+
+function setupAdminPostMessageBridge() {
+    window.addEventListener('message', (event) => {
+        const data = event.data;
+        if (!data || typeof data.type !== 'string') return;
+        if (data.type === 'ADMIN_TOGGLE_DRAW') {
+            if (isDevModePinsActive) togglePinsMode(false);
+            toggleDrawMode(typeof data.active === 'boolean' ? data.active : !isDevModeDrawActive);
+        }
+        if (data.type === 'ADMIN_TOGGLE_PINS') {
+            if (isDevModeDrawActive) toggleDrawMode(false);
+            togglePinsMode(typeof data.active === 'boolean' ? data.active : !isDevModePinsActive);
+        }
+    });
+}
 
 function setupDevModes() {
     document.querySelectorAll('.dev-toolbar').forEach(tb => { tb.addEventListener('mousedown', e => e.stopPropagation()); tb.addEventListener('mouseup', e => e.stopPropagation()); tb.addEventListener('touchstart', e => e.stopPropagation(), {passive: true}); tb.addEventListener('touchend', e => e.stopPropagation()); });
