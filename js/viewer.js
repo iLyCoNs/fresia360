@@ -1224,8 +1224,15 @@ function getCalleHalfWidthPx(anchoFactor) {
 function getCalleStrokeWidths(anchoFactor) {
     const base = getCalleDynBasePx();
     const factor = anchoFactor || draftCalleAncho || 8;
-    const asf = Math.max(4, base * factor);
-    const thin = getCalleBorderThinPx();
+    
+    // FIX: Reducción del 20% del grosor general solo en dispositivos móviles
+    const isMobile = window.innerWidth <= 768;
+    const scale = isMobile ? 0.8 : 1.0;
+    
+    // Aplicamos la escala al asfalto y a la línea blanca fina
+    const asf = Math.max(4, base * factor * scale);
+    const thin = getCalleBorderThinPx() * scale;
+    
     return { asfalto: asf, borde: asf + thin * 2, thin };
 }
 function getCalleStyleForLine(line) {
@@ -3162,15 +3169,15 @@ function setupNavPinTouchInteractions() {
     if (setupNavPinTouchInteractions._bound) return;
     setupNavPinTouchInteractions._bound = true;
     let lastTap = 0;
-    const isMobileNav = () => window.matchMedia('(max-width: 768px)').matches || (document.body.classList.contains('is-embedded') && window.innerWidth <= 960);
-    document.addEventListener('touchend', (e) => {
+
+    const toggleNavArrow = (e) => {
         if (document.body.classList.contains('dev-mode-pins-active')) return;
+        
         const rutaArrow = e.target.closest('.ruta-hud-wrapper .ruta-expand-arrow');
-        if (rutaArrow && isMobileNav()) {
+        if (rutaArrow) {
             const wrapper = rutaArrow.closest('.ruta-hud-wrapper');
             if (!wrapper) return;
-            e.preventDefault();
-            e.stopPropagation();
+            e.preventDefault(); e.stopPropagation();
             const now = Date.now();
             if (now - lastTap < 300) return;
             lastTap = now;
@@ -3178,12 +3185,12 @@ function setupNavPinTouchInteractions() {
             wrapper.classList.toggle('ruta-pill-expanded');
             return;
         }
-        const arrow = e.target.closest('.horizon-hud-wrapper .horizon-expand-arrow');
-        if (arrow && isMobileNav()) {
-            const wrapper = arrow.closest('.horizon-hud-wrapper');
+        
+        const horizonArrow = e.target.closest('.horizon-hud-wrapper .horizon-expand-arrow');
+        if (horizonArrow) {
+            const wrapper = horizonArrow.closest('.horizon-hud-wrapper');
             if (!wrapper) return;
-            e.preventDefault();
-            e.stopPropagation();
+            e.preventDefault(); e.stopPropagation();
             const now = Date.now();
             if (now - lastTap < 300) return;
             lastTap = now;
@@ -3191,18 +3198,11 @@ function setupNavPinTouchInteractions() {
             wrapper.classList.toggle('horizon-pill-expanded');
             return;
         }
-        const pill = e.target.closest('.horizon-hud-wrapper .ruta-glass-pill');
-        if (!pill || e.target.closest('a.r-link') || isMobileNav()) return;
-        const wrapper = pill.closest('.horizon-hud-wrapper');
-        if (!wrapper) return;
-        e.preventDefault();
-        e.stopPropagation();
-        const now = Date.now();
-        if (now - lastTap < 350) return;
-        lastTap = now;
-        document.querySelectorAll('.horizon-hud-wrapper.horizon-pin-open').forEach(el => { if (el !== wrapper) el.classList.remove('horizon-pin-open'); });
-        wrapper.classList.toggle('horizon-pin-open');
-    }, { passive: false, capture: true });
+    };
+
+    document.addEventListener('touchend', toggleNavArrow, { passive: false, capture: true });
+    document.addEventListener('click', toggleNavArrow, { capture: true });
+
     document.addEventListener('mousedown', (e) => {
         if (document.body.classList.contains('dev-mode-pins-active')) return;
         if (!e.target.closest('.horizon-hud-wrapper') && !e.target.closest('.ruta-hud-wrapper')) {
@@ -3211,12 +3211,6 @@ function setupNavPinTouchInteractions() {
             document.querySelectorAll('.ruta-hud-wrapper.ruta-pill-expanded').forEach(el => el.classList.remove('ruta-pill-expanded'));
         }
     });
-    document.addEventListener('touchend', (e) => {
-        if (document.body.classList.contains('dev-mode-pins-active') || !isMobileNav()) return;
-        if (e.target.closest('.horizon-hud-wrapper') || e.target.closest('.ruta-hud-wrapper')) return;
-        document.querySelectorAll('.horizon-hud-wrapper.horizon-pill-expanded').forEach(el => el.classList.remove('horizon-pill-expanded'));
-        document.querySelectorAll('.ruta-hud-wrapper.ruta-pill-expanded').forEach(el => el.classList.remove('ruta-pill-expanded'));
-    }, { passive: true });
 }
 
 function generarSmartPin(hotSpotDiv, args) {
