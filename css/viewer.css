@@ -33,19 +33,26 @@ g.lote-interactivo.hovered path.linea-relleno-mp, g.lote-interactivo:hover path.
 .linea-borde-macro { stroke: rgba(255,255,255,0.94) !important; stroke-width: calc(var(--stroke-dyn) * 0.48) !important; stroke-linejoin: round; stroke-linecap: round; filter: drop-shadow(0 0 1px rgba(255,255,255,0.35)); pointer-events: none; }
 body.auto-macro-active g[data-tipo="borde-macro"] path { stroke-width: calc(var(--stroke-dyn) * 0.44) !important; }
 body.auto-macro-active g[data-tipo="divisoria"] path { stroke-width: calc(var(--stroke-dyn) * 0.38) !important; stroke-dasharray: 2.5 4.5; }
-body.auto-macro-active:not(.dev-mode-active) g[data-tipo="franja-grupo"] { display: none; }
+body.auto-macro-active:not(.dev-mode-active) g[data-tipo="franja-grupo"],
+body.auto-macro-active:not(.dev-mode-active) g[data-tipo="franja-curva-grupo"] { display: none; }
 body.auto-macro-active g.lote-interactivo[data-tipo="area-invisible"] path.linea-area-fill { fill: rgba(var(--c-disp), 0.20) !important; }
-body.eraser-mode-active g[data-tipo="divisoria"] path, body.eraser-mode-active g[data-tipo="borde-macro"] path, body.eraser-mode-active g[data-tipo="franja-grupo"] path { pointer-events: auto !important; cursor: crosshair; }
+body.auto-macro-active g[data-tipo="franja-grupo"] path,
+body.auto-macro-active g[data-tipo="franja-curva-grupo"] path { fill: none !important; stroke: rgba(16,185,129,0.38); stroke-width: calc(var(--stroke-dyn) * 0.42); stroke-dasharray: 4 4; pointer-events: none; }
+body.eraser-mode-active g[data-tipo="divisoria"] path, body.eraser-mode-active g[data-tipo="borde-macro"] path, body.eraser-mode-active g[data-tipo="franja-grupo"] path, body.eraser-mode-active g[data-tipo="franja-curva-grupo"] path { pointer-events: auto !important; cursor: crosshair; }
 body.eraser-mode-active .linea-corte { pointer-events: auto !important; cursor: crosshair; }
 body.eraser-mode-active .vertex-marker { cursor: crosshair; }
+.linea-franja-grupo-outline { fill: rgba(16,185,129,0.04); stroke: rgba(16,185,129,0.45); stroke-width: calc(var(--stroke-dyn) * 0.5); stroke-dasharray: 4 4; pointer-events: none; }
+body.auto-macro-active .linea-franja-grupo-outline { fill: none !important; stroke: rgba(16,185,129,0.38); stroke-width: calc(var(--stroke-dyn) * 0.42); }
 .linea-franja-preview { fill: rgba(16,185,129,0.07); stroke: rgba(255,255,255,0.5); stroke-width: calc(var(--stroke-dyn) * 0.55); stroke-dasharray: 5 4; pointer-events: none; }
 .vertex-marker.franja-corner-marker { background: #10b981 !important; border-color: #fff !important; box-shadow: 0 0 14px rgba(16,185,129,0.85); width: 16px !important; height: 16px !important; }
+.vertex-marker.franja-elastic-node { background: rgba(16,185,129,0.82) !important; border: 2px solid rgba(255,255,255,0.92) !important; box-shadow: 0 0 8px rgba(16,185,129,0.55); width: 11px !important; height: 11px !important; }
 .franja-lot-label { position: absolute; transform: translate(-50%,-50%); background: rgba(16,185,129,0.92); color: #fff; font-size: 10px; font-weight: 800; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.35); pointer-events: none; z-index: 99999; }
 .franja-div-handle { position: absolute; transform: translate(-50%,-50%); width: 10px; height: 44px; background: rgba(245,158,11,0.88); border: 2px solid #fff; border-radius: 5px; box-shadow: 0 2px 12px rgba(0,0,0,0.5); cursor: ew-resize; pointer-events: auto; z-index: 100001; touch-action: none; }
 .franja-div-handle::before { content: ''; position: absolute; top: 6px; bottom: 6px; left: 50%; width: 2px; transform: translateX(-50%); background: rgba(255,255,255,0.85); border-radius: 1px; box-shadow: -3px 0 0 rgba(255,255,255,0.5), 3px 0 0 rgba(255,255,255,0.5); }
 .franja-div-handle::after { content: ''; position: absolute; top: -24px; left: -28px; right: -28px; bottom: -24px; }
 .franja-div-handle:hover, .franja-div-handle.is-dragging { background: #fbbf24; transform: translate(-50%,-50%) scale(1.12); box-shadow: 0 0 14px rgba(245,158,11,0.85); }
-g[data-tipo="franja-grupo"] path { fill: rgba(16,185,129,0.04); stroke: rgba(16,185,129,0.45); stroke-width: calc(var(--stroke-dyn) * 0.5); stroke-dasharray: 4 4; pointer-events: none; }
+g[data-tipo="franja-grupo"] path,
+g[data-tipo="franja-curva-grupo"] path { fill: rgba(16,185,129,0.04); stroke: rgba(16,185,129,0.45); stroke-width: calc(var(--stroke-dyn) * 0.5); stroke-dasharray: 4 4; pointer-events: none; }
 .btn-franja-lotes::before { content:'🏘️'; display:inline-block; font-size:10px; margin-right: 3px; }
 #franja-lotes-modal { position: fixed; inset: 0; background: rgba(10, 15, 25, 0.98); z-index: 99999999; display: flex; align-items: center; justify-content: center; visibility: hidden; opacity: 0; transition: opacity 0.25s, visibility 0.25s; pointer-events: none; }
 #franja-lotes-modal.open { visibility: visible; opacity: 1; pointer-events: auto; }

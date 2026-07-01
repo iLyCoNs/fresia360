@@ -978,6 +978,40 @@ function normalizeFranjaStripToRect(gid) {
     if (grp.tipo === 'franja-curva-grupo') straightenFranjaGroup(gid);
     return allDrawnLines.find(l => l.id === gid && l.tipo === 'franja-grupo') || null;
 }
+function resamplePolylineToCount(pts, count) {
+    if (!pts?.length || count < 2) return pts ? pts.map(p => [...p]) : [];
+    const out = [];
+    for (let i = 0; i < count; i++) out.push(getPointAlongPolyline(pts, i / (count - 1)));
+    return out;
+}
+function weldFranjaCurvaToNeighbors(gid) {
+    const grp = getFranjaStripById(gid);
+    if (!grp || grp.tipo !== 'franja-curva-grupo') return false;
+    const nr = getFranjaGrupoScreenRects().find(r => r.gid === gid);
+    if (!nr) return false;
+    const SNAP = 32;
+    let welded = false;
+    getFranjaGrupoScreenRects().forEach(or => {
+        if (or.gid === gid) return;
+        const neighbor = getFranjaStripById(or.gid);
+        if (!neighbor || neighbor.tipo !== 'franja-grupo' || neighbor.puntos?.length < 4) return;
+        const [TL, TR, BR, BL] = neighbor.puntos;
+        const nF = grp.frente.length - 1, nB = grp.fondo.length - 1;
+        if (nF < 1 || nB < 1) return;
+        if (Math.abs(nr.bottom - or.top) < SNAP) {
+            for (let i = 0; i <= nB; i++) grp.fondo[i] = lerpPY(TL, TR, i / nB);
+            welded = true;
+        } else if (Math.abs(nr.top - or.bottom) < SNAP) {
+            for (let i = 0; i <= nF; i++) grp.frente[i] = lerpPY(BL, BR, i / nF);
+            welded = true;
+        }
+    });
+    if (welded) {
+        ensureStitchedDivisorias();
+        rebuildFranjaCurvaGroup(gid);
+    }
+    return welded;
+}
 function getFranjaSplitRailPoints(grp) {
     const N = grp.franjaCount || 2;
     const splits = ensureFranjaSplits(grp);
@@ -1128,6 +1162,7 @@ function applyDraggedVertexCoords(coords) {
         if (draggingVertex.target === 'frente') linea.frente[draggingVertex.idx] = [coords[0], coords[1]];
         if (draggingVertex.target === 'fondo') linea.fondo[draggingVertex.idx] = [coords[0], coords[1]];
         rebuildFranjaCurvaGroup(linea.id);
+        weldFranjaCurvaToNeighbors(linea.id);
         return;
     }
     if (linea.franjaGrupo) {
@@ -2139,14 +2174,12 @@ function commitFranjaFromModal() {
 
     if (pending.tipo === 'franja_curva') {
         const gid = 'franja_curva_' + Date.now();
-        const topPts = [], botPts = [];
-        const segs = 6;
-        for (let i = 0; i <= segs; i++) {
-            topPts.push(lerpPY(finalBuilt.topPts[0], finalBuilt.topPts[N], i / segs));
-            botPts.push(lerpPY(finalBuilt.botPts[0], finalBuilt.botPts[N], i / segs));
-        }
+        const ELASTIC_NODES = 7;
+        const topPts = resamplePolylineToCount(finalBuilt.topPts, ELASTIC_NODES);
+        const botPts = resamplePolylineToCount(finalBuilt.botPts, ELASTIC_NODES);
         allDrawnLines.push({ id: gid, tipo: 'franja-curva-grupo', franjaCount: N, frente: topPts, fondo: botPts, franjaSplits: splits });
         rebuildFranjaCurvaGroup(gid);
+        weldFranjaCurvaToNeighbors(gid);
         refreshAllHotspots(); saveToLocal(); flashScreenSuccess();
         return;
     }
@@ -2300,8 +2333,15 @@ function getHotspotsConfig() {
                         hotspots.push({ "id": "vert_franja_corner_" + linea.id + "_" + pIdx, "pitch": coord[0], "yaw": coord[1], "createTooltipFunc": renderHiddenVertex, "createTooltipArgs": { lineId: linea.id, type: linea.tipo, isGuide: true, isFranjaCorner: true, idx: pIdx, hsId: "vert_franja_corner_" + linea.id + "_" + pIdx } });
                     });
                 } else {
-                    linea.frente.forEach((coord, pIdx) => { hotspots.push({ "id": "vert_fcurva_frente_" + linea.id + "_" + pIdx, "pitch": coord[0], "yaw": coord[1], "createTooltipFunc": renderHiddenVertex, "createTooltipArgs": { lineId: linea.id, type: linea.tipo, isGuide: true, isFranjaCorner: true, idx: pIdx, target: 'frente', hsId: "vert_fcurva_frente_" + linea.id + "_" + pIdx } }); });
-                    linea.fondo.forEach((coord, pIdx) => { hotspots.push({ "id": "vert_fcurva_fondo_" + linea.id + "_" + pIdx, "pitch": coord[0], "yaw": coord[1], "createTooltipFunc": renderHiddenVertex, "createTooltipArgs": { lineId: linea.id, type: linea.tipo, isGuide: true, isFranjaCorner: true, idx: pIdx, target: 'fondo', hsId: "vert_fcurva_fondo_" + linea.id + "_" + pIdx } }); });
+                    const nF = linea.frente.length - 1, nB = linea.fondo.length - 1;
+                    linea.frente.forEach((coord, pIdx) => {
+                        const isEnd = pIdx === 0 || pIdx === nF;
+                        hotspots.push({ "id": "vert_fcurva_frente_" + linea.id + "_" + pIdx, "pitch": coord[0], "yaw": coord[1], "createTooltipFunc": renderHiddenVertex, "createTooltipArgs": { lineId: linea.id, type: linea.tipo, isGuide: true, isFranjaCorner: isEnd, isFranjaElastic: !isEnd, idx: pIdx, target: 'frente', hsId: "vert_fcurva_frente_" + linea.id + "_" + pIdx } });
+                    });
+                    linea.fondo.forEach((coord, pIdx) => {
+                        const isEnd = pIdx === 0 || pIdx === nB;
+                        hotspots.push({ "id": "vert_fcurva_fondo_" + linea.id + "_" + pIdx, "pitch": coord[0], "yaw": coord[1], "createTooltipFunc": renderHiddenVertex, "createTooltipArgs": { lineId: linea.id, type: linea.tipo, isGuide: true, isFranjaCorner: isEnd, isFranjaElastic: !isEnd, idx: pIdx, target: 'fondo', hsId: "vert_fcurva_fondo_" + linea.id + "_" + pIdx } });
+                    });
                 }
                 const N = linea.franjaCount || 2;
                 const splits = ensureFranjaSplits(linea);
@@ -2380,9 +2420,9 @@ function syncSVGElements() {
                 pEdge.setAttribute("class", line.tipo === 'arista_solida' ? 'linea-mp-perimetro' : 'linea-mp-interna');
                 lAristas.appendChild(pEdge); DOMCache.paths[line.id] = { base: [pEdge] };
             } else if (line.tipo === 'franja-grupo' || line.tipo === 'franja-curva-grupo') {
-                const gGrp = document.createElementNS("http://www.w3.org/2000/svg", "g"); gGrp.dataset.lineId = line.id; gGrp.dataset.tipo = 'franja-grupo';
+                const gGrp = document.createElementNS("http://www.w3.org/2000/svg", "g"); gGrp.dataset.lineId = line.id; gGrp.dataset.tipo = line.tipo;
                 const pGrp = document.createElementNS("http://www.w3.org/2000/svg", "path");
-                pGrp.setAttribute("class", "linea-franja-preview");
+                pGrp.setAttribute("class", "linea-franja-grupo-outline");
                 gGrp.appendChild(pGrp); bindSvgEraser(gGrp, line.id); bindSvgEraser(pGrp, line.id); lLotes.appendChild(gGrp); DOMCache.paths[line.id] = { base: [pGrp] };
             } else if (line.tipo === 'franja-preview' || line.tipo === 'franja-preview-div') {
                 const gPrev = document.createElementNS("http://www.w3.org/2000/svg", "g"); gPrev.dataset.lineId = line.id; gPrev.dataset.tipo = line.tipo;
@@ -2454,6 +2494,10 @@ function updateSVGPaths() {
         let pts = lineData.puntos;
         if (lineData.tipo === 'franja-curva-grupo') pts = [...lineData.frente, ...[...lineData.fondo].reverse()];
         let hasVisiblePoints = false;
+        if (lineData.tipo === 'franja-curva-grupo' && document.body.classList.contains('auto-macro-active')) {
+            if (cacheObj.base) cacheObj.base.forEach(path => path.setAttribute("d", 'M -999 -999'));
+            return;
+        }
         for (let i = 0; i < pts.length; i++) {
             let p1 = pts[i], p2 = pts[(i + 1) % pts.length];
             if (!isClosed && i === pts.length - 1) break;
@@ -3282,6 +3326,7 @@ function renderFranjaDivHandle(hotSpotDiv, args) {
 function renderHiddenVertex(hotSpotDiv, args) { 
     hotSpotDiv.classList.add('vertex-marker'); hotSpotDiv.id = args.hsId;
     if (args.isFranjaCorner || args.type === 'franja-grupo') hotSpotDiv.classList.add('franja-corner-marker');
+    if (args.isFranjaElastic) hotSpotDiv.classList.add('franja-elastic-node');
     if (!DOMCache.markers[args.lineId]) DOMCache.markers[args.lineId] = { base: [] }; DOMCache.markers[args.lineId].base[args.idx] = hotSpotDiv; 
     if (args.lineId === currentTempLineId) { hotSpotDiv.classList.add('drawing-node'); }
     if (args.lineId === currentTempLineId && args.idx === 0 && currentLinePoints.length >= 3 && currentLineType !== 'cortar' && currentLineType !== 'eraser') { hotSpotDiv.classList.add('origin-vertex'); }
