@@ -441,6 +441,24 @@ body.arq2-active .arq2-panel { transform: translateX(0); visibility: visible; op
 .arq2-fila-modal-box { max-width: 480px; width: calc(100% - 32px); }
 #snap-cursor.is-costura { border-color: #22d3ee !important; background: rgba(34, 211, 238, 0.28) !important; width: 24px !important; height: 24px !important; box-shadow: 0 0 0 5px rgba(34, 211, 238, 0.15), 0 0 18px rgba(34, 211, 238, 0.65); }
 .linea-punteada-costura { fill: rgba(var(--c-disp), 0.18); stroke: rgba(255,255,255,0.75); stroke-width: calc(var(--stroke-dyn) * 0.42); stroke-dasharray: 3 5; vector-effect: non-scaling-stroke; pointer-events: none; }
-g.lote-organico path.linea-solida, g.fila-variable-lote path.linea-solida { fill: rgba(var(--c-disp), 0.22); stroke: rgba(255,255,255,0.88); stroke-width: calc(var(--stroke-dyn) * 0.48); vector-effect: non-scaling-stroke; }
 body.arq2-active #dev-toolbar-draw.show { opacity: 0.35; pointer-events: none; }
 body.is-touch-device .arq2-panel { backdrop-filter: none; background: rgba(9, 11, 17, 0.97); }
+.arq2-semaphore { margin: 0 0 8px; font-size: 12px; font-weight: 700; padding: 6px 10px; border-radius: 8px; background: rgba(255,255,255,0.06); }
+.arq2-sem-green { color: #6ee7b7; }
+.arq2-sem-yellow { color: #fcd34d; background: rgba(245,158,11,0.12); }
+.arq2-sem-red { color: #fca5a5; background: rgba(239,68,68,0.12); }
+.arq2-steps-dynamic { list-style: none; margin: 0 0 10px; padding: 0; font-size: 11px; line-height: 1.4; }
+.arq2-steps-dynamic li { padding: 6px 8px; margin-bottom: 4px; border-radius: 6px; color: rgba(226,232,240,0.65); border: 1px solid transparent; }
+.arq2-steps-dynamic li.arq2-step-active { color: #e2e8f0; background: rgba(6,182,212,0.18); border-color: rgba(34,211,238,0.35); font-weight: 600; }
+#arq2-live-counter { position: fixed; z-index: 99999999; pointer-events: none; font-size: 11px; font-weight: 700; color: #10b981; background: rgba(9,11,17,0.88); border: 1px solid rgba(16,185,129,0.4); padding: 4px 8px; border-radius: 8px; display: none; white-space: nowrap; transform: translate(14px, 14px); }
+#arq2-invasion-tooltip { position: fixed; z-index: 99999999; pointer-events: none; font-size: 11px; font-weight: 700; color: #fecaca; background: rgba(127,29,29,0.92); border: 1px solid rgba(239,68,68,0.5); padding: 4px 8px; border-radius: 8px; display: none; white-space: nowrap; transform: translate(14px, 36px); }
+#arq2-rubber-band { fill: none; stroke: #10b981; stroke-width: 2; stroke-dasharray: 4 4; pointer-events: none; }
+#arq2-rubber-band.arq2-invasion-warning { stroke: #ef4444; animation: arq2Shake 0.15s infinite; }
+@keyframes arq2Shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-2px); } 75% { transform: translateX(2px); } }
+.arq2-vertex-pulse { fill: rgba(16,185,129,0.35); stroke: #10b981; stroke-width: 2; animation: arq2Pulse 1.2s infinite; pointer-events: none; }
+#arq2-snap-magnet { fill: rgba(6,182,212,0.2); stroke: #06b6d4; stroke-width: 2; pointer-events: none; }
+#arq2-snap-magnet.arq2-snap-pulse { animation: arq2Pulse 1.2s infinite; }
+@keyframes arq2Pulse { 0% { r: 6; opacity: 0.8; } 100% { r: 10.8; opacity: 0; } }
+#layer-arq2-feedback { pointer-events: none; }
+g.lote-organico path.linea-solida, g.fila-variable-lote path.linea-solida { fill: rgba(16, 185, 129, 0.16) !important; fill-opacity: 1 !important; stroke: #ffffff !important; stroke-width: 2 !important; vector-effect: non-scaling-stroke; }
+.linea-punteada-costura { fill: none !important; stroke: rgba(255,255,255,0.75); stroke-width: 2; stroke-dasharray: 3 5; vector-effect: non-scaling-stroke; pointer-events: none; }
