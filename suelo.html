@@ -114,6 +114,38 @@
         </div>
         <div id="linea-pines-panel"><h4>📍 Línea Pines</h4><span id="linea-pines-status">Clic en el mapa: punto inicial y final de la fila</span><p class="linea-pines-hint">Pulsa <strong>Enter</strong> para alinear los smart pins al centro de cada lote franja. El trazo desaparece al confirmar.</p></div>
         <div id="calle-tool-panel"><h4>🛣️ Servidumbre de paso</h4><label>Grosor <span id="calle-ui-ancho-val">8.0</span></label><input type="range" id="calle-ui-ancho" min="2" max="28" step="0.5" value="8"><div id="calle-width-preview"><div id="calle-width-preview-bar"></div></div><label>Transparencia <span id="calle-ui-alpha-val">0%</span></label><input type="range" id="calle-ui-alpha" min="0" max="1" step="0.05" value="0"><label>Tamaño texto <span id="calle-ui-label-val">1.0×</span></label><input type="range" id="calle-ui-label" min="0.5" max="2.5" step="0.1" value="1"><label class="calle-ui-check"><input type="checkbox" id="calle-ui-show-label" checked> Etiqueta SERVIDUMBRE DE PASO</label><label class="calle-ui-check"><input type="checkbox" id="calle-ui-snap-franja"> Pegar a borde franja (opcional)</label><button type="button" id="btn-calle-finish">✓ Terminar calle</button><span id="calle-draw-status">Coloca al menos 2 puntos en el mapa</span><p class="calle-ui-hint">Termina con el botón verde, doble clic, Enter o clic en el último punto (verde). Luego arrastra ✥ para mover la calle.</p></div>
+        <div id="arq2-panel" class="arq2-panel">
+            <div class="macos-header"><div class="macos-dots"><i></i><i></i><i></i></div><div class="dev-toolbar-title">MODO ARQUITECTO 2.0</div><button type="button" id="arq2-panel-close" class="arq2-close-btn" title="Cerrar (Ctrl+Alt+A)">✕</button></div>
+            <div class="arq2-tool-row">
+                <button type="button" class="dev-btn arq2-tool-btn active" data-arq2-tool="lote-libre">Lote Libre</button>
+                <button type="button" class="dev-btn arq2-tool-btn" data-arq2-tool="costura">Costura</button>
+                <button type="button" class="dev-btn arq2-tool-btn" data-arq2-tool="fila-variable">Fila Variable</button>
+                <button type="button" class="dev-btn arq2-tool-btn" data-arq2-tool="relleno-auto">Relleno Auto</button>
+            </div>
+            <details class="arq2-instructivo" open>
+                <summary>Guía paso a paso</summary>
+                <ol class="arq2-steps">
+                    <li>Activa con <strong>Ctrl+Alt+A</strong> y elige una sub-herramienta.</li>
+                    <li><strong>Lote Libre:</strong> clics sucesivos; cierra con Enter, doble clic o clic cerca del primer punto.</li>
+                    <li><strong>Costura:</strong> igual que Lote Libre, pero imán a bordes vecinos (cursor cian).</li>
+                    <li><strong>Fila Variable:</strong> traza el frente curvo → Enter → traza el fondo → Enter → indica m² por lote.</li>
+                    <li>Al cerrar, el polígono se suaviza (Catmull-Rom) y se guarda en el plano.</li>
+                    <li><strong>Relleno Auto</strong> numera y marca estado disponible; guarda con ☁️ o autosave local.</li>
+                </ol>
+            </details>
+            <p id="arq2-status" class="arq2-status">Listo — Lote Libre orgánico</p>
+        </div>
+        <div id="arq2-fila-modal">
+            <div class="modal-content franja-modal-box arq2-fila-modal-box">
+                <h3>〰️ Fila Variable — m² por lote</h3>
+                <p class="franja-modal-hint">Indica la superficie de cada lote. El ancho a lo largo del eje curvo será proporcional a √m² (arc-length real).</p>
+                <div class="franja-modal-count-row"><input type="number" id="arq2-fila-count" min="1" max="40" value="4"><button type="button" id="arq2-fila-apply-count">Actualizar filas</button></div>
+                <div class="franja-scale-preview" id="arq2-fila-scale-preview"></div>
+                <div class="franja-modal-rows" id="arq2-fila-rows"></div>
+                <div class="franja-modal-tools"><button type="button" id="arq2-fila-equal">Igualar todos</button></div>
+                <div class="modal-btns"><button class="btn-cancel" id="arq2-fila-cancel">Cancelar</button><button class="btn-save" id="arq2-fila-confirm">Generar hilera</button></div>
+            </div>
+        </div>
         <div id="franja-lotes-modal"><div class="modal-content franja-modal-box"><h3>🏘️ Franja de Lotes</h3><p class="franja-modal-hint">Indica cuántos lotes y el tamaño de cada uno en m². El ancho en el mapa será proporcional (ej. 7000 m² = 40% más ancho que 5000 m²).</p><div class="franja-modal-count-row"><input type="number" id="franja-modal-count" min="1" max="40" value="10"><button type="button" id="franja-modal-apply-count">Actualizar</button></div><div class="franja-scale-preview" id="franja-modal-scale-preview"></div><div class="franja-modal-rows" id="franja-modal-rows"></div><div class="franja-modal-tools"><button type="button" id="franja-modal-equal">Igualar todos</button><button type="button" id="franja-modal-last-big">Último +40% (7000)</button></div><div class="modal-btns"><button class="btn-cancel" id="franja-modal-cancel">Cancelar</button><button class="btn-save" id="franja-modal-confirm">Crear franja</button></div></div></div>
         <div id="global-event-interceptor" style="position: absolute; top:0; left:0; width:100%; height:100%; pointer-events: none; z-index: 9999999;"></div>
         <div id="snap-cursor"></div>
