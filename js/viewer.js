@@ -292,7 +292,7 @@ function loadFromLocal() { const savedData = localStorage.getItem(FRESIA_CFG.aut
 async function fetchValorUFOnline() { try { const response = await fetch('https://mindicador.cl/api/uf', { cache: 'no-store' }); if (response.ok) { const data = await response.json(); if(data && data.serie && data.serie.length > 0) { UF_Online = data.serie[0].valor; return; } } } catch (error) {} }
 async function fetchMasterData() { try { const response = await fetch(FRESIA_CFG.datosJson + '?v=' + new Date().getTime()); if(response.ok) { const data = await response.json(); ConfigProyecto = data.configProyecto || ConfigProyecto; OrigenDrone = data.origen || null; NorteOffset = data.norte || 0; BaseDatosLotes = data.lotes || []; PuntosHorizonte = data.horizontes || []; allDrawnLines = data.trazos || []; } else { loadFromLocal(); } } catch(e) { loadFromLocal(); } applyProjectConfig(); await syncRutasDesdeOrigen(); }
 
-let visor360, currentPinSizeIndex = 1, isIntroAnimating = true, isDevModeDrawActive = false, isDevModePinsActive = false, isArquitecto2Active = false, arq2Tool = 'lote-libre', arq2LinePoints = [], arq2TempLineId = 'arq2_temp_' + Date.now(), arq2CosturaSnap = null, arq2FilaPhase = 0, arq2FilaFrente = [], arq2FilaFondo = [], arq2PendingFila = null, arq2InvasionActive = false, arq2SmoothCurves = true, arq2FilaDirectionBad = false, currentLineType = 'solida', currentLinePoints = [], currentPinTypeMap = 'disponible', currentTempLineId = 'temp_' + Date.now(), draggingVertex = null, draggingFranjaDiv = null, draggingCalleMove = null, pickedPin = null, snapCursor = null, ghostPin = null, snappedCoords = null, activePinArgs = null, isCreatingNewPin = false, isSnapToClose = false, franjaCornerA = null, franjaPreviewQuad = null, franjaPreviewDivs = [], franjaCurvaPreviewStrip = null, franjaDraftCount = 10, franjaDraftBaseM2 = 5000, franjaPendingCreate = null, guardarNubeEnCurso = false, draftCalleAncho = 8, draftCalleAlpha = 0, draftCalleLabelScale = 1, draftCalleShowLabel = true, draftCalleSnapFranja = false, calleSnapIsFranjaEdge = false, lastCalleTap = null, isLineaPinesActive = false, lineaPinesPoints = [], lineaPinesTempId = 'linea_pins_' + Date.now(), franjaCurvaFrente = [], franjaCurvaFase = 0;
+let visor360, currentPinSizeIndex = 1, isIntroAnimating = true, isDevModeDrawActive = false, isDevModePinsActive = false, isArquitecto2Active = false, arq2Tool = 'lote-libre', arq2LinePoints = [], arq2TempLineId = 'arq2_temp_' + Date.now(), arq2CosturaSnap = null, arq2CosturaStyle = 'punteada', arq2SelectedLineId = null, arq2FilaPhase = 0, arq2FilaFrente = [], arq2FilaFondo = [], arq2PendingFila = null, arq2InvasionActive = false, arq2SmoothCurves = true, arq2FilaDirectionBad = false, arq2DemoActive = false, arq2DemoTimers = [], arq2DemoLoopInterval = null, arq2DemoPY = null, currentLineType = 'solida', currentLinePoints = [], currentPinTypeMap = 'disponible', currentTempLineId = 'temp_' + Date.now(), draggingVertex = null, draggingFranjaDiv = null, draggingCalleMove = null, pickedPin = null, snapCursor = null, ghostPin = null, snappedCoords = null, activePinArgs = null, isCreatingNewPin = false, isSnapToClose = false, franjaCornerA = null, franjaPreviewQuad = null, franjaPreviewDivs = [], franjaCurvaPreviewStrip = null, franjaDraftCount = 10, franjaDraftBaseM2 = 5000, franjaPendingCreate = null, guardarNubeEnCurso = false, draftCalleAncho = 8, draftCalleAlpha = 0, draftCalleLabelScale = 1, draftCalleShowLabel = true, draftCalleSnapFranja = false, calleSnapIsFranjaEdge = false, lastCalleTap = null, isLineaPinesActive = false, lineaPinesPoints = [], lineaPinesTempId = 'linea_pins_' + Date.now(), franjaCurvaFrente = [], franjaCurvaFase = 0;
 function revealLoteoOverlay() {
     isIntroAnimating = false;
     document.body.classList.add('loteo-overlay-ready');
@@ -916,7 +916,7 @@ function resolveSvgLayerForLine(line, layers) {
 }
 function ensureSvgLayerOrder(svg) {
     if (!svg) return;
-    ['layer-calles-bordes', 'layer-calles-asfalto', 'layer-lotes', 'layer-aristas', 'layer-arq2-feedback'].forEach(id => {
+    ['layer-calles-bordes', 'layer-calles-asfalto', 'layer-lotes', 'layer-aristas', 'arq2-demo-layer', 'layer-arq2-feedback'].forEach(id => {
         const g = document.getElementById(id);
         if (g && g.parentNode === svg) svg.appendChild(g);
     });
@@ -2348,6 +2348,11 @@ function arq2_applyOrganicPathAttrs(pathEl, role) {
         pathEl.setAttribute('stroke-width', '2');
         pathEl.setAttribute('stroke-dasharray', '3 5');
         pathEl.style.pointerEvents = 'none';
+    } else if (role === 'shared-solid') {
+        pathEl.setAttribute('fill', 'none');
+        pathEl.setAttribute('stroke', '#ffffff');
+        pathEl.setAttribute('stroke-width', '2');
+        pathEl.style.pointerEvents = 'none';
     } else if (role === 'preview') {
         pathEl.setAttribute('fill', 'rgba(16,185,129,0.10)');
         pathEl.setAttribute('stroke', '#10b981');
@@ -2487,6 +2492,22 @@ function arq2_updatePanelStep() {
     if (smoothRow) {
         smoothRow.style.display = (toolKey === 'lote-libre' || toolKey === 'costura' || toolKey === 'relleno-auto') ? 'flex' : 'none';
     }
+    const costuraRow = document.getElementById('arq2-costura-style-row');
+    const costuraToggle = document.getElementById('arq2-costura-toggle-selected');
+    const demoReplay = document.getElementById('arq2-fila-demo-replay');
+    if (costuraRow) costuraRow.style.display = toolKey === 'costura' ? 'flex' : 'none';
+    if (costuraToggle) {
+        const sel = arq2SelectedLineId && allDrawnLines.find(l => l.id === arq2SelectedLineId);
+        const showSel = toolKey === 'costura' && sel?.sharedSegs?.length;
+        costuraToggle.style.display = showSel ? 'block' : 'none';
+        if (showSel) {
+            const cur = sel.sharedSegStyles?.[sel.sharedSegs[0]] || sel.costuraStyle || 'punteada';
+            costuraToggle.textContent = cur === 'punteada' ? 'Cambiar a sólida' : 'Cambiar a punteada';
+        }
+    }
+    if (demoReplay) demoReplay.style.display = toolKey === 'fila-variable' ? 'block' : 'none';
+    document.getElementById('arq2-costura-punteada')?.classList.toggle('active', arq2CosturaStyle === 'punteada');
+    document.getElementById('arq2-costura-solida')?.classList.toggle('active', arq2CosturaStyle === 'solida');
     if (dirWarn) {
         dirWarn.style.display = (toolKey === 'fila-variable' && arq2FilaPhase === 1 && arq2FilaDirectionBad) ? 'block' : 'none';
     }
@@ -2798,10 +2819,15 @@ function arq2_registerSharedEdges(newLineId) {
     const nue = allDrawnLines.find(l => l.id === newLineId);
     if (!nue || !nue.puntos || nue.puntos.length < 3) return;
     nue.sharedSegs = nue.sharedSegs || [];
+    nue.sharedSegStyles = nue.sharedSegStyles || {};
+    nue.sharedSegMeta = nue.sharedSegMeta || {};
+    const styleDefault = nue.costuraStyle || arq2CosturaStyle || 'punteada';
     allDrawnLines.forEach(other => {
         if (other.id === newLineId || !other.puntos || other.puntos.length < 3) return;
         if (other.tipo === 'divisoria' || other.tipo === 'cortar') return;
         other.sharedSegs = other.sharedSegs || [];
+        other.sharedSegStyles = other.sharedSegStyles || {};
+        other.sharedSegMeta = other.sharedSegMeta || {};
         const nSeg = nue.puntos.length;
         for (let i = 0; i < nSeg; i++) {
             const a1 = nue.puntos[i], a2 = nue.puntos[(i + 1) % nSeg];
@@ -2812,10 +2838,302 @@ function arq2_registerSharedEdges(newLineId) {
                     if (!nue.sharedSegs.includes(i)) nue.sharedSegs.push(i);
                     const oIdx = j % other.puntos.length;
                     if (!other.sharedSegs.includes(oIdx)) other.sharedSegs.push(oIdx);
+                    nue.sharedSegStyles[i] = styleDefault;
+                    other.sharedSegStyles[oIdx] = styleDefault;
+                    nue.sharedSegMeta[i] = { lineId: other.id, segIdx: oIdx };
+                    other.sharedSegMeta[oIdx] = { lineId: nue.id, segIdx: i };
                 }
             }
         }
     });
+}
+function arq2_snapVerticesToExisting(points) {
+    if (!points || !points.length) return points;
+    return points.map(pt => {
+        let best = null, bestD = 0.05;
+        allDrawnLines.forEach(line => {
+            if (!line.puntos || line.tipo === 'divisoria' || line.tipo === 'cortar' || line.tipo === 'linea-pines-guia') return;
+            line.puntos.forEach(v => {
+                const d = Math.hypot(pt[0] - v[0], pt[1] - v[1]);
+                if (d < bestD) { bestD = d; best = v; }
+            });
+        });
+        return best ? [parseFloat(best[0].toFixed(4)), parseFloat(best[1].toFixed(4))] : [...pt];
+    });
+}
+function arq2_weldVerticesToNeighbors(lineId) {
+    const nue = allDrawnLines.find(l => l.id === lineId);
+    if (!nue?.puntos || nue.puntos.length < 3) return;
+    const n = nue.puntos.length;
+    allDrawnLines.forEach(other => {
+        if (other.id === lineId || !other.puntos || other.puntos.length < 3) return;
+        if (other.tipo === 'divisoria' || other.tipo === 'cortar') return;
+        const oSeg = other.tipo === 'calle' ? other.puntos.length - 1 : other.puntos.length;
+        for (let i = 0; i < n; i++) {
+            const a1 = nue.puntos[i], a2 = nue.puntos[(i + 1) % n];
+            for (let j = 0; j < oSeg; j++) {
+                const b1 = other.puntos[j], b2 = other.puntos[(j + 1) % other.puntos.length];
+                if (!arq2_segMatchTol(a1, a2, b1, b2, 0.05)) continue;
+                const d11 = Math.hypot(a1[0] - b1[0], a1[1] - b1[1]), d22 = Math.hypot(a2[0] - b2[0], a2[1] - b2[1]);
+                if (d11 < 0.05 && d22 < 0.05) {
+                    nue.puntos[i] = [parseFloat(b1[0].toFixed(4)), parseFloat(b1[1].toFixed(4))];
+                    nue.puntos[(i + 1) % n] = [parseFloat(b2[0].toFixed(4)), parseFloat(b2[1].toFixed(4))];
+                } else {
+                    nue.puntos[i] = [parseFloat(b2[0].toFixed(4)), parseFloat(b2[1].toFixed(4))];
+                    nue.puntos[(i + 1) % n] = [parseFloat(b1[0].toFixed(4)), parseFloat(b1[1].toFixed(4))];
+                }
+            }
+        }
+    });
+}
+function arq2_getSharedSegStyle(lineData, segIdx) {
+    if (!lineData?.sharedSegs?.includes(segIdx)) return null;
+    return lineData.sharedSegStyles?.[segIdx] || lineData.costuraStyle || 'punteada';
+}
+function arq2_setCosturaStyleForLine(lineId, style) {
+    const line = allDrawnLines.find(l => l.id === lineId);
+    if (!line || !line.sharedSegs?.length) return;
+    line.costuraStyle = style;
+    line.sharedSegs.forEach(i => {
+        line.sharedSegStyles[i] = style;
+        const meta = line.sharedSegMeta?.[i];
+        if (meta?.lineId) {
+            const other = allDrawnLines.find(l => l.id === meta.lineId);
+            if (other?.sharedSegs?.includes(meta.segIdx)) {
+                other.sharedSegStyles[meta.segIdx] = style;
+            }
+        }
+    });
+}
+function arq2_selectCosturaLine(lineId) {
+    arq2SelectedLineId = lineId;
+    document.querySelectorAll('g.lote-organico[data-line-id], g.fila-variable-lote[data-line-id]').forEach(g => {
+        g.classList.toggle('arq2-costura-selected', g.getAttribute('data-line-id') === lineId);
+    });
+    arq2_updatePanelStep();
+}
+function arq2_toggleSelectedCosturaStyle() {
+    if (!arq2SelectedLineId) return;
+    const line = allDrawnLines.find(l => l.id === arq2SelectedLineId);
+    if (!line?.sharedSegs?.length) return;
+    const cur = line.sharedSegStyles?.[line.sharedSegs[0]] || line.costuraStyle || 'punteada';
+    const next = cur === 'punteada' ? 'solida' : 'punteada';
+    arq2_setCosturaStyleForLine(arq2SelectedLineId, next);
+    syncSVGElements();
+    updateSVGPaths();
+    saveToLocal();
+    arq2_updatePanelStep();
+    arq2_setStatusText('Costura lote ' + (line.arq2Numero || line.franjaNumero || '') + ': ' + (next === 'punteada' ? 'punteada ✓' : 'sólida ✓'));
+}
+function arq2_clearDemoTimeouts() {
+    arq2DemoTimers.forEach(t => clearTimeout(t));
+    arq2DemoTimers = [];
+}
+function arq2_clearDemoTimers() {
+    arq2_clearDemoTimeouts();
+    if (arq2DemoLoopInterval) { clearInterval(arq2DemoLoopInterval); arq2DemoLoopInterval = null; }
+}
+function arq2_stopDemoAnimation() {
+    arq2DemoActive = false;
+    arq2_clearDemoTimers();
+    const layer = document.getElementById('arq2-demo-layer');
+    if (layer) layer.innerHTML = '';
+}
+function arq2_ensureDemoLayer() {
+    const svg = document.getElementById('loteo-svg');
+    if (!svg || document.getElementById('arq2-demo-layer')) return;
+    const ns = 'http://www.w3.org/2000/svg';
+    const layer = document.createElementNS(ns, 'g');
+    layer.id = 'arq2-demo-layer';
+    layer.setAttribute('pointer-events', 'none');
+    svg.appendChild(layer);
+}
+function arq2_getDemoPYPoints() {
+    if (!visor360) return { front: [], back: [], divs: [], lotCenters: [] };
+    const pitch = visor360.getPitch(), yaw = visor360.getYaw();
+    const dp = 3, spread = 3.5, depth = 7;
+    const front = [
+        [pitch - dp, yaw - spread * 1.5],
+        [pitch - dp, yaw - spread * 0.5],
+        [pitch - dp, yaw + spread * 0.5],
+        [pitch - dp, yaw + spread * 1.5],
+    ];
+    const back = front.map(([p, y]) => [p - depth, y]);
+    const divs = [0.25, 0.5, 0.75, 1].map(t => [
+        getPointAlongPolyline(front, t),
+        getPointAlongPolyline(back, t)
+    ]);
+    const lotCenters = [0.125, 0.375, 0.625, 0.875].map(t => {
+        const tf = getPointAlongPolyline(front, t), tb = getPointAlongPolyline(back, t);
+        return [(tf[0] + tb[0]) / 2, (tf[1] + tb[1]) / 2];
+    });
+    return { front, back, divs, lotCenters };
+}
+function arq2_pyToScreen(py, getCam, cx, cySc, f) {
+    const c = getCam(py[0], py[1]);
+    if (c.z <= 0.0001) return null;
+    return { x: cx + (c.x / c.z) * f, y: cySc - (c.y / c.z) * f };
+}
+function arq2_demoSchedule(fn, ms) {
+    arq2DemoTimers.push(setTimeout(fn, ms));
+}
+function arq2_demoMakeLine(root, ns, p1, p2, cls, extraCls) {
+    const line = document.createElementNS(ns, 'line');
+    line.setAttribute('class', 'arq2-demo-stroke ' + cls + (extraCls ? ' ' + extraCls : ''));
+    line.setAttribute('data-py', p1[0] + ',' + p1[1]);
+    line.setAttribute('data-py2', p2[0] + ',' + p2[1]);
+    line.style.opacity = '0';
+    root.appendChild(line);
+    return line;
+}
+function arq2_demoMakeCircle(root, ns, py, r, cls) {
+    const c = document.createElementNS(ns, 'circle');
+    c.setAttribute('class', 'arq2-demo-stroke ' + (cls || ''));
+    c.setAttribute('data-py', py[0] + ',' + py[1]);
+    c.setAttribute('r', r);
+    c.style.opacity = '0';
+    root.appendChild(c);
+    return c;
+}
+function arq2_demoMakeText(root, ns, py, text, cls) {
+    const t = document.createElementNS(ns, 'text');
+    t.setAttribute('class', 'arq2-demo-label ' + (cls || ''));
+    t.setAttribute('data-py', py[0] + ',' + py[1]);
+    t.setAttribute('text-anchor', 'middle');
+    t.textContent = text;
+    t.style.opacity = '0';
+    root.appendChild(t);
+    return t;
+}
+function arq2_demoMakeMidLabel(root, ns, p1, p2, text, cls) {
+    const t = document.createElementNS(ns, 'text');
+    t.setAttribute('class', 'arq2-demo-label ' + (cls || ''));
+    t.setAttribute('data-py-mid', p1[0] + ',' + p1[1] + '|' + p2[0] + ',' + p2[1]);
+    t.setAttribute('text-anchor', 'middle');
+    t.textContent = text;
+    t.style.opacity = '0';
+    root.appendChild(t);
+    return t;
+}
+function arq2_demoReveal(el) {
+    if (!el) return;
+    el.style.opacity = '1';
+    el.classList.add('is-visible');
+}
+function arq2_demoDrawLine(line, delayMs, durationMs) {
+    arq2_demoSchedule(() => {
+        if (!arq2DemoActive || !line) return;
+        arq2_updateDemoLayer();
+        const len = parseFloat(line.style.getPropertyValue('--draw-len')) || 100;
+        line.style.strokeDasharray = len;
+        line.style.strokeDashoffset = len;
+        line.style.opacity = '1';
+        line.classList.add('is-drawing');
+        requestAnimationFrame(() => {
+            line.style.transition = 'stroke-dashoffset ' + durationMs + 'ms linear';
+            line.style.strokeDashoffset = '0';
+        });
+        arq2_demoSchedule(() => line.classList.add('is-drawn'), durationMs);
+    }, delayMs);
+}
+function arq2_updateDemoLayer() {
+    if (!arq2DemoActive || !visor360) return;
+    const layer = document.getElementById('arq2-demo-layer');
+    if (!layer || !layer.childNodes.length) return;
+    const ctx = arq2_getCameraContext();
+    if (!ctx) return;
+    const { getCam, cx, cy_screen, f } = ctx;
+    layer.querySelectorAll('[data-py]').forEach(el => {
+        const parts = el.getAttribute('data-py').split(',').map(Number);
+        const sc = arq2_pyToScreen(parts, getCam, cx, cy_screen, f);
+        if (!sc) { el.style.visibility = 'hidden'; return; }
+        el.style.visibility = 'visible';
+        if (el.tagName === 'circle') {
+            el.setAttribute('cx', sc.x);
+            el.setAttribute('cy', sc.y);
+        } else if (el.tagName === 'line') {
+            const p2 = el.getAttribute('data-py2');
+            if (!p2) return;
+            const parts2 = p2.split(',').map(Number);
+            const sc2 = arq2_pyToScreen(parts2, getCam, cx, cy_screen, f);
+            if (!sc2) { el.style.visibility = 'hidden'; return; }
+            el.setAttribute('x1', sc.x);
+            el.setAttribute('y1', sc.y);
+            el.setAttribute('x2', sc2.x);
+            el.setAttribute('y2', sc2.y);
+            const len = Math.hypot(sc2.x - sc.x, sc2.y - sc.y);
+            el.style.setProperty('--draw-len', len);
+            if (el.classList.contains('arq2-demo-draw-line') && !el.classList.contains('is-drawn')) {
+                el.style.strokeDasharray = len;
+                if (!el.classList.contains('is-drawing')) el.style.strokeDashoffset = len;
+            }
+        } else if (el.tagName === 'text') {
+            el.setAttribute('x', sc.x);
+            el.setAttribute('y', sc.y);
+        }
+    });
+    layer.querySelectorAll('[data-py-mid]').forEach(el => {
+        const [p1s, p2s] = el.getAttribute('data-py-mid').split('|');
+        const a = p1s.split(',').map(Number), b = p2s.split(',').map(Number);
+        const sc1 = arq2_pyToScreen(a, getCam, cx, cy_screen, f), sc2 = arq2_pyToScreen(b, getCam, cx, cy_screen, f);
+        if (!sc1 || !sc2) { el.style.visibility = 'hidden'; return; }
+        el.style.visibility = 'visible';
+        el.setAttribute('x', (sc1.x + sc2.x) / 2);
+        el.setAttribute('y', (sc1.y + sc2.y) / 2 - 14);
+    });
+}
+function arq2_runDemoCycle() {
+    if (!arq2DemoActive || !visor360) return;
+    arq2_clearDemoTimeouts();
+    arq2_ensureDemoLayer();
+    const layer = document.getElementById('arq2-demo-layer');
+    if (!layer) return;
+    const ns = 'http://www.w3.org/2000/svg';
+    layer.innerHTML = '';
+    arq2DemoPY = arq2_getDemoPYPoints();
+    const root = document.createElementNS(ns, 'g');
+    root.classList.add('arq2-demo-root');
+    layer.appendChild(root);
+    const { front, back, divs, lotCenters } = arq2DemoPY;
+    const frontLines = [], backLines = [], divLines = [], lotNums = [];
+    for (let i = 0; i < front.length - 1; i++) frontLines.push(arq2_demoMakeLine(root, ns, front[i], front[i + 1], 'arq2-demo-draw-line'));
+    for (let i = 0; i < back.length - 1; i++) backLines.push(arq2_demoMakeLine(root, ns, back[i], back[i + 1], 'arq2-demo-draw-line'));
+    divs.forEach(d => divLines.push(arq2_demoMakeLine(root, ns, d[0], d[1], 'arq2-demo-draw-line arq2-demo-div-line')));
+    const pt0 = arq2_demoMakeCircle(root, ns, front[0], 7, 'arq2-demo-point');
+    const lblFrente = arq2_demoMakeMidLabel(root, ns, front[0], front[front.length - 1], 'FRENTE ✓', 'arq2-demo-tag');
+    const lblFondo = arq2_demoMakeMidLabel(root, ns, back[0], back[back.length - 1], 'FONDO ✓ (misma dirección)', 'arq2-demo-tag');
+    const lblScale = arq2_demoMakeText(root, ns, lotCenters[1], '📐 m² proporcional por lote', 'arq2-demo-tag arq2-demo-center-tag');
+    lotCenters.forEach((c, i) => {
+        lotNums.push(arq2_demoMakeCircle(root, ns, c, 10, 'arq2-demo-lot-circle'));
+        lotNums.push(arq2_demoMakeText(root, ns, c, String(i + 1), 'arq2-demo-lot-num'));
+    });
+    arq2_updateDemoLayer();
+    arq2_demoSchedule(() => arq2_demoReveal(pt0), 0);
+    arq2_demoSchedule(() => pt0.classList.add('arq2-demo-pulse'), 0);
+    frontLines.forEach((ln, i) => arq2_demoDrawLine(ln, 300 + i * 400, 400));
+    arq2_demoSchedule(() => arq2_demoReveal(lblFrente), 1300);
+    backLines.forEach((ln, i) => arq2_demoDrawLine(ln, 1600 + i * 400, 400));
+    arq2_demoSchedule(() => arq2_demoReveal(lblFondo), 2900);
+    divLines.forEach((ln, i) => arq2_demoDrawLine(ln, 3200 + i * 80, 350));
+    lotNums.forEach((el, i) => arq2_demoSchedule(() => { arq2_demoReveal(el); el.classList.add('arq2-demo-pop'); }, 3800 + i * 120));
+    arq2_demoSchedule(() => arq2_demoReveal(lblScale), 4300);
+    arq2_demoSchedule(() => root.classList.add('arq2-demo-fadeout'), 5000);
+}
+function arq2_startDemoAnimation(forceReplay) {
+    if (!isArquitecto2Active || arq2Tool !== 'fila-variable') return;
+    if (arq2FilaFrente.length > 0 || arq2FilaFondo.length > 0) return;
+    if (arq2DemoActive && !forceReplay) return;
+    arq2_stopDemoAnimation();
+    arq2DemoActive = true;
+    arq2_ensureDemoLayer();
+    arq2_runDemoCycle();
+    arq2DemoLoopInterval = setInterval(() => {
+        if (arq2_shouldRunFilaDemo()) arq2_runDemoCycle();
+        else arq2_stopDemoAnimation();
+    }, 6000);
+}
+function arq2_shouldRunFilaDemo() {
+    return isArquitecto2Active && arq2Tool === 'fila-variable' && arq2FilaFrente.length === 0 && arq2FilaFondo.length === 0 && !document.getElementById('arq2-fila-modal')?.classList.contains('open');
 }
 function arq2_getNextLoteNumero() {
     let max = 0;
@@ -2846,11 +3164,14 @@ function arq2_clearDraft() {
     arq2LinePoints = [];
     arq2TempLineId = 'arq2_temp_' + Date.now();
     arq2CosturaSnap = null;
+    arq2SelectedLineId = null;
     arq2FilaPhase = 0;
     arq2FilaFrente = [];
     arq2FilaFondo = [];
     arq2PendingFila = null;
     arq2_clearVisualFeedback();
+    arq2_stopDemoAnimation();
+    document.querySelectorAll('.arq2-costura-selected').forEach(g => g.classList.remove('arq2-costura-selected'));
     if (snapCursor) snapCursor.classList.remove('is-costura', 'active');
     arq2_updatePanelStep();
 }
@@ -2859,6 +3180,7 @@ function arq2_setTool(tool) {
     arq2_clearDraft();
     document.querySelectorAll('.arq2-tool-btn').forEach(b => b.classList.toggle('active', b.dataset.arq2Tool === tool));
     arq2_updatePanelStep();
+    if (tool === 'fila-variable' && isArquitecto2Active) arq2_startDemoAnimation(false);
 }
 function arq2_toggleArquitecto2(force) {
     if (typeof force === 'boolean') isArquitecto2Active = force;
@@ -2866,18 +3188,21 @@ function arq2_toggleArquitecto2(force) {
     document.body.classList.toggle('arq2-active', isArquitecto2Active);
     if (!isArquitecto2Active) {
         arq2_clearDraft();
+        arq2_stopDemoAnimation();
         closeArq2FilaModal();
         refreshAllHotspots(true);
     } else {
         arq2_ensureFeedbackLayer();
+        arq2_ensureDemoLayer();
         arq2_setTool(arq2Tool);
         refreshAllHotspots(true);
     }
 }
-function arq2_buildSegmentPaths(pts, sharedSegs, isClosed, getCamFn, cx, cySc, f) {
-    let dSolid = '', dDash = '';
+function arq2_buildSharedEdgePaths(pts, sharedSegs, sharedStyles, isClosed, getCamFn, cx, cySc, f) {
+    let dPunteada = '', dSolida = '';
     const segN = isClosed ? pts.length : pts.length - 1;
     for (let i = 0; i < segN; i++) {
+        if (!sharedSegs || !sharedSegs.includes(i)) continue;
         const p1 = pts[i], p2 = pts[(i + 1) % pts.length];
         const c1 = getCamFn(p1[0], p1[1]), c2 = getCamFn(p2[0], p2[1]);
         if (c1.z <= 0.0001 && c2.z <= 0.0001) continue;
@@ -2886,21 +3211,29 @@ function arq2_buildSegmentPaths(pts, sharedSegs, isClosed, getCamFn, cx, cySc, f
         else { const t = c1.z / (c1.z - c2.z); s1 = { x: cx + ((c1.x + t * (c2.x - c1.x)) / 0.0001) * f, y: cySc - ((c1.y + t * (c2.y - c1.y)) / 0.0001) * f }; }
         if (c2.z > 0.0001) s2 = { x: cx + (c2.x / c2.z) * f, y: cySc - (c2.y / c2.z) * f };
         else { const t = c2.z / (c2.z - c1.z); s2 = { x: cx + ((c2.x + t * (c1.x - c2.x)) / 0.0001) * f, y: cySc - ((c2.y + t * (c1.y - c2.y)) / 0.0001) * f }; }
-        const shared = sharedSegs && sharedSegs.includes(i);
         const seg = `M ${s1.x},${s1.y} L ${s2.x},${s2.y} `;
-        if (shared) dDash += seg; else dSolid += seg;
+        const style = (sharedStyles && sharedStyles[i]) || 'punteada';
+        if (style === 'solida') dSolida += seg;
+        else dPunteada += seg;
     }
-    if (dDash.trim()) { /* segmentos abiertos, sin Z */ }
-    return { dSolid: '', dDash };
+    return { dPunteada, dSolida };
+}
+function arq2_buildSegmentPaths(pts, sharedSegs, isClosed, getCamFn, cx, cySc, f) {
+    return arq2_buildSharedEdgePaths(pts, sharedSegs, null, isClosed, getCamFn, cx, cySc, f);
 }
 function arq2_finishLoteOrganico(rawPoints, useCostura) {
     if (!rawPoints || rawPoints.length < 3) return;
-    const smoothed = arq2_adaptiveSmooth(rawPoints, 8);
+    const snapped = useCostura ? arq2_snapVerticesToExisting(rawPoints) : rawPoints.map(p => [...p]);
+    const smoothed = arq2_adaptiveSmooth(snapped, 8);
     const id = 'arq2_org_' + Date.now();
-    const entry = { id, tipo: 'lote-organico', puntos: smoothed, sharedSegs: [] };
+    const entry = { id, tipo: 'lote-organico', puntos: smoothed, sharedSegs: [], sharedSegStyles: {}, sharedSegMeta: {} };
+    if (useCostura) entry.costuraStyle = arq2CosturaStyle || 'punteada';
     if (!arq2_applyAutoFill(entry)) return;
     allDrawnLines.push(entry);
-    if (useCostura) arq2_registerSharedEdges(id);
+    if (useCostura) {
+        arq2_weldVerticesToNeighbors(id);
+        arq2_registerSharedEdges(id);
+    }
     arq2_clearDraft();
     refreshAllHotspots(true);
     saveToLocal();
@@ -3024,12 +3357,21 @@ function arq2_onPanoramaClick(mock, isDblClick) {
     const coords = visor360.mouseEventToCoords(mock);
     if (!coords || isNaN(coords[0])) return;
     if (isDblClick && arq2Tool !== 'fila-variable') { if (arq2_tryClosePolygon(true)) return; }
+    if (arq2Tool === 'costura' && arq2LinePoints.length === 0 && !isDblClick && !arq2CosturaSnap) {
+        const selId = findClosestLineAtScreen(mock.clientX, mock.clientY, 28);
+        const sel = selId && allDrawnLines.find(l => l.id === selId);
+        if (sel && (sel.tipo === 'lote-organico' || sel.tipo === 'fila-variable-lote') && sel.sharedSegs?.length) {
+            arq2_selectCosturaLine(selId);
+            return;
+        }
+    }
     let p = parseFloat(coords[0].toFixed(3)), y = parseFloat(coords[1].toFixed(3));
     if (arq2Tool === 'costura' && arq2CosturaSnap) {
         p = parseFloat(arq2CosturaSnap.pitch.toFixed(3));
         y = parseFloat(arq2CosturaSnap.yaw.toFixed(3));
     }
     if (arq2Tool === 'fila-variable') {
+        arq2_stopDemoAnimation();
         if (arq2FilaPhase === 0) arq2FilaFrente.push([p, y]);
         else if (arq2FilaPhase === 1) arq2FilaFondo.push([p, y]);
         arq2_refreshFeedbackVisuals(mock);
@@ -3038,6 +3380,8 @@ function arq2_onPanoramaClick(mock, isDblClick) {
         updateSVGPaths();
         return;
     }
+    arq2SelectedLineId = null;
+    document.querySelectorAll('.arq2-costura-selected').forEach(g => g.classList.remove('arq2-costura-selected'));
     if (arq2LinePoints.length >= 3) {
         const d0 = Math.hypot(p - arq2LinePoints[0][0], y - arq2LinePoints[0][1]);
         if (d0 < SNAP_DISTANCE) { arq2_finishLoteOrganico([...arq2LinePoints], arq2Tool === 'costura'); return; }
@@ -3104,6 +3448,16 @@ function arq2_setup() {
         arq2SmoothCurves = !!e.target.checked;
         arq2_updatePanelStep();
     });
+    document.getElementById('arq2-costura-punteada')?.addEventListener('click', () => {
+        arq2CosturaStyle = 'punteada';
+        arq2_updatePanelStep();
+    });
+    document.getElementById('arq2-costura-solida')?.addEventListener('click', () => {
+        arq2CosturaStyle = 'solida';
+        arq2_updatePanelStep();
+    });
+    document.getElementById('arq2-costura-toggle-selected')?.addEventListener('click', arq2_toggleSelectedCosturaStyle);
+    document.getElementById('arq2-fila-demo-replay')?.addEventListener('click', () => arq2_startDemoAnimation(true));
     arq2_updatePanelStep();
 }
 
@@ -3380,15 +3734,20 @@ function syncSVGElements() {
                 pSolid.dataset.edgeRole = 'solid';
                 const pDash = document.createElementNS("http://www.w3.org/2000/svg", "path");
                 pDash.setAttribute("class", "linea-punteada-costura");
-                pDash.dataset.edgeRole = 'shared';
+                pDash.dataset.edgeRole = 'shared-punteada';
                 pDash.dataset.sharedEdge = 'true';
+                const pSolidEdge = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                pSolidEdge.setAttribute("class", "linea-solida-costura");
+                pSolidEdge.dataset.edgeRole = 'shared-solida';
                 g.appendChild(pSolid);
                 g.appendChild(pDash);
+                g.appendChild(pSolidEdge);
                 arq2_applyOrganicPathAttrs(pSolid, 'solid');
                 arq2_applyOrganicPathAttrs(pDash, 'dash');
+                arq2_applyOrganicPathAttrs(pSolidEdge, 'shared-solid');
                 bindSvgEraser(g, line.id);
                 lLotes.appendChild(g);
-                DOMCache.paths[line.id] = { gNode: g, base: [pSolid, pDash] };
+                DOMCache.paths[line.id] = { gNode: g, base: [pSolid, pDash, pSolidEdge] };
             } else if (line.tipo === 'lote-organico-preview') {
                 const gPrev = document.createElementNS("http://www.w3.org/2000/svg", "g");
                 gPrev.dataset.lineId = line.id;
@@ -3427,9 +3786,17 @@ function syncSVGElements() {
                     const pBase = gNode.querySelector('path');
                     if (pBase) pBase.setAttribute('class', getPathClassForLine(line));
                     if (line.tipo === 'lote-organico' || line.tipo === 'fila-variable-lote') {
-                        const paths = gNode.querySelectorAll('path');
+                        let paths = Array.from(gNode.querySelectorAll('path'));
+                        if (paths.length < 3) {
+                            const pSolidEdge = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                            pSolidEdge.setAttribute("class", "linea-solida-costura");
+                            pSolidEdge.dataset.edgeRole = 'shared-solida';
+                            gNode.appendChild(pSolidEdge);
+                            paths = Array.from(gNode.querySelectorAll('path'));
+                        }
                         if (paths[0]) arq2_applyOrganicPathAttrs(paths[0], 'solid');
-                        if (paths[1]) arq2_applyOrganicPathAttrs(paths[1], 'dash');
+                        if (paths[1]) { paths[1].setAttribute('class', 'linea-punteada-costura'); arq2_applyOrganicPathAttrs(paths[1], 'dash'); }
+                        if (paths[2]) { paths[2].setAttribute('class', 'linea-solida-costura'); arq2_applyOrganicPathAttrs(paths[2], 'shared-solid'); }
                     }
                     bindSvgEraser(gNode, line.id);
                     if (pBase) bindSvgEraser(pBase, line.id);
@@ -3464,12 +3831,17 @@ function updateSVGPaths() {
         if (cacheObj.gNode && lineData.tipo !== 'calle' && lineData.tipo !== 'franja-grupo' && lineData.tipo !== 'franja-curva-grupo') { if (lineData.puntos && lineData.puntos.length > 0) { let polyStatus = lineData.loteStatus || 'disponible'; if (!lineData.loteStatus && !(lineData.franjaNumero || lineData.tipo === 'area-invisible')) { let cP = 0, cY = 0; lineData.puntos.forEach(pt => { cP += pt[0]; cY += pt[1]; }); cP /= lineData.puntos.length; cY /= lineData.puntos.length; let closestPin = null; let minDist = 30; BaseDatosLotes.forEach(pin => { if(pin.tipo === 'lote') { let dist = Math.pow(pin.pitch - cP, 2) + Math.pow(pin.yaw - cY, 2); if(dist < minDist) { minDist = dist; closestPin = pin; } } }); if (closestPin) polyStatus = closestPin.status; } cacheObj.gNode.setAttribute('data-status', polyStatus); } }
         if ((lineData.tipo === 'lote-organico' || lineData.tipo === 'fila-variable-lote') && cacheObj.base && cacheObj.base.length >= 2) {
             const dFill = arq2_projectPolylineD(lineData.puntos, true, getCam, cx, cy_screen, f);
-            const segPaths = arq2_buildSegmentPaths(lineData.puntos, lineData.sharedSegs, true, getCam, cx, cy_screen, f);
+            const shared = arq2_buildSharedEdgePaths(lineData.puntos, lineData.sharedSegs, lineData.sharedSegStyles, true, getCam, cx, cy_screen, f);
             cacheObj.base[0].setAttribute('d', dFill.trim() || 'M -999 -999');
-            cacheObj.base[1].setAttribute('d', segPaths.dDash.trim() || 'M -999 -999');
-            cacheObj.base[1].setAttribute('data-shared-edge', 'true');
+            cacheObj.base[1].setAttribute('d', shared.dPunteada.trim() || 'M -999 -999');
+            cacheObj.base[1].setAttribute('class', 'linea-punteada-costura');
             arq2_applyOrganicPathAttrs(cacheObj.base[0], 'solid');
             arq2_applyOrganicPathAttrs(cacheObj.base[1], 'dash');
+            if (cacheObj.base[2]) {
+                cacheObj.base[2].setAttribute('d', shared.dSolida.trim() || 'M -999 -999');
+                cacheObj.base[2].setAttribute('class', 'linea-solida-costura');
+                arq2_applyOrganicPathAttrs(cacheObj.base[2], 'shared-solid');
+            }
             return;
         }
         let dBase = '';
@@ -3501,6 +3873,7 @@ function updateSVGPaths() {
             }
         }
     });
+    arq2_updateDemoLayer();
 }
 
 let isPegmanDragging = false, pegmanLastX = 0, pegmanLastY = 0, pegmanTilt = 0, pegmanTargetTilt = 0, pegmanAnimFrame = null;
@@ -4026,6 +4399,7 @@ function setupDevModes() {
         if (isArquitecto2Active && e.code === 'Escape') {
             e.preventDefault();
             arq2_clearDraft();
+            if (arq2Tool === 'fila-variable') arq2_startDemoAnimation(false);
             refreshAllHotspots(true);
             syncSVGElements();
             updateSVGPaths();

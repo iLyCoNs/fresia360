@@ -467,3 +467,24 @@ g.lote-organico path.linea-solida, g.fila-variable-lote path.linea-solida { fill
 .arq2-fila-direction-warn { display: none; margin: 0 0 8px; padding: 6px 10px; border-radius: 8px; font-size: 11px; font-weight: 700; color: #fecaca; background: rgba(127,29,29,0.85); border: 1px solid rgba(239,68,68,0.45); }
 .arq2-fila-guide-line { stroke: rgba(148,163,184,0.55); stroke-width: 1; stroke-dasharray: 3 4; pointer-events: none; }
 .arq2-fila-guide-line.arq2-fila-guide-bad { stroke: rgba(239,68,68,0.85); stroke-width: 1.5; }
+.arq2-style-toggle-row { display: none; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0 0 10px; }
+.arq2-style-label { font-size: 10px; color: #94a3b8; width: 100%; }
+.arq2-style-btn { flex: 1; font-size: 10px; padding: 6px 4px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.06); color: #cbd5e1; cursor: pointer; }
+.arq2-style-btn.active { background: rgba(245,158,11,0.22); border-color: rgba(245,158,11,0.55); color: #fde68a; font-weight: 700; }
+.arq2-context-btn { display: none; width: 100%; margin: 0 0 10px; padding: 8px 10px; font-size: 11px; font-weight: 600; border-radius: 8px; border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.08); color: #e2e8f0; cursor: pointer; }
+.arq2-demo-replay-btn { color: #fde68a; border-color: rgba(245,158,11,0.35); }
+.linea-solida-costura { fill: none !important; stroke: rgba(255,255,255,0.9); stroke-width: 2; vector-effect: non-scaling-stroke; pointer-events: none; }
+g.lote-organico.arq2-costura-selected path.linea-solida { stroke: #06b6d4; stroke-width: 2.5; }
+#arq2-demo-layer { pointer-events: none; }
+.arq2-demo-root { transform-origin: center; transition: opacity 0.8s ease, transform 0.8s ease; }
+.arq2-demo-root.arq2-demo-fadeout { opacity: 0; transform: scale(0.95); }
+.arq2-demo-stroke { stroke: #f59e0b; fill: none; stroke-width: 2.5; vector-effect: non-scaling-stroke; }
+.arq2-demo-div-line { stroke-dasharray: 4 5; stroke-width: 2; opacity: 0.85; }
+.arq2-demo-point { fill: #f59e0b; stroke: #fff; stroke-width: 1.5; }
+.arq2-demo-point.arq2-demo-pulse { animation: arq2DemoPulse 1.2s ease-in-out infinite; }
+.arq2-demo-label { fill: #fde68a; font-size: 11px; font-weight: 800; font-family: system-ui, sans-serif; paint-order: stroke; stroke: rgba(9,11,17,0.85); stroke-width: 3px; }
+.arq2-demo-lot-circle { fill: rgba(245,158,11,0.25); stroke: #f59e0b; stroke-width: 2; }
+.arq2-demo-lot-num { fill: #fff; font-size: 10px; font-weight: 800; font-family: system-ui, sans-serif; dominant-baseline: central; text-anchor: middle; stroke: none; }
+.arq2-demo-pop { animation: arq2DemoPop 0.35s cubic-bezier(0.34,1.56,0.64,1) forwards; }
+@keyframes arq2DemoPulse { 0%,100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.35); opacity: 0.75; } }
+@keyframes arq2DemoPop { 0% { transform: scale(0); opacity: 0; } 70% { transform: scale(1.1); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
