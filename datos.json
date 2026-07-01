@@ -1162,22 +1162,22 @@
       "franjaGrupo": "franja_1782846267891"
     },
     {
-      "id": "temp_1782870628887",
+      "id": "temp_1782870671515",
       "tipo": "calle",
       "puntos": [
         [
-          -55.01592970197367,
-          -173.74719149805384
+          -55.07203959283359,
+          -173.74835194839255
         ],
         [
-          -59.95481335156557,
-          -16.925398035593616
+          -59.9157129914187,
+          -16.681487591547466
         ]
       ],
       "calleAncho": 5,
       "calleAlpha": 0.55,
       "calleLabelScale": 1,
-      "calleShowLabel": true
+      "calleShowLabel": false
     }
   ],
   "configProyecto": {
