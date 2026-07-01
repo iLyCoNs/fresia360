@@ -1342,16 +1342,81 @@ function getCalleMidpointPY(puntos) {
     }
     return [puntos[puntos.length - 1][0], puntos[puntos.length - 1][1]];
 }
-function snapCalleToFranjaParallelEdge(clientX, clientY, anchoFactor) {
-    const sx = clientX - DOMCache.viewport.left, sy = clientY - DOMCache.viewport.top;
+function getPanoramaPointDepth(pitch, yaw, visor360) {
+    if (!visor360) return 1;
+    const camP = visor360.getPitch() * Math.PI / 180;
+    const camYw = visor360.getYaw() * Math.PI / 180;
+    const p = pitch * Math.PI / 180;
+    const y = yaw * Math.PI / 180;
+    let yd = y - camYw;
+    while (yd > Math.PI) yd -= 2 * Math.PI;
+    while (yd < -Math.PI) yd += 2 * Math.PI;
+    const sp = Math.sin(p), cp = Math.cos(p);
+    const sy = Math.sin(yd), cy = Math.cos(yd);
+    const scp = Math.sin(camP), ccp = Math.cos(camP);
+    return Math.max(0.08, sp * scp + cp * cy * ccp);
+}
+function computeCalleSnapOffsetPx(pitch, yaw, anchoFactor, visor360) {
     const halfW = getCalleHalfWidthPx(anchoFactor);
+    if (!visor360) return halfW;
+    const hfov = visor360.getHfov();
+    const hfovRef = DEFAULT_HFOV || 125;
+    // FOV más ancho → menos grados por píxel → el mismo halfW px “corta” en el terreno
+    const fovScale = Math.tan(hfovRef * Math.PI / 360) / Math.tan(hfov * Math.PI / 360);
+    const z = getPanoramaPointDepth(pitch, yaw, visor360);
+    // Compensación oblicua: baja z = punto en zona comprimida del domo (típico costados largos en móvil)
+    const obliquity = Math.min(2.6, 1 / z);
+    const pitchCam = visor360.getPitch();
+    const pitchScale = 1 + Math.min(Math.abs(pitch - pitchCam) / 75, 1) * 0.18;
+    return halfW * fovScale * obliquity * pitchScale;
+}
+function pushPanoramaAlongScreenNormal(edgePY, nx, ny, offsetPx, proj) {
+    const pSc = proj.toScreen(edgePY[0], edgePY[1]);
+    if (!pSc || offsetPx <= 0) return edgePY;
+    const len = Math.hypot(nx, ny) || 1;
+    const ux = nx / len, uy = ny / len;
+    let scale = 1;
+    let best = null;
+    for (let i = 0; i < 5; i++) {
+        const tx = pSc[0] + ux * offsetPx * scale;
+        const ty = pSc[1] + uy * offsetPx * scale;
+        const py = proj.toPY(tx, ty);
+        if (!py) break;
+        const chk = proj.toScreen(py[0], py[1]);
+        if (!chk) { best = py; break; }
+        const actual = Math.hypot(chk[0] - pSc[0], chk[1] - pSc[1]);
+        if (actual >= offsetPx * 0.97) return py;
+        scale *= offsetPx / Math.max(actual, 0.001);
+        best = py;
+    }
+    return best || edgePY;
+}
+function snapCalleToFranjaParallelEdge(clientX, clientY, anchoFactor) {
+    const proj = getPanoramaScreenProjector();
+    if (!proj || !visor360) return null;
+    const sx = clientX - DOMCache.viewport.left;
+    const sy = clientY - DOMCache.viewport.top;
     const SNAP_PX = 52;
     let best = null;
     getAllStripSnapTargets().forEach(r => {
         const cx = (r.tl[0] + r.tr[0] + r.br[0] + r.bl[0]) / 4;
         const cy = (r.tl[1] + r.tr[1] + r.br[1] + r.bl[1]) / 4;
-        [[r.tl, r.tr], [r.tr, r.br], [r.br, r.bl], [r.bl, r.tl]].forEach(([a, b]) => {
-            const ax = a[0], ay = a[1], bx = b[0], by = b[1];
+        let edges;
+        if (r.grp?.puntos?.length >= 4) {
+            const [TL, TR, BR, BL] = r.grp.puntos;
+            edges = [[TL, TR], [TR, BR], [BR, BL], [BL, TL]];
+        } else {
+            edges = [[r.tl, r.tr], [r.tr, r.br], [r.br, r.bl], [r.bl, r.tl]].map(([a, b]) => {
+                const aPy = proj.toPY(a[0], a[1]);
+                const bPy = proj.toPY(b[0], b[1]);
+                return aPy && bPy ? [aPy, bPy] : null;
+            }).filter(Boolean);
+        }
+        edges.forEach(([aPY, bPY]) => {
+            const aSc = proj.toScreen(aPY[0], aPY[1]);
+            const bSc = proj.toScreen(bPY[0], bPY[1]);
+            if (!aSc || !bSc) return;
+            const ax = aSc[0], ay = aSc[1], bx = bSc[0], by = bSc[1];
             const dx = bx - ax, dy = by - ay, len = Math.hypot(dx, dy);
             if (len < 2) return;
             const mx = (ax + bx) / 2, my = (ay + by) / 2;
@@ -1362,9 +1427,16 @@ function snapCalleToFranjaParallelEdge(clientX, clientY, anchoFactor) {
             const px = ax + t * dx, py = ay + t * dy;
             const dist = Math.hypot(sx - px, sy - py);
             if (dist > SNAP_PX) return;
-            const scx = px + nx * halfW, scy = py + ny * halfW;
-            const pan = screenPointToPanorama(DOMCache.viewport.left + scx, DOMCache.viewport.top + scy);
-            if (pan && (!best || dist < best.dist)) best = { dist, pitch: pan[0], yaw: pan[1] };
+            const edgePY = lerpPY(aPY, bPY, t);
+            const offsetPx = computeCalleSnapOffsetPx(edgePY[0], edgePY[1], anchoFactor, visor360);
+            const pushed = pushPanoramaAlongScreenNormal(edgePY, nx, ny, offsetPx, proj);
+            if (pushed && (!best || dist < best.dist)) {
+                best = {
+                    dist,
+                    pitch: parseFloat(pushed[0].toFixed(3)),
+                    yaw: parseFloat(pushed[1].toFixed(3))
+                };
+            }
         });
     });
     return best;
