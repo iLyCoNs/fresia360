@@ -1,0 +1,25 @@
+{
+  "vista": "suelo",
+  "configProyecto": {
+    "titulo": "PROYECTO INMOBILIARIO",
+    "subtitulo": "Masterplan Interactivo 360°"
+  },
+  "origen": {
+    "lat": -41.22570599168656,
+    "lng": -73.31826540340656
+  },
+  "norte": 0,
+  "lotes": [
+    {
+      "pitch": 2.94,
+      "yaw": -9.41,
+      "tipo": "casa360",
+      "titulo": "TinyHouse",
+      "url": "https://res.cloudinary.com/dwuwtpbpp/video/upload/v1782769502/VID-20260604-WA0053_rimvz4.mp4",
+      "id": "nuevo_1782881000154",
+      "numero": "00"
+    }
+  ],
+  "horizontes": [],
+  "trazos": []
+}
