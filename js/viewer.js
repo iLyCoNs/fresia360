@@ -70,6 +70,16 @@ function flashScreenError() {
     setTimeout(() => { toast.style.opacity='0'; toast.style.transform='translate(-50%,-55%) scale(0.92)'; setTimeout(() => toast.remove(), 280); }, 3000);
 }
 
+function mostrarToast(mensaje, isSuccess = true) {
+    const toast = document.createElement('div');
+    const border = isSuccess ? 'rgba(16,185,129,0.55)' : 'rgba(59,130,246,0.55)';
+    toast.style.cssText = `position:fixed;top:50%;left:50%;transform:translate(-50%,-55%) scale(0.92);background:rgba(10,15,25,0.96);backdrop-filter:blur(20px);border:1px solid ${border};border-radius:18px;padding:18px 28px;color:#fff;font-size:12px;font-weight:700;text-align:center;z-index:9999999999;pointer-events:none;opacity:0;transition:opacity 0.25s,transform 0.25s;line-height:1.6;max-width:80vw;box-shadow:0 20px 50px rgba(0,0,0,0.7);`;
+    toast.textContent = mensaje;
+    document.body.appendChild(toast);
+    requestAnimationFrame(() => { toast.style.opacity = '1'; toast.style.transform = 'translate(-50%,-50%) scale(1)'; });
+    setTimeout(() => { toast.style.opacity = '0'; toast.style.transform = 'translate(-50%,-55%) scale(0.92)'; setTimeout(() => toast.remove(), 280); }, 3200);
+}
+
 const TouchPerfPhase1 = {
     overlayFrame: 0, panBindDone: false,
     init() {
@@ -282,7 +292,7 @@ function loadFromLocal() { const savedData = localStorage.getItem(FRESIA_CFG.aut
 async function fetchValorUFOnline() { try { const response = await fetch('https://mindicador.cl/api/uf', { cache: 'no-store' }); if (response.ok) { const data = await response.json(); if(data && data.serie && data.serie.length > 0) { UF_Online = data.serie[0].valor; return; } } } catch (error) {} }
 async function fetchMasterData() { try { const response = await fetch(FRESIA_CFG.datosJson + '?v=' + new Date().getTime()); if(response.ok) { const data = await response.json(); ConfigProyecto = data.configProyecto || ConfigProyecto; OrigenDrone = data.origen || null; NorteOffset = data.norte || 0; BaseDatosLotes = data.lotes || []; PuntosHorizonte = data.horizontes || []; allDrawnLines = data.trazos || []; } else { loadFromLocal(); } } catch(e) { loadFromLocal(); } applyProjectConfig(); await syncRutasDesdeOrigen(); }
 
-let visor360, currentPinSizeIndex = 1, isIntroAnimating = true, isDevModeDrawActive = false, isDevModePinsActive = false, currentLineType = 'solida', currentLinePoints = [], currentPinTypeMap = 'disponible', currentTempLineId = 'temp_' + Date.now(), draggingVertex = null, draggingFranjaDiv = null, draggingCalleMove = null, pickedPin = null, snapCursor = null, ghostPin = null, snappedCoords = null, activePinArgs = null, isCreatingNewPin = false, isSnapToClose = false, franjaCornerA = null, franjaPreviewQuad = null, franjaPreviewDivs = [], franjaDraftCount = 10, franjaDraftBaseM2 = 5000, franjaPendingCreate = null, guardarNubeEnCurso = false, draftCalleAncho = 8, draftCalleAlpha = 0, draftCalleLabelScale = 1, draftCalleShowLabel = true, draftCalleSnapFranja = false, calleSnapIsFranjaEdge = false, lastCalleTap = null, isLineaPinesActive = false, lineaPinesPoints = [], lineaPinesTempId = 'linea_pins_' + Date.now();
+let visor360, currentPinSizeIndex = 1, isIntroAnimating = true, isDevModeDrawActive = false, isDevModePinsActive = false, currentLineType = 'solida', currentLinePoints = [], currentPinTypeMap = 'disponible', currentTempLineId = 'temp_' + Date.now(), draggingVertex = null, draggingFranjaDiv = null, draggingCalleMove = null, pickedPin = null, snapCursor = null, ghostPin = null, snappedCoords = null, activePinArgs = null, isCreatingNewPin = false, isSnapToClose = false, franjaCornerA = null, franjaPreviewQuad = null, franjaPreviewDivs = [], franjaDraftCount = 10, franjaDraftBaseM2 = 5000, franjaPendingCreate = null, guardarNubeEnCurso = false, draftCalleAncho = 8, draftCalleAlpha = 0, draftCalleLabelScale = 1, draftCalleShowLabel = true, draftCalleSnapFranja = false, calleSnapIsFranjaEdge = false, lastCalleTap = null, isLineaPinesActive = false, lineaPinesPoints = [], lineaPinesTempId = 'linea_pins_' + Date.now(), franjaCurvaFrente = [], franjaCurvaFase = 0;
 function revealLoteoOverlay() {
     isIntroAnimating = false;
     document.body.classList.add('loteo-overlay-ready');
@@ -1163,6 +1173,7 @@ function initMasterplanPremiumFromData() {
 function initAutoMacroFromData() {
     migrateFranjaGroupsFromData();
     allDrawnLines.filter(l => l.tipo === 'franja-grupo').forEach(g => rebuildFranjaGroup(g.id));
+    allDrawnLines.filter(l => l.tipo === 'franja-curva-grupo').forEach(g => rebuildFranjaCurvaGroup(g.id));
     const fills = allDrawnLines.filter(l => isAutoMacroLotePoly(l) && l.tipo !== 'franja-grupo');
     const hasMacroEdges = allDrawnLines.some(l => isMacroEdgeType(l.tipo));
     if (fills.length >= 2 && !hasMacroEdges) { runAutoMacroTransform(fills); finalizeAutoMacroSession(); }
@@ -1999,13 +2010,64 @@ function commitFranjaFromModal() {
     const weights = getFranjaModalWeights();
     if (weights.length !== N) { alert('⚠️ Actualiza la lista para que coincida con la cantidad de lotes.'); return; }
     const splits = weightsToFranjaSplits(weights);
-    const finalBuilt = buildFranjaScreenPointsSnapped(pending.ax, pending.ay, pending.bx, pending.by, N, null, splits);
+    
+    franjaDraftCount = N; franjaDraftBaseM2 = Math.round(weights.reduce((a, b) => a + b, 0) / N);
     closeFranjaLotesModal();
+
+    if (pending.tipo === 'curva') {
+        const gid = 'franja_curva_' + Date.now();
+        allDrawnLines.push({ id: gid, tipo: 'franja-curva-grupo', franjaCount: N, frente: pending.frente, fondo: pending.fondo, franjaSplits: splits });
+        rebuildFranjaCurvaGroup(gid);
+        franjaCurvaFase = 1; franjaCurvaFrente = []; // Reset
+        refreshAllHotspots(); saveToLocal(); flashScreenSuccess();
+        return;
+    }
+
+    const finalBuilt = buildFranjaScreenPointsSnapped(pending.ax, pending.ay, pending.bx, pending.by, N, null, splits);
     if (!finalBuilt) { alert('⚠️ No se pudo proyectar la franja.'); refreshAllHotspots(); return; }
-    franjaDraftCount = N;
-    franjaDraftBaseM2 = Math.round(weights.reduce((a, b) => a + b, 0) / N);
     finalizeNewFranja(finalBuilt.topPts, finalBuilt.botPts, N, pending.snap, splits);
     refreshAllHotspots(); saveToLocal(); flashScreenSuccess();
+}
+
+// --- MOTOR GEOMÉTRICO FRANJA CURVA ---
+function getPolylineLength(pts) { let len = 0; for (let i = 0; i < pts.length - 1; i++) len += Math.hypot(pts[i+1][0] - pts[i][0], pts[i+1][1] - pts[i][1]); return len; }
+function getPointAlongPolyline(pts, t) {
+    if (t <= 0) return [...pts[0]]; if (t >= 1) return [...pts[pts.length - 1]];
+    const target = getPolylineLength(pts) * t; let acc = 0;
+    for (let i = 0; i < pts.length - 1; i++) {
+        const d = Math.hypot(pts[i+1][0] - pts[i][0], pts[i+1][1] - pts[i][1]);
+        if (acc + d >= target) { const segT = (target - acc) / d; return [pts[i][0] + (pts[i+1][0] - pts[i][0]) * segT, pts[i][1] + (pts[i+1][1] - pts[i][1]) * segT]; }
+        acc += d;
+    }
+    return [...pts[pts.length - 1]];
+}
+function extractPolylineSegment(pts, tStart, tEnd) {
+    const len = getPolylineLength(pts), dStart = len * tStart, dEnd = len * tEnd, res = [getPointAlongPolyline(pts, tStart)];
+    let acc = 0;
+    for (let i = 0; i < pts.length - 1; i++) {
+        const d = Math.hypot(pts[i+1][0] - pts[i][0], pts[i+1][1] - pts[i][1]);
+        if (acc + d > dStart && acc < dEnd) res.push([...pts[i+1]]);
+        acc += d;
+    }
+    res.push(getPointAlongPolyline(pts, tEnd));
+    return res;
+}
+function rebuildFranjaCurvaGroup(gid) {
+    const grp = allDrawnLines.find(l => l.id === gid && l.tipo === 'franja-curva-grupo');
+    if (!grp) return;
+    const splits = ensureFranjaSplits(grp);
+    allDrawnLines = allDrawnLines.filter(l => l.franjaGrupo !== gid);
+    const draftPolys = [];
+    for (let i = 0; i < grp.franjaCount; i++) {
+        const topSeg = extractPolylineSegment(grp.frente, splits[i], splits[i+1]);
+        const botSeg = extractPolylineSegment(grp.fondo, splits[i], splits[i+1]).reverse();
+        draftPolys.push({ id: gid + '_' + i, tipo: 'solida', franjaGrupo: gid, franjaIdx: i, franjaNumero: String(i + 1).padStart(2, '0'), puntos: [...topSeg, ...botSeg] });
+    }
+    const { invisibleFills, macroLines } = buildAutoMacroFromLotes(draftPolys);
+    invisibleFills.forEach((f, i) => { f.franjaGrupo = gid; f.franjaIdx = i; f.franjaNumero = draftPolys[i].franjaNumero; f.id = gid + '_' + i; });
+    macroLines.forEach(m => { m.franjaGrupo = gid; });
+    allDrawnLines.push(...invisibleFills, ...macroLines);
+    document.body.classList.add('auto-macro-active');
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
@@ -2120,12 +2182,12 @@ function syncSVGElements() {
     const currentLineIds = allDrawnLines.map(l => l.id);
     if (currentLinePoints.length > 0) currentLineIds.push(currentTempLineId);
     if (isLineaPinesActive && lineaPinesPoints.length > 0) currentLineIds.push(lineaPinesTempId);
-    if (franjaPreviewQuad) currentLineIds.push('franja_preview_quad'); franjaPreviewDivs.forEach(d => currentLineIds.push(d.id));
+    if (franjaPreviewQuad) currentLineIds.push('franja_preview_quad'); if (franjaCurvaFrente.length > 0) currentLineIds.push('franja_curva_preview_frente'); franjaPreviewDivs.forEach(d => currentLineIds.push(d.id));
     Array.from(svg.querySelectorAll('[data-line-id]')).forEach(el => { if (!currentLineIds.includes(el.dataset.lineId)) el.remove(); });
     DOMCache.paths = {}; const allLinesData = [...allDrawnLines];
     if (currentLinePoints.length > 0) allLinesData.push({ id: currentTempLineId, tipo: currentLineType, puntos: currentLinePoints });
     if (isLineaPinesActive && lineaPinesPoints.length > 0) allLinesData.push({ id: lineaPinesTempId, tipo: 'linea-pines-guia', puntos: lineaPinesPoints });
-    if (franjaPreviewQuad) allLinesData.push({ id: 'franja_preview_quad', tipo: 'franja-preview', puntos: franjaPreviewQuad }); franjaPreviewDivs.forEach(d => allLinesData.push(d));
+    if (franjaPreviewQuad) allLinesData.push({ id: 'franja_preview_quad', tipo: 'franja-preview', puntos: franjaPreviewQuad }); if (franjaCurvaFrente.length > 0) allLinesData.push({ id: 'franja_curva_preview_frente', tipo: 'franja-preview', puntos: franjaCurvaFrente }); franjaPreviewDivs.forEach(d => allLinesData.push(d));
     allLinesData.forEach(line => {
         const existingElements = svg.querySelectorAll(`[data-line-id="${line.id}"]`);
         if (existingElements.length === 0) {
@@ -2771,6 +2833,23 @@ function setupDevModes() {
             finishCalleDrawing();
             return;
         }
+        if (e.code === 'Enter' && isDevModeDrawActive && currentLineType === 'franja_curva') {
+            e.preventDefault();
+            if (franjaCurvaFase === 1 && currentLinePoints.length >= 2) {
+                franjaCurvaFrente = [...currentLinePoints];
+                currentLinePoints = []; franjaCurvaFase = 2;
+                mostrarToast('Fase 2: Dibuja la curva TRASERA (fondo) y presiona Enter', true);
+            } else if (franjaCurvaFase === 2 && currentLinePoints.length >= 2) {
+                let franjaCurvaFondo = [...currentLinePoints];
+                const dDirect = Math.hypot(franjaCurvaFrente[0][0] - franjaCurvaFondo[0][0], franjaCurvaFrente[0][1] - franjaCurvaFondo[0][1]);
+                const dCross = Math.hypot(franjaCurvaFrente[0][0] - franjaCurvaFondo[franjaCurvaFondo.length-1][0], franjaCurvaFrente[0][1] - franjaCurvaFondo[franjaCurvaFondo.length-1][1]);
+                if (dCross < dDirect) franjaCurvaFondo.reverse(); // Auto-alinea la dirección
+                currentLinePoints = [];
+                franjaPendingCreate = { tipo: 'curva', frente: franjaCurvaFrente, fondo: franjaCurvaFondo };
+                openFranjaLotesModal(franjaDraftCount, commitFranjaFromModal);
+            }
+            return;
+        }
         if (e.code === 'Escape' && isLineaPinesActive) {
             e.preventDefault();
             clearLineaPinesDraft();
@@ -2793,10 +2872,17 @@ function setupDevModes() {
     document.getElementById('btn-draw-cut')?.addEventListener('click', (e) => { setDrawMode('cortar', e.target); });
     document.getElementById('btn-draw-divisoria')?.addEventListener('click', (e) => { clearFranjaDraft(); setDrawMode('divisoria', e.target); });
     document.getElementById('btn-draw-franja')?.addEventListener('click', (e) => { clearFranjaDraft(); closeFranjaLotesModal(); setDrawMode('franja', e.target); });
+    document.getElementById('btn-draw-franja-curva')?.addEventListener('click', (e) => { clearFranjaDraft(); closeFranjaLotesModal(); setDrawMode('franja_curva', e.target); });
     document.getElementById('btn-straighten-franja')?.addEventListener('click', enderezarFranjas);
     document.getElementById('btn-eraser')?.addEventListener('click', (e) => { setDrawMode('eraser', e.target); });
     
-    function setDrawMode(mode, targetBtn) { if (mode !== 'franja') clearFranjaDraft(); if (mode !== 'calle') closeCalleToolPanel(); currentLineType = mode; document.body.classList.toggle('eraser-mode-active', mode === 'eraser'); document.querySelectorAll('#dev-toolbar-draw .dev-btn:not(.action):not(.export):not(.export-ai):not(.nuke)').forEach(b => b.classList.remove('active')); if(targetBtn) targetBtn.classList.add('active'); }
+    function setDrawMode(mode, targetBtn) { 
+        if (mode !== 'franja') clearFranjaDraft(); 
+        if (mode !== 'calle') closeCalleToolPanel(); 
+        if (mode !== 'franja_curva') { franjaCurvaFase = 0; franjaCurvaFrente = []; }
+        else { franjaCurvaFase = 1; currentLinePoints = []; mostrarToast('Fase 1: Dibuja la curva FRONTAL (calle) y presiona Enter', true); }
+        currentLineType = mode; document.body.classList.toggle('eraser-mode-active', mode === 'eraser'); document.querySelectorAll('#dev-toolbar-draw .dev-btn:not(.action):not(.export):not(.export-ai):not(.nuke)').forEach(b => b.classList.remove('active')); if(targetBtn) targetBtn.classList.add('active'); 
+    }
     const bindCallePanel = (id, fn) => { const el = document.getElementById(id); if (!el) return; el.addEventListener('input', fn); el.addEventListener('change', fn); };
     bindCallePanel('calle-ui-ancho', (e) => { draftCalleAncho = Math.max(2, Math.min(28, parseFloat(e.target.value) || 8)); syncCallePanelUI(); updateSVGPaths(); refreshAllHotspots(true); });
     bindCallePanel('calle-ui-alpha', (e) => { draftCalleAlpha = Math.max(0, Math.min(1, parseFloat(e.target.value) || 0)); syncCallePanelUI(); updateSVGPaths(); });
