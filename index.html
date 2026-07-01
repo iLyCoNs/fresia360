@@ -76,9 +76,9 @@
         .franja-modal-tools button { flex: 1; min-width: 120px; padding: 8px 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.05); color: #e2e8f0; font-size: 10px; font-weight: 700; cursor: pointer; }
         .linea-corte { stroke: #f59e0b !important; stroke-width: calc(var(--stroke-dyn) * 1.5) !important; stroke-dasharray: 6 6; filter: drop-shadow(0 0 8px #f59e0b); pointer-events: none; }
         g.lote-interactivo.hovered path, g.lote-interactivo:hover path { fill: transparent !important; stroke: #ffffff !important; stroke-width: var(--stroke-dyn-hover) !important; filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.9)); }
-        .linea-calle-borde { fill: none; stroke: rgba(255, 255, 255, 0.6); stroke-width: calc(var(--stroke-dyn) * 3); pointer-events: none; }
-        .linea-calle-asfalto { fill: none; stroke: rgba(30, 35, 45, 0.85); stroke-width: calc(var(--stroke-dyn) * 2.2); pointer-events: auto; cursor: pointer; transition: stroke 0.3s; }
-        .linea-calle-asfalto:hover { stroke: rgba(80, 85, 95, 0.9); }
+        .linea-calle-borde { fill: none; stroke: rgba(255, 255, 255, 0.6); pointer-events: none; stroke-linecap: butt; stroke-linejoin: round; }
+        .linea-calle-asfalto { fill: none; stroke: rgba(30, 35, 45, 0.85); pointer-events: auto; cursor: pointer; stroke-linecap: butt; stroke-linejoin: round; }
+        .linea-calle-asfalto:hover { filter: brightness(1.15); }
         .calle-servidumbre-label { position: absolute; transform: translate(-50%, -50%); transform-origin: center center; background: rgba(22, 27, 38, 0.94); color: #f1f5f9; font-size: 7px; font-weight: 800; letter-spacing: 0.55px; text-transform: uppercase; padding: 4px 7px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.28); white-space: nowrap; pointer-events: none; z-index: 99998; box-shadow: 0 2px 12px rgba(0,0,0,0.5); line-height: 1.2; }
         .calle-move-handle { position: absolute; transform: translate(-50%, -50%); width: 28px; height: 28px; border-radius: 50%; background: rgba(59,130,246,0.92); border: 2px solid #fff; color: #fff; font-size: 14px; font-weight: 900; display: flex; align-items: center; justify-content: center; cursor: grab; pointer-events: auto; z-index: 100001; box-shadow: 0 4px 14px rgba(59,130,246,0.45); line-height: 1; user-select: none; }
         .calle-move-handle.is-dragging { cursor: grabbing; background: rgba(16,185,129,0.95); box-shadow: 0 0 0 6px rgba(16,185,129,0.2); }
@@ -421,7 +421,7 @@
                 </div>
             </div>
         </div>
-        <div id="calle-tool-panel"><h4>🛣️ Servidumbre de paso</h4><label>Grosor <span id="calle-ui-ancho-val">2.2</span></label><input type="range" id="calle-ui-ancho" min="0.5" max="12" step="0.1" value="2.2"><div id="calle-width-preview"><div id="calle-width-preview-bar"></div></div><label>Transparencia <span id="calle-ui-alpha-val">85%</span></label><input type="range" id="calle-ui-alpha" min="0.15" max="1" step="0.05" value="0.85"><label>Tamaño texto <span id="calle-ui-label-val">1.0×</span></label><input type="range" id="calle-ui-label" min="0.5" max="2.5" step="0.1" value="1"><label class="calle-ui-check"><input type="checkbox" id="calle-ui-show-label" checked> Etiqueta SERVIDUMBRE DE PASO</label><label class="calle-ui-check"><input type="checkbox" id="calle-ui-snap-franja"> Pegar a borde franja (opcional)</label><p class="calle-ui-hint">Doble clic en el mismo punto para terminar esta calle. Arrastra ✥ para mover la calle entera.</p></div>
+        <div id="calle-tool-panel"><h4>🛣️ Servidumbre de paso</h4><label>Grosor <span id="calle-ui-ancho-val">8.0</span></label><input type="range" id="calle-ui-ancho" min="2" max="28" step="0.5" value="8"><div id="calle-width-preview"><div id="calle-width-preview-bar"></div></div><label>Transparencia <span id="calle-ui-alpha-val">85%</span></label><input type="range" id="calle-ui-alpha" min="0.15" max="1" step="0.05" value="0.85"><label>Tamaño texto <span id="calle-ui-label-val">1.0×</span></label><input type="range" id="calle-ui-label" min="0.5" max="2.5" step="0.1" value="1"><label class="calle-ui-check"><input type="checkbox" id="calle-ui-show-label" checked> Etiqueta SERVIDUMBRE DE PASO</label><label class="calle-ui-check"><input type="checkbox" id="calle-ui-snap-franja"> Pegar a borde franja (opcional)</label><p class="calle-ui-hint">Doble clic en el mismo punto para terminar esta calle. Arrastra ✥ para mover la calle entera.</p></div>
         <div id="franja-lotes-modal"><div class="modal-content franja-modal-box"><h3>🏘️ Franja de Lotes</h3><p class="franja-modal-hint">Indica cuántos lotes y el tamaño de cada uno en m². El ancho en el mapa será proporcional (ej. 7000 m² = 40% más ancho que 5000 m²).</p><div class="franja-modal-count-row"><input type="number" id="franja-modal-count" min="1" max="40" value="10"><button type="button" id="franja-modal-apply-count">Actualizar</button></div><div class="franja-scale-preview" id="franja-modal-scale-preview"></div><div class="franja-modal-rows" id="franja-modal-rows"></div><div class="franja-modal-tools"><button type="button" id="franja-modal-equal">Igualar todos</button><button type="button" id="franja-modal-last-big">Último +40% (7000)</button></div><div class="modal-btns"><button class="btn-cancel" id="franja-modal-cancel">Cancelar</button><button class="btn-save" id="franja-modal-confirm">Crear franja</button></div></div></div>
         <div id="global-event-interceptor" style="position: absolute; top:0; left:0; width:100%; height:100%; pointer-events: none; z-index: 9999999;"></div>
         <div id="snap-cursor"></div>
@@ -661,7 +661,7 @@
         async function fetchValorUFOnline() { try { const response = await fetch('https://mindicador.cl/api/uf', { cache: 'no-store' }); if (response.ok) { const data = await response.json(); if(data && data.serie && data.serie.length > 0) { UF_Online = data.serie[0].valor; return; } } } catch (error) {} }
         async function fetchMasterData() { try { const response = await fetch('datos.json?v=' + new Date().getTime()); if(response.ok) { const data = await response.json(); ConfigProyecto = data.configProyecto || ConfigProyecto; OrigenDrone = data.origen || null; NorteOffset = data.norte || 0; BaseDatosLotes = data.lotes || []; PuntosHorizonte = data.horizontes || []; allDrawnLines = data.trazos || []; } else { loadFromLocal(); } } catch(e) { loadFromLocal(); } applyProjectConfig(); await syncRutasDesdeOrigen(); }
 
-        let visor360, currentPinSizeIndex = 1, isIntroAnimating = true, isDevModeDrawActive = false, isDevModePinsActive = false, currentLineType = 'solida', currentLinePoints = [], currentPinTypeMap = 'disponible', currentTempLineId = 'temp_' + Date.now(), draggingVertex = null, draggingFranjaDiv = null, draggingCalleMove = null, pickedPin = null, snapCursor = null, ghostPin = null, snappedCoords = null, activePinArgs = null, isCreatingNewPin = false, isSnapToClose = false, franjaCornerA = null, franjaPreviewQuad = null, franjaPreviewDivs = [], franjaDraftCount = 10, franjaDraftBaseM2 = 5000, franjaPendingCreate = null, guardarNubeEnCurso = false, draftCalleAncho = 2.2, draftCalleAlpha = 0.85, draftCalleLabelScale = 1, draftCalleShowLabel = true, draftCalleSnapFranja = false, calleSnapIsFranjaEdge = false, lastCalleTap = null;
+        let visor360, currentPinSizeIndex = 1, isIntroAnimating = true, isDevModeDrawActive = false, isDevModePinsActive = false, currentLineType = 'solida', currentLinePoints = [], currentPinTypeMap = 'disponible', currentTempLineId = 'temp_' + Date.now(), draggingVertex = null, draggingFranjaDiv = null, draggingCalleMove = null, pickedPin = null, snapCursor = null, ghostPin = null, snappedCoords = null, activePinArgs = null, isCreatingNewPin = false, isSnapToClose = false, franjaCornerA = null, franjaPreviewQuad = null, franjaPreviewDivs = [], franjaDraftCount = 10, franjaDraftBaseM2 = 5000, franjaPendingCreate = null, guardarNubeEnCurso = false, draftCalleAncho = 8, draftCalleAlpha = 0.85, draftCalleLabelScale = 1, draftCalleShowLabel = true, draftCalleSnapFranja = false, calleSnapIsFranjaEdge = false, lastCalleTap = null;
         function revealLoteoOverlay() {
             isIntroAnimating = false;
             document.body.classList.add('loteo-overlay-ready');
@@ -1381,17 +1381,22 @@
         function isFranjaBoundLine(line) {
             return line && (line.tipo === 'franja-grupo' || line.tipo === 'borde-macro' || line.tipo === 'area-invisible' || !!line.franjaGrupo);
         }
+        function getCalleDynBasePx() {
+            const raw = getComputedStyle(document.documentElement).getPropertyValue('--stroke-dyn') || '2.5px';
+            return Math.max(1.2, parseFloat(raw) || 2.5);
+        }
         function getCalleHalfWidthPx(anchoFactor) {
-            const dyn = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--stroke-dyn')) || 2;
-            return (dyn * (anchoFactor || draftCalleAncho || 2.2)) * 0.5;
+            return getCalleStrokeWidths(anchoFactor).asfalto * 0.5;
         }
         function getCalleStrokeWidths(anchoFactor) {
-            const asf = getCalleHalfWidthPx(anchoFactor) * 2;
-            return { asfalto: asf, borde: asf * (3 / 2.2) };
+            const base = getCalleDynBasePx();
+            const factor = anchoFactor || draftCalleAncho || 8;
+            const asf = Math.max(4, base * factor);
+            return { asfalto: asf, borde: asf * 1.36 };
         }
         function getCalleStyleForLine(line) {
             return {
-                ancho: line?.calleAncho ?? draftCalleAncho ?? 2.2,
+                ancho: line?.calleAncho ?? draftCalleAncho ?? 8,
                 alpha: line?.calleAlpha ?? draftCalleAlpha ?? 0.85,
                 labelScale: line?.calleLabelScale ?? draftCalleLabelScale ?? 1,
                 showLabel: line?.calleShowLabel !== undefined ? line.calleShowLabel : draftCalleShowLabel
@@ -1402,12 +1407,12 @@
             const sw = getCalleStrokeWidths(ancho);
             const a = Math.max(0.12, Math.min(1, alpha ?? draftCalleAlpha ?? 0.85));
             if (paths[0]) {
-                paths[0].setAttribute('stroke-width', sw.borde);
-                paths[0].setAttribute('stroke', `rgba(255,255,255,${Math.min(1, a + 0.12)})`);
+                paths[0].style.setProperty('stroke-width', sw.borde + 'px', 'important');
+                paths[0].style.setProperty('stroke', `rgba(255,255,255,${Math.min(1, a + 0.12)})`, 'important');
             }
             if (paths[1]) {
-                paths[1].setAttribute('stroke-width', sw.asfalto);
-                paths[1].setAttribute('stroke', `rgba(30,35,45,${a})`);
+                paths[1].style.setProperty('stroke-width', sw.asfalto + 'px', 'important');
+                paths[1].style.setProperty('stroke', `rgba(30,35,45,${a})`, 'important');
             }
         }
         function syncCallePanelUI() {
@@ -1431,7 +1436,7 @@
             if (labelVal) labelVal.textContent = draftCalleLabelScale.toFixed(1) + '×';
             const bar = document.getElementById('calle-width-preview-bar');
             if (bar) {
-                const pct = Math.max(8, Math.min(100, (draftCalleAncho / 12) * 100));
+                const pct = Math.max(6, Math.min(100, ((draftCalleAncho - 2) / 26) * 100));
                 bar.style.width = pct + '%';
                 bar.style.opacity = String(draftCalleAlpha);
             }
@@ -2713,7 +2718,7 @@
             
             function setDrawMode(mode, targetBtn) { if (mode !== 'franja') clearFranjaDraft(); if (mode !== 'calle') closeCalleToolPanel(); currentLineType = mode; document.body.classList.toggle('eraser-mode-active', mode === 'eraser'); document.querySelectorAll('#dev-toolbar-draw .dev-btn:not(.action):not(.export):not(.export-ai):not(.nuke)').forEach(b => b.classList.remove('active')); if(targetBtn) targetBtn.classList.add('active'); }
             const bindCallePanel = (id, fn) => { const el = document.getElementById(id); if (!el) return; el.addEventListener('input', fn); el.addEventListener('change', fn); };
-            bindCallePanel('calle-ui-ancho', (e) => { draftCalleAncho = Math.max(0.5, Math.min(12, parseFloat(e.target.value) || 2.2)); syncCallePanelUI(); updateSVGPaths(); refreshAllHotspots(true); });
+            bindCallePanel('calle-ui-ancho', (e) => { draftCalleAncho = Math.max(2, Math.min(28, parseFloat(e.target.value) || 8)); syncCallePanelUI(); updateSVGPaths(); refreshAllHotspots(true); });
             bindCallePanel('calle-ui-alpha', (e) => { draftCalleAlpha = Math.max(0.15, Math.min(1, parseFloat(e.target.value) || 0.85)); syncCallePanelUI(); updateSVGPaths(); });
             bindCallePanel('calle-ui-label', (e) => { draftCalleLabelScale = Math.max(0.5, Math.min(2.5, parseFloat(e.target.value) || 1)); syncCallePanelUI(); refreshAllHotspots(true); });
             bindCallePanel('calle-ui-show-label', (e) => { draftCalleShowLabel = !!e.target.checked; refreshAllHotspots(true); });
