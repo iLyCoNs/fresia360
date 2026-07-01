@@ -481,47 +481,60 @@ function applyLineaPinesAlign() {
         alert('⚠️ Coloca al menos 2 puntos para definir la línea de alineación.');
         return false;
     }
-    const lineA = lineaPinesPoints[0];
-    const lineB = lineaPinesPoints[lineaPinesPoints.length - 1];
     migrateFranjaGroupsFromData();
     const lots = allDrawnLines.filter(l => l.tipo === 'area-invisible' && l.franjaGrupo && l.franjaNumero && l.puntos.length >= 3);
     if (!lots.length) {
         alert('⚠️ No hay lotes de franja.\n\nCrea una franja con 🏘️ Franja Lotes (Modo Arquitecto) primero.');
         return false;
     }
-    const matched = lots.filter(lot => lineNearFranjaLot(lineA, lineB, lot)).map(lot => {
-        const pinPt = getFranjaLotPinPosition(lot, lineA, lineB);
-        return { lot, pinPt, t: projectionT(pinPt, lineA, lineB) };
-    });
-    if (!matched.length) {
-        alert('⚠️ La línea no cruza ningún lote de franja.\n\nAjusta el trazo para que atraviese la hilera de lotes.');
-        return false;
-    }
-    matched.sort((a, b) => a.t - b.t || (a.lot.franjaIdx || 0) - (b.lot.franjaIdx || 0));
+
     const defaultStatus = ['disponible', 'reservado', 'vendido', 'no_disponible'].includes(currentPinTypeMap) ? currentPinTypeMap : 'disponible';
     let updated = 0, created = 0;
-    matched.forEach(({ lot, pinPt }) => {
-        const numero = lot.franjaNumero;
-        const pitch = parseFloat(pinPt[0].toFixed(3));
-        const yaw = parseFloat(pinPt[1].toFixed(3));
-        let pin = findPinForFranjaNumero(numero);
-        if (pin) {
-            pin.pitch = pitch;
-            pin.yaw = yaw;
-            updated++;
-        } else {
-            BaseDatosLotes.push({
-                id: 'lp_' + lot.franjaGrupo + '_' + (lot.franjaIdx ?? 0) + '_' + Date.now(),
-                tipo: 'lote',
-                titulo: numero,
-                numero: numero,
-                status: defaultStatus,
-                pitch,
-                yaw
-            });
-            created++;
+
+    lots.forEach(lot => {
+        let pinPt = null;
+        // Calculamos el centro vertical exacto del lote actual
+        const topMid = lerpPY(lot.puntos[0], lot.puntos[1], 0.5);
+        const botMid = lerpPY(lot.puntos[3], lot.puntos[2], 0.5);
+
+        // Disparamos un rayo láser para ver dónde cruza el trazo del usuario
+        for (let i = 0; i < lineaPinesPoints.length - 1; i++) {
+            const hit = intersectSegments2D(topMid, botMid, lineaPinesPoints[i], lineaPinesPoints[i+1]);
+            if (hit) { pinPt = hit; break; }
+        }
+
+        // Si la línea no cruzó de arriba a abajo, buscamos el punto más cercano al centroide
+        if (!pinPt) {
+            const c = polyCentroid(lot.puntos);
+            if (c) {
+                let minDist = Infinity;
+                for (let i = 0; i < lineaPinesPoints.length - 1; i++) {
+                    const proj = projectPointOnSegment(c, lineaPinesPoints[i], lineaPinesPoints[i+1]);
+                    const d = Math.hypot(c[0]-proj[0], c[1]-proj[1]);
+                    if (d < minDist && d < 10) { minDist = d; pinPt = proj; }
+                }
+            }
+        }
+
+        if (pinPt) {
+            const numero = lot.franjaNumero;
+            const pitch = parseFloat(pinPt[0].toFixed(3));
+            const yaw = parseFloat(pinPt[1].toFixed(3));
+            let pin = findPinForFranjaNumero(numero);
+            if (pin) { 
+                pin.pitch = pitch; pin.yaw = yaw; updated++; 
+            } else {
+                BaseDatosLotes.push({ id: 'lp_' + lot.franjaGrupo + '_' + (lot.franjaIdx ?? 0) + '_' + Date.now(), tipo: 'lote', titulo: numero, numero: numero, status: defaultStatus, pitch, yaw });
+                created++;
+            }
         }
     });
+
+    if (updated === 0 && created === 0) { 
+        alert('⚠️ La línea no cruzó ningún lote de franja.\n\nAjusta el trazo para que atraviese la hilera de lotes.'); 
+        return false; 
+    }
+    
     clearLineaPinesDraft();
     saveToLocal();
     refreshAllHotspots();
@@ -1196,7 +1209,11 @@ function getCalleBorderThinPx() {
     return Math.max(0.4, getCalleDynBasePx() * CALLE_BORDER_FRANJA_RATIO);
 }
 function getCalleHalfWidthPx(anchoFactor) {
-    return getCalleStrokeWidths(anchoFactor).asfalto * 0.5;
+    const sw = getCalleStrokeWidths(anchoFactor);
+    // Sumamos la mitad del borde blanco de la calle + la mitad del grosor de la línea del lote
+    // Esto garantiza un beso matemático perfecto (kissing edges) sin superposición.
+    const lotBorderHalf = getCalleDynBasePx() * 0.5; 
+    return (sw.borde * 0.5) + lotBorderHalf;
 }
 function getCalleStrokeWidths(anchoFactor) {
     const base = getCalleDynBasePx();
@@ -1222,9 +1239,10 @@ function applyCallePathStyles(paths, ancho, alpha) {
     if (borde) {
         borde.style.setProperty('stroke-width', sw.borde + 'px', 'important');
         borde.style.setProperty('stroke', 'rgba(255,255,255,0.94)', 'important');
-        borde.style.setProperty('stroke-linecap', 'round', 'important');
-        borde.style.setProperty('stroke-linejoin', 'round', 'important');
-        borde.style.removeProperty('filter');
+        // FIX: Forzamos corte plano y esquinas rectas en el borde blanco
+        borde.style.setProperty('stroke-linecap', 'butt', 'important');
+        borde.style.setProperty('stroke-linejoin', 'miter', 'important');
+        borde.style.setProperty('filter', 'drop-shadow(0 0 1px rgba(255,255,255,0.35))', 'important');
     }
     if (asf) {
         asf.style.setProperty('stroke-width', sw.asfalto + 'px', 'important');
