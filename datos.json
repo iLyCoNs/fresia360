@@ -1,7 +1,7 @@
 {
   "origen": {
-    "lat": -41.22583035619617,
-    "lng": -73.3173470901525
+    "lat": -41.22570599168656,
+    "lng": -73.31826540340656
   },
   "norte": -112.61619796926988,
   "lotes": [
@@ -142,22 +142,32 @@
       "yaw": -23.35,
       "titulo": "Volcán Osorno",
       "tipo": "horizonte",
-      "distancia": "",
-      "tiempo": "",
+      "distancia": "110.3 KM",
+      "tiempo": "118 MIN",
       "id": "nuevo_1782607581831",
       "numero": "00",
-      "coordenadasDestino": "-41.103, -72.486"
+      "coordenadasDestino": "-41.103, -72.486",
+      "rutaFactorTrafico": 0.92,
+      "rutaEtiquetaTrafico": "Madrugada/noche",
+      "rutaFuente": "osrm",
+      "rutaCalculadaEn": 1782878019289,
+      "rutaEscenarioTrafico": "auto"
     },
     {
       "pitch": 1.29,
       "yaw": -7.24,
       "titulo": "Volcán Calbuco",
       "tipo": "horizonte",
-      "distancia": "83.2",
-      "tiempo": "59",
+      "distancia": "86.0 KM",
+      "tiempo": "137 MIN",
       "id": "nuevo_1782607757155",
       "numero": "00",
-      "coordenadasDestino": "-41.326, -72.613"
+      "coordenadasDestino": "-41.326, -72.613",
+      "rutaFactorTrafico": 0.92,
+      "rutaEtiquetaTrafico": "Madrugada/noche",
+      "rutaFuente": "osrm",
+      "rutaCalculadaEn": 1782878019743,
+      "rutaEscenarioTrafico": "auto"
     },
     {
       "pitch": -1.42,
@@ -212,8 +222,13 @@
       "coordenadasDestino": "-41.227, -73.298",
       "id": "nuevo_1782709547430",
       "numero": "362",
-      "distancia": "",
-      "tiempo": ""
+      "distancia": "1.6 KM",
+      "tiempo": "3 MIN",
+      "rutaFactorTrafico": 0.92,
+      "rutaEtiquetaTrafico": "Madrugada/noche",
+      "rutaFuente": "osrm",
+      "rutaCalculadaEn": 1782878020191,
+      "rutaEscenarioTrafico": "libre"
     },
     {
       "pitch": -26.77,
@@ -221,11 +236,16 @@
       "tipo": "ruta",
       "titulo": "RUTA V-30 A FRESIA",
       "descripcion": "Entrar a V-362",
-      "coordenadasDestino": "-41.198, -73.355",
+      "coordenadasDestino": "-41.219378217559395, -73.30913366110684",
       "id": "nuevo_1782709687467",
       "numero": "30",
-      "distancia": "",
-      "tiempo": ""
+      "distancia": "1.7 KM",
+      "tiempo": "2 MIN",
+      "rutaFactorTrafico": 0.92,
+      "rutaEtiquetaTrafico": "Madrugada/noche",
+      "rutaFuente": "osrm",
+      "rutaCalculadaEn": 1782878020649,
+      "rutaEscenarioTrafico": "libre"
     },
     {
       "pitch": -2.05,
@@ -237,228 +257,793 @@
       "id": "nuevo_1782709774551",
       "numero": "??",
       "coordenadasDestino": ""
+    },
+    {
+      "pitch": -54.29,
+      "yaw": -173.97,
+      "titulo": "ACCESO PRINCIPAL",
+      "tipo": "ruta",
+      "coordenadasDestino": "-41.225350322375895, -73.31899437036822",
+      "distancia": "0.0 KM",
+      "tiempo": "0 MIN",
+      "rutaEscenarioTrafico": "libre",
+      "id": "nuevo_1782877991422",
+      "numero": "00",
+      "rutaFactorTrafico": 0.92,
+      "rutaEtiquetaTrafico": "Madrugada/noche",
+      "rutaFuente": "osrm",
+      "rutaCalculadaEn": 1782878021101
     }
   ],
   "trazos": [
     {
-      "id": "str_1782705325171_0",
-      "tipo": "masterplan_fill",
+      "id": "franja_1782877752620",
+      "tipo": "franja-grupo",
+      "franjaCount": 10,
       "puntos": [
         [
-          -53.167,
-          2.554
+          -55.05376646968593,
+          -174.64645290725923
         ],
         [
-          -60.065,
-          3.579
+          -52.344047595728625,
+          -12.790293601970347
         ],
         [
-          -59.074,
-          -16.715
+          -53.089234373217906,
+          2.6790314226656164
         ],
         [
-          -52.163,
-          -13.64
+          -54.59974571181494,
+          173.01921822429787
+        ]
+      ],
+      "franjaSplits": [
+        0,
+        0.09615384615384616,
+        0.19230769230769232,
+        0.28846153846153844,
+        0.38461538461538464,
+        0.4807692307692308,
+        0.5769230769230769,
+        0.6730769230769231,
+        0.7692307692307693,
+        0.8653846153846154,
+        1
+      ]
+    },
+    {
+      "id": "franja_1782877752620_0",
+      "tipo": "area-invisible",
+      "franjaGrupo": "franja_1782877752620",
+      "franjaIdx": 0,
+      "franjaNumero": "01",
+      "puntos": [
+        [
+          -55.054,
+          -174.646
+        ],
+        [
+          -60.652,
+          -172.303
+        ],
+        [
+          -60.281,
+          171.799
+        ],
+        [
+          -54.6,
+          173.019
         ]
       ]
     },
     {
-      "id": "str_1782705325171_1",
-      "tipo": "masterplan_fill",
+      "id": "franja_1782877752620_1",
+      "tipo": "area-invisible",
+      "franjaGrupo": "franja_1782877752620",
+      "franjaIdx": 1,
+      "franjaNumero": "02",
       "puntos": [
         [
-          -60.065,
-          3.579
+          -60.652,
+          -172.303
         ],
         [
-          -66.156,
-          5.17
+          -66.87,
+          -168.464
         ],
         [
-          -65.167,
-          -20.468
+          -66.66,
+          169.79
         ],
         [
-          -59.074,
-          -16.715
+          -60.281,
+          171.799
         ]
       ]
     },
     {
-      "id": "str_1782705325171_2",
-      "tipo": "masterplan_fill",
+      "id": "franja_1782877752620_2",
+      "tipo": "area-invisible",
+      "franjaGrupo": "franja_1782877752620",
+      "franjaIdx": 2,
+      "franjaNumero": "03",
       "puntos": [
         [
-          -66.156,
-          5.17
+          -66.87,
+          -168.464
         ],
         [
-          -73.475,
-          8.696
+          -73.535,
+          -161.138
         ],
         [
-          -71.949,
-          -28.165
+          -73.654,
+          165.88
         ],
         [
-          -65.167,
-          -20.468
+          -66.66,
+          169.79
         ]
       ]
     },
     {
-      "id": "str_1782705325171_3",
-      "tipo": "masterplan_fill",
+      "id": "franja_1782877752620_3",
+      "tipo": "area-invisible",
+      "franjaGrupo": "franja_1782877752620",
+      "franjaIdx": 3,
+      "franjaNumero": "04",
       "puntos": [
         [
-          -73.475,
-          8.696
+          -73.535,
+          -161.138
         ],
         [
-          -80.891,
-          17.399
+          -80.021,
+          -143.083
         ],
         [
-          -78.303,
-          -44.342
+          -80.97,
+          155.22
         ],
         [
-          -71.949,
-          -28.165
+          -73.654,
+          165.88
         ]
       ]
     },
     {
-      "id": "str_1782705325171_4",
-      "tipo": "masterplan_fill",
+      "id": "franja_1782877752620_4",
+      "tipo": "area-invisible",
+      "franjaGrupo": "franja_1782877752620",
+      "franjaIdx": 4,
+      "franjaNumero": "05",
       "puntos": [
         [
-          -80.891,
-          17.399
+          -80.021,
+          -143.083
         ],
         [
-          -86.816,
-          72.362
+          -83.392,
+          -90.754
         ],
         [
-          -82.25,
-          -83.419
+          -86.462,
+          93.947
         ],
         [
-          -78.303,
-          -44.342
+          -80.97,
+          155.22
         ]
       ]
     },
     {
-      "id": "str_1782705325171_5",
-      "tipo": "masterplan_fill",
+      "id": "franja_1782877752620_5",
+      "tipo": "area-invisible",
+      "franjaGrupo": "franja_1782877752620",
+      "franjaIdx": 5,
+      "franjaNumero": "06",
       "puntos": [
         [
-          -86.816,
-          72.362
+          -83.392,
+          -90.754
         ],
         [
-          -82.254,
-          153.945
+          -79.425,
+          -42.443
         ],
         [
-          -80.09,
-          -134.525
+          -81.633,
+          22.698
         ],
         [
-          -82.25,
-          -83.419
+          -86.462,
+          93.947
         ]
       ]
     },
     {
-      "id": "str_1782705325171_6",
-      "tipo": "masterplan_fill",
+      "id": "franja_1782877752620_6",
+      "tipo": "area-invisible",
+      "franjaGrupo": "franja_1782877752620",
+      "franjaIdx": 6,
+      "franjaNumero": "07",
       "puntos": [
         [
-          -82.254,
-          153.945
+          -79.425,
+          -42.443
         ],
         [
-          -74.803,
-          165.859
+          -72.836,
+          -26.159
         ],
         [
-          -74.186,
-          -156.318
+          -74.338,
+          10.653
         ],
         [
-          -80.09,
-          -134.525
+          -81.633,
+          22.698
         ]
       ]
     },
     {
-      "id": "str_1782705325171_7",
-      "tipo": "masterplan_fill",
+      "id": "franja_1782877752620_7",
+      "tipo": "area-invisible",
+      "franjaGrupo": "franja_1782877752620",
+      "franjaIdx": 7,
+      "franjaNumero": "08",
       "puntos": [
         [
-          -74.803,
-          165.859
+          -72.836,
+          -26.159
         ],
         [
-          -67.562,
-          170.095
+          -66.165,
+          -19.346
         ],
         [
-          -67.393,
-          -165.547
+          -67.319,
+          6.444
         ],
         [
-          -74.186,
-          -156.318
+          -74.338,
+          10.653
         ]
       ]
     },
     {
-      "id": "str_1782705325171_8",
-      "tipo": "masterplan_fill",
+      "id": "franja_1782877752620_8",
+      "tipo": "area-invisible",
+      "franjaGrupo": "franja_1782877752620",
+      "franjaIdx": 8,
+      "franjaNumero": "09",
       "puntos": [
         [
-          -67.562,
-          170.095
+          -66.165,
+          -19.346
         ],
         [
-          -60.967,
-          172.162
+          -59.964,
+          -15.709
         ],
         [
-          -60.977,
-          -170.235
+          -60.903,
+          4.327
         ],
         [
-          -67.393,
-          -165.547
+          -67.319,
+          6.444
         ]
       ]
     },
     {
-      "id": "str_1782705325171_9",
-      "tipo": "masterplan_fill",
+      "id": "franja_1782877752620_9",
+      "tipo": "area-invisible",
+      "franjaGrupo": "franja_1782877752620",
+      "franjaIdx": 9,
+      "franjaNumero": "10",
       "puntos": [
         [
-          -60.967,
-          172.162
+          -59.964,
+          -15.709
         ],
         [
-          -55.11,
-          173.383
+          -52.344,
+          -12.79
         ],
         [
-          -55.192,
-          -173.036
+          -53.089,
+          2.679
         ],
         [
-          -60.977,
-          -170.235
+          -60.903,
+          4.327
         ]
       ]
+    },
+    {
+      "id": "brd_auto_1782877816731_0",
+      "tipo": "borde-macro",
+      "puntos": [
+        [
+          -55.054,
+          -174.646
+        ],
+        [
+          -60.652,
+          -172.303
+        ]
+      ],
+      "franjaGrupo": "franja_1782877752620"
+    },
+    {
+      "id": "div_auto_1782877816731_1",
+      "tipo": "divisoria",
+      "puntos": [
+        [
+          -60.652,
+          -172.303
+        ],
+        [
+          -60.281,
+          171.799
+        ]
+      ],
+      "franjaGrupo": "franja_1782877752620"
+    },
+    {
+      "id": "brd_auto_1782877816731_2",
+      "tipo": "borde-macro",
+      "puntos": [
+        [
+          -60.281,
+          171.799
+        ],
+        [
+          -54.6,
+          173.019
+        ]
+      ],
+      "franjaGrupo": "franja_1782877752620"
+    },
+    {
+      "id": "brd_auto_1782877816731_3",
+      "tipo": "borde-macro",
+      "puntos": [
+        [
+          -54.6,
+          173.019
+        ],
+        [
+          -55.054,
+          -174.646
+        ]
+      ],
+      "franjaGrupo": "franja_1782877752620"
+    },
+    {
+      "id": "brd_auto_1782877816731_4",
+      "tipo": "borde-macro",
+      "puntos": [
+        [
+          -60.652,
+          -172.303
+        ],
+        [
+          -66.87,
+          -168.464
+        ]
+      ],
+      "franjaGrupo": "franja_1782877752620"
+    },
+    {
+      "id": "div_auto_1782877816731_5",
+      "tipo": "divisoria",
+      "puntos": [
+        [
+          -66.87,
+          -168.464
+        ],
+        [
+          -66.66,
+          169.79
+        ]
+      ],
+      "franjaGrupo": "franja_1782877752620"
+    },
+    {
+      "id": "brd_auto_1782877816731_6",
+      "tipo": "borde-macro",
+      "puntos": [
+        [
+          -66.66,
+          169.79
+        ],
+        [
+          -60.281,
+          171.799
+        ]
+      ],
+      "franjaGrupo": "franja_1782877752620"
+    },
+    {
+      "id": "brd_auto_1782877816731_7",
+      "tipo": "borde-macro",
+      "puntos": [
+        [
+          -66.87,
+          -168.464
+        ],
+        [
+          -73.535,
+          -161.138
+        ]
+      ],
+      "franjaGrupo": "franja_1782877752620"
+    },
+    {
+      "id": "div_auto_1782877816731_8",
+      "tipo": "divisoria",
+      "puntos": [
+        [
+          -73.535,
+          -161.138
+        ],
+        [
+          -73.654,
+          165.88
+        ]
+      ],
+      "franjaGrupo": "franja_1782877752620"
+    },
+    {
+      "id": "brd_auto_1782877816731_9",
+      "tipo": "borde-macro",
+      "puntos": [
+        [
+          -73.654,
+          165.88
+        ],
+        [
+          -66.66,
+          169.79
+        ]
+      ],
+      "franjaGrupo": "franja_1782877752620"
+    },
+    {
+      "id": "brd_auto_1782877816731_10",
+      "tipo": "borde-macro",
+      "puntos": [
+        [
+          -73.535,
+          -161.138
+        ],
+        [
+          -80.021,
+          -143.083
+        ]
+      ],
+      "franjaGrupo": "franja_1782877752620"
+    },
+    {
+      "id": "div_auto_1782877816731_11",
+      "tipo": "divisoria",
+      "puntos": [
+        [
+          -80.021,
+          -143.083
+        ],
+        [
+          -80.97,
+          155.22
+        ]
+      ],
+      "franjaGrupo": "franja_1782877752620"
+    },
+    {
+      "id": "brd_auto_1782877816731_12",
+      "tipo": "borde-macro",
+      "puntos": [
+        [
+          -80.97,
+          155.22
+        ],
+        [
+          -73.654,
+          165.88
+        ]
+      ],
+      "franjaGrupo": "franja_1782877752620"
+    },
+    {
+      "id": "brd_auto_1782877816731_13",
+      "tipo": "borde-macro",
+      "puntos": [
+        [
+          -80.021,
+          -143.083
+        ],
+        [
+          -83.392,
+          -90.754
+        ]
+      ],
+      "franjaGrupo": "franja_1782877752620"
+    },
+    {
+      "id": "div_auto_1782877816731_14",
+      "tipo": "divisoria",
+      "puntos": [
+        [
+          -83.392,
+          -90.754
+        ],
+        [
+          -86.462,
+          93.947
+        ]
+      ],
+      "franjaGrupo": "franja_1782877752620"
+    },
+    {
+      "id": "brd_auto_1782877816731_15",
+      "tipo": "borde-macro",
+      "puntos": [
+        [
+          -86.462,
+          93.947
+        ],
+        [
+          -80.97,
+          155.22
+        ]
+      ],
+      "franjaGrupo": "franja_1782877752620"
+    },
+    {
+      "id": "brd_auto_1782877816731_16",
+      "tipo": "borde-macro",
+      "puntos": [
+        [
+          -83.392,
+          -90.754
+        ],
+        [
+          -79.425,
+          -42.443
+        ]
+      ],
+      "franjaGrupo": "franja_1782877752620"
+    },
+    {
+      "id": "div_auto_1782877816731_17",
+      "tipo": "divisoria",
+      "puntos": [
+        [
+          -79.425,
+          -42.443
+        ],
+        [
+          -81.633,
+          22.698
+        ]
+      ],
+      "franjaGrupo": "franja_1782877752620"
+    },
+    {
+      "id": "brd_auto_1782877816731_18",
+      "tipo": "borde-macro",
+      "puntos": [
+        [
+          -81.633,
+          22.698
+        ],
+        [
+          -86.462,
+          93.947
+        ]
+      ],
+      "franjaGrupo": "franja_1782877752620"
+    },
+    {
+      "id": "brd_auto_1782877816731_19",
+      "tipo": "borde-macro",
+      "puntos": [
+        [
+          -79.425,
+          -42.443
+        ],
+        [
+          -72.836,
+          -26.159
+        ]
+      ],
+      "franjaGrupo": "franja_1782877752620"
+    },
+    {
+      "id": "div_auto_1782877816731_20",
+      "tipo": "divisoria",
+      "puntos": [
+        [
+          -72.836,
+          -26.159
+        ],
+        [
+          -74.338,
+          10.653
+        ]
+      ],
+      "franjaGrupo": "franja_1782877752620"
+    },
+    {
+      "id": "brd_auto_1782877816731_21",
+      "tipo": "borde-macro",
+      "puntos": [
+        [
+          -74.338,
+          10.653
+        ],
+        [
+          -81.633,
+          22.698
+        ]
+      ],
+      "franjaGrupo": "franja_1782877752620"
+    },
+    {
+      "id": "brd_auto_1782877816731_22",
+      "tipo": "borde-macro",
+      "puntos": [
+        [
+          -72.836,
+          -26.159
+        ],
+        [
+          -66.165,
+          -19.346
+        ]
+      ],
+      "franjaGrupo": "franja_1782877752620"
+    },
+    {
+      "id": "div_auto_1782877816731_23",
+      "tipo": "divisoria",
+      "puntos": [
+        [
+          -66.165,
+          -19.346
+        ],
+        [
+          -67.319,
+          6.444
+        ]
+      ],
+      "franjaGrupo": "franja_1782877752620"
+    },
+    {
+      "id": "brd_auto_1782877816731_24",
+      "tipo": "borde-macro",
+      "puntos": [
+        [
+          -67.319,
+          6.444
+        ],
+        [
+          -74.338,
+          10.653
+        ]
+      ],
+      "franjaGrupo": "franja_1782877752620"
+    },
+    {
+      "id": "brd_auto_1782877816731_25",
+      "tipo": "borde-macro",
+      "puntos": [
+        [
+          -66.165,
+          -19.346
+        ],
+        [
+          -59.964,
+          -15.709
+        ]
+      ],
+      "franjaGrupo": "franja_1782877752620"
+    },
+    {
+      "id": "div_auto_1782877816731_26",
+      "tipo": "divisoria",
+      "puntos": [
+        [
+          -59.964,
+          -15.709
+        ],
+        [
+          -60.903,
+          4.327
+        ]
+      ],
+      "franjaGrupo": "franja_1782877752620"
+    },
+    {
+      "id": "brd_auto_1782877816731_27",
+      "tipo": "borde-macro",
+      "puntos": [
+        [
+          -60.903,
+          4.327
+        ],
+        [
+          -67.319,
+          6.444
+        ]
+      ],
+      "franjaGrupo": "franja_1782877752620"
+    },
+    {
+      "id": "brd_auto_1782877816731_28",
+      "tipo": "borde-macro",
+      "puntos": [
+        [
+          -59.964,
+          -15.709
+        ],
+        [
+          -52.344,
+          -12.79
+        ]
+      ],
+      "franjaGrupo": "franja_1782877752620"
+    },
+    {
+      "id": "brd_auto_1782877816731_29",
+      "tipo": "borde-macro",
+      "puntos": [
+        [
+          -52.344,
+          -12.79
+        ],
+        [
+          -53.089,
+          2.679
+        ]
+      ],
+      "franjaGrupo": "franja_1782877752620"
+    },
+    {
+      "id": "brd_auto_1782877816731_30",
+      "tipo": "borde-macro",
+      "puntos": [
+        [
+          -53.089,
+          2.679
+        ],
+        [
+          -60.903,
+          4.327
+        ]
+      ],
+      "franjaGrupo": "franja_1782877752620"
+    },
+    {
+      "id": "temp_1782877705837",
+      "tipo": "calle",
+      "puntos": [
+        [
+          -55.11697359360512,
+          -174.0519773259399
+        ],
+        [
+          -59.849597734502176,
+          -16.414973945663178
+        ]
+      ],
+      "calleAncho": 5,
+      "calleAlpha": 0.4,
+      "calleLabelScale": 1,
+      "calleShowLabel": false
     }
   ],
   "configProyecto": {
