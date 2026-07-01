@@ -256,7 +256,7 @@ function loadFromLocal() { const savedData = localStorage.getItem(FRESIA_CFG.aut
 async function fetchValorUFOnline() { try { const response = await fetch('https://mindicador.cl/api/uf', { cache: 'no-store' }); if (response.ok) { const data = await response.json(); if(data && data.serie && data.serie.length > 0) { UF_Online = data.serie[0].valor; return; } } } catch (error) {} }
 async function fetchMasterData() { try { const response = await fetch(FRESIA_CFG.datosJson + '?v=' + new Date().getTime()); if(response.ok) { const data = await response.json(); ConfigProyecto = data.configProyecto || ConfigProyecto; OrigenDrone = data.origen || null; NorteOffset = data.norte || 0; BaseDatosLotes = data.lotes || []; PuntosHorizonte = data.horizontes || []; allDrawnLines = data.trazos || []; } else { loadFromLocal(); } } catch(e) { loadFromLocal(); } applyProjectConfig(); await syncRutasDesdeOrigen(); }
 
-let visor360, currentPinSizeIndex = 1, isIntroAnimating = true, isDevModeDrawActive = false, isDevModePinsActive = false, currentLineType = 'solida', currentLinePoints = [], currentPinTypeMap = 'disponible', currentTempLineId = 'temp_' + Date.now(), draggingVertex = null, draggingFranjaDiv = null, draggingCalleMove = null, pickedPin = null, snapCursor = null, ghostPin = null, snappedCoords = null, activePinArgs = null, isCreatingNewPin = false, isSnapToClose = false, franjaCornerA = null, franjaPreviewQuad = null, franjaPreviewDivs = [], franjaDraftCount = 10, franjaDraftBaseM2 = 5000, franjaPendingCreate = null, guardarNubeEnCurso = false, draftCalleAncho = 8, draftCalleAlpha = 0.85, draftCalleLabelScale = 1, draftCalleShowLabel = true, draftCalleSnapFranja = false, calleSnapIsFranjaEdge = false, lastCalleTap = null, isLineaPinesActive = false, lineaPinesPoints = [], lineaPinesTempId = 'linea_pins_' + Date.now();
+let visor360, currentPinSizeIndex = 1, isIntroAnimating = true, isDevModeDrawActive = false, isDevModePinsActive = false, currentLineType = 'solida', currentLinePoints = [], currentPinTypeMap = 'disponible', currentTempLineId = 'temp_' + Date.now(), draggingVertex = null, draggingFranjaDiv = null, draggingCalleMove = null, pickedPin = null, snapCursor = null, ghostPin = null, snappedCoords = null, activePinArgs = null, isCreatingNewPin = false, isSnapToClose = false, franjaCornerA = null, franjaPreviewQuad = null, franjaPreviewDivs = [], franjaDraftCount = 10, franjaDraftBaseM2 = 5000, franjaPendingCreate = null, guardarNubeEnCurso = false, draftCalleAncho = 8, draftCalleAlpha = 0, draftCalleLabelScale = 1, draftCalleShowLabel = true, draftCalleSnapFranja = false, calleSnapIsFranjaEdge = false, lastCalleTap = null, isLineaPinesActive = false, lineaPinesPoints = [], lineaPinesTempId = 'linea_pins_' + Date.now();
 function revealLoteoOverlay() {
     isIntroAnimating = false;
     document.body.classList.add('loteo-overlay-ready');
@@ -1166,7 +1166,7 @@ function getCalleStrokeWidths(anchoFactor) {
 function getCalleStyleForLine(line) {
     return {
         ancho: line?.calleAncho ?? draftCalleAncho ?? 8,
-        alpha: line?.calleAlpha ?? draftCalleAlpha ?? 0.85,
+        alpha: line?.calleAlpha ?? draftCalleAlpha ?? 0,
         labelScale: line?.calleLabelScale ?? draftCalleLabelScale ?? 1,
         showLabel: line?.calleShowLabel !== undefined ? line.calleShowLabel : draftCalleShowLabel
     };
@@ -1174,19 +1174,19 @@ function getCalleStyleForLine(line) {
 function applyCallePathStyles(paths, ancho, alpha) {
     if (!paths || !paths.length) return;
     const sw = getCalleStrokeWidths(ancho);
-    const a = Math.max(0.12, Math.min(1, alpha ?? draftCalleAlpha ?? 0.85));
+    const a = Math.max(0, Math.min(1, alpha ?? draftCalleAlpha ?? 0));
     const borde = paths.find(p => p.classList && p.classList.contains('linea-calle-borde')) || paths[0];
     const asf = paths.find(p => p.classList && p.classList.contains('linea-calle-asfalto')) || paths[1];
     if (borde) {
         borde.style.setProperty('stroke-width', sw.borde + 'px', 'important');
         borde.style.setProperty('stroke', 'rgba(255,255,255,0.94)', 'important');
-        borde.style.setProperty('stroke-linecap', 'butt', 'important');
-        borde.style.setProperty('stroke-linejoin', 'miter', 'important');
+        borde.style.setProperty('stroke-linecap', 'round', 'important');
+        borde.style.setProperty('stroke-linejoin', 'round', 'important');
         borde.style.setProperty('filter', 'drop-shadow(0 0 1px rgba(255,255,255,0.35))', 'important');
     }
     if (asf) {
         asf.style.setProperty('stroke-width', sw.asfalto + 'px', 'important');
-        asf.style.setProperty('stroke', `rgba(30,35,45,${a})`, 'important');
+        asf.style.setProperty('stroke', a <= 0.02 ? 'rgba(0,0,0,0)' : `rgba(30,35,45,${a})`, 'important');
         asf.style.setProperty('stroke-linecap', 'butt', 'important');
         asf.style.setProperty('stroke-linejoin', 'miter', 'important');
     }
@@ -1983,7 +1983,7 @@ function syncSVGElements() {
         const existingElements = svg.querySelectorAll(`[data-line-id="${line.id}"]`);
         if (existingElements.length === 0) {
             if (line.tipo === 'calle') {
-                const pBorde = document.createElementNS("http://www.w3.org/2000/svg", "path"); pBorde.setAttribute("class", "linea-calle-borde"); pBorde.dataset.lineId = line.id; lAristas.appendChild(pBorde);
+                const pBorde = document.createElementNS("http://www.w3.org/2000/svg", "path"); pBorde.setAttribute("class", "linea-calle-borde"); pBorde.dataset.lineId = line.id; lBordes.appendChild(pBorde);
                 const pAsfalto = document.createElementNS("http://www.w3.org/2000/svg", "path"); pAsfalto.setAttribute("class", "linea-calle-asfalto"); pAsfalto.dataset.lineId = line.id; bindSvgEraser(pAsfalto, line.id); lAsfalto.appendChild(pAsfalto); DOMCache.paths[line.id] = { base: [pBorde, pAsfalto] };
             } else if (line.tipo === 'divisoria' || line.tipo === 'borde-macro') {
                 const gMacro = document.createElementNS("http://www.w3.org/2000/svg", "g"); gMacro.dataset.lineId = line.id; gMacro.dataset.tipo = line.tipo;
@@ -2021,7 +2021,8 @@ function syncSVGElements() {
             if (line.tipo === 'calle') {
                 const bordeEl = svg.querySelector(`.linea-calle-borde[data-line-id="${line.id}"]`);
                 const asfEl = svg.querySelector(`.linea-calle-asfalto[data-line-id="${line.id}"]`);
-                if (bordeEl && bordeEl.parentNode !== lAristas) lAristas.appendChild(bordeEl);
+                if (bordeEl && bordeEl.parentNode !== lBordes) lBordes.appendChild(bordeEl);
+                if (asfEl && asfEl.parentNode !== lAsfalto) lAsfalto.appendChild(asfEl);
                 DOMCache.paths[line.id] = { base: [bordeEl, asfEl].filter(Boolean) };
             } else {
                 const gNode = svg.querySelector(`g[data-line-id="${line.id}"]`);
@@ -2597,7 +2598,7 @@ function setupDevModes() {
     function setDrawMode(mode, targetBtn) { if (mode !== 'franja') clearFranjaDraft(); if (mode !== 'calle') closeCalleToolPanel(); currentLineType = mode; document.body.classList.toggle('eraser-mode-active', mode === 'eraser'); document.querySelectorAll('#dev-toolbar-draw .dev-btn:not(.action):not(.export):not(.export-ai):not(.nuke)').forEach(b => b.classList.remove('active')); if(targetBtn) targetBtn.classList.add('active'); }
     const bindCallePanel = (id, fn) => { const el = document.getElementById(id); if (!el) return; el.addEventListener('input', fn); el.addEventListener('change', fn); };
     bindCallePanel('calle-ui-ancho', (e) => { draftCalleAncho = Math.max(2, Math.min(28, parseFloat(e.target.value) || 8)); syncCallePanelUI(); updateSVGPaths(); refreshAllHotspots(true); });
-    bindCallePanel('calle-ui-alpha', (e) => { draftCalleAlpha = Math.max(0.15, Math.min(1, parseFloat(e.target.value) || 0.85)); syncCallePanelUI(); updateSVGPaths(); });
+    bindCallePanel('calle-ui-alpha', (e) => { draftCalleAlpha = Math.max(0, Math.min(1, parseFloat(e.target.value) || 0)); syncCallePanelUI(); updateSVGPaths(); });
     bindCallePanel('calle-ui-label', (e) => { draftCalleLabelScale = Math.max(0.5, Math.min(2.5, parseFloat(e.target.value) || 1)); syncCallePanelUI(); refreshAllHotspots(true); });
     bindCallePanel('calle-ui-show-label', (e) => { draftCalleShowLabel = !!e.target.checked; refreshAllHotspots(true); });
     bindCallePanel('calle-ui-snap-franja', (e) => { draftCalleSnapFranja = !!e.target.checked; });

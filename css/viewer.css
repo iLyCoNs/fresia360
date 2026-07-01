@@ -76,26 +76,24 @@ body.linea-pines-active { cursor: crosshair !important; }
 .linea-pines-hint { margin: 0; font-size: 8px; line-height: 1.45; color: #64748b; font-weight: 600; }
 body.is-embedded #linea-pines-panel { bottom: 72px; left: 8px; width: min(248px, calc(100vw - 16px)); }
 #dev-toolbar-pins #btn-linea-pines.active { background: rgba(168, 85, 247, 0.28); border-color: rgba(196, 181, 253, 0.55); color: #e9d5ff; box-shadow: 0 0 0 1px rgba(168, 85, 247, 0.35), 0 4px 14px rgba(168, 85, 247, 0.2); }
-/* --- CALLES PREMIUM (borde = mismo peso que franja borde-macro) --- */
+/* --- CALLES PREMIUM (anillo blanco fino + núcleo transparente) --- */
 .linea-calle-borde {
     fill: none;
-    stroke: rgba(255, 255, 255, 0.94) !important;
-    stroke-width: calc(var(--stroke-dyn) * 0.48) !important;
-    stroke-linecap: butt !important;
-    stroke-linejoin: miter !important;
+    stroke: rgba(255, 255, 255, 0.94);
+    stroke-linejoin: round;
+    stroke-linecap: round;
     filter: drop-shadow(0 0 1px rgba(255, 255, 255, 0.35));
     pointer-events: none;
 }
 .linea-calle-asfalto {
     fill: none;
-    stroke: rgba(30, 35, 45, 0.85) !important;
-    stroke-linecap: butt !important;
-    stroke-linejoin: miter !important;
+    stroke: rgba(0, 0, 0, 0);
+    stroke-linecap: butt;
+    stroke-linejoin: miter;
     pointer-events: auto;
     cursor: pointer;
-    transition: stroke 0.3s;
 }
-.linea-calle-asfalto:hover { filter: brightness(1.15); }
+.linea-calle-asfalto:hover { filter: brightness(1.08); }
 .calle-servidumbre-label { position: absolute; transform: translate(-50%, -50%); transform-origin: center center; background: rgba(22, 27, 38, 0.94); color: #f1f5f9; font-size: 7px; font-weight: 800; letter-spacing: 0.55px; text-transform: uppercase; padding: 4px 7px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.28); white-space: nowrap; pointer-events: none; z-index: 99998; box-shadow: 0 2px 12px rgba(0,0,0,0.5); line-height: 1.2; }
 .calle-move-handle { position: absolute; transform: translate(-50%, -50%); width: 28px; height: 28px; border-radius: 50%; background: rgba(59,130,246,0.92); border: 2px solid #fff; color: #fff; font-size: 14px; font-weight: 900; display: flex; align-items: center; justify-content: center; cursor: grab; pointer-events: auto; z-index: 100001; box-shadow: 0 4px 14px rgba(59,130,246,0.45); line-height: 1; user-select: none; }
 .calle-move-handle.is-dragging { cursor: grabbing; background: rgba(16,185,129,0.95); box-shadow: 0 0 0 6px rgba(16,185,129,0.2); }
