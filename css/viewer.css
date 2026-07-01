@@ -192,13 +192,30 @@ body:not(.dev-mode-pins-active) .horizon-hud-wrapper:hover .horizon-detail-card,
 .btn-pin-ruta::before { content:'🛣️'; display:inline-block; font-size:10px; margin-right: 4px; }
 .btn-calc-route:disabled { opacity: 0.55; cursor: wait; }
 .ruta-traffic-badge { font-size: 6px; color: #94a3b8; letter-spacing: 0.3px; margin-left: 2px; vertical-align: super; }
-.horizon-expand-arrow { display: none; flex-shrink: 0; width: 22px; height: 22px; border-radius: 50%; border: 1px solid rgba(253, 146, 39, 0.55); background: rgba(253, 146, 39, 0.18); color: #FD9227; cursor: pointer; align-items: center; justify-content: center; padding: 0; margin-left: 2px; pointer-events: auto; touch-action: manipulation; transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1), background 0.2s, border-color 0.2s; box-shadow: 0 0 10px rgba(253, 146, 39, 0.35); animation: horizonArrowPulse 1.35s ease-in-out infinite; }
+/* --- UI COLAPSABLE GLOBAL (Desktop & Mobile) --- */
+.horizon-expand-arrow { display: flex; flex-shrink: 0; width: 22px; height: 22px; border-radius: 50%; border: 1px solid rgba(253, 146, 39, 0.55); background: rgba(253, 146, 39, 0.18); color: #FD9227; cursor: pointer; align-items: center; justify-content: center; padding: 0; margin-left: 2px; pointer-events: auto; touch-action: manipulation; transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1), background 0.2s, border-color 0.2s; box-shadow: 0 0 10px rgba(253, 146, 39, 0.35); animation: horizonArrowPulse 1.35s ease-in-out infinite; }
 .horizon-expand-arrow svg { display: block; pointer-events: none; filter: drop-shadow(0 0 4px rgba(253, 146, 39, 0.6)); }
 @keyframes horizonArrowPulse { 0%, 100% { transform: translateX(0) scale(1); box-shadow: 0 0 8px rgba(253, 146, 39, 0.35), 0 0 0 0 rgba(253, 146, 39, 0.25); } 50% { transform: translateX(3px) scale(1.08); box-shadow: 0 0 16px rgba(253, 146, 39, 0.75), 0 0 0 4px rgba(253, 146, 39, 0.12); } }
-.horizon-pill-extra { display: flex; align-items: center; gap: 10px; }
-.ruta-expand-arrow { display: none; flex-shrink: 0; width: 22px; height: 22px; border-radius: 50%; border: 1px solid rgba(145, 200, 255, 0.55); background: rgba(145, 200, 255, 0.18); color: #91C8FF; cursor: pointer; align-items: center; justify-content: center; padding: 0; margin-left: 2px; pointer-events: auto; touch-action: manipulation; transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1), background 0.2s, border-color 0.2s; box-shadow: 0 0 10px rgba(145, 200, 255, 0.35); animation: rutaArrowPulse 1.35s ease-in-out infinite; }
+.ruta-expand-arrow { display: flex; flex-shrink: 0; width: 22px; height: 22px; border-radius: 50%; border: 1px solid rgba(145, 200, 255, 0.55); background: rgba(145, 200, 255, 0.18); color: #91C8FF; cursor: pointer; align-items: center; justify-content: center; padding: 0; margin-left: 2px; pointer-events: auto; touch-action: manipulation; transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1), background 0.2s, border-color 0.2s; box-shadow: 0 0 10px rgba(145, 200, 255, 0.35); animation: rutaArrowPulse 1.35s ease-in-out infinite; }
 .ruta-expand-arrow svg { display: block; pointer-events: none; filter: drop-shadow(0 0 4px rgba(145, 200, 255, 0.6)); }
 @keyframes rutaArrowPulse { 0%, 100% { transform: translateX(0) scale(1); box-shadow: 0 0 8px rgba(145, 200, 255, 0.35), 0 0 0 0 rgba(145, 200, 255, 0.25); } 50% { transform: translateX(3px) scale(1.08); box-shadow: 0 0 16px rgba(145, 200, 255, 0.75), 0 0 0 4px rgba(145, 200, 255, 0.12); } }
+
+.horizon-pill-extra { max-width: 0; opacity: 0; overflow: hidden; gap: 8px; transition: max-width 0.38s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.28s ease; pointer-events: none; display: flex; align-items: center; }
+
+/* Estados Expandidos Globales */
+.horizon-hud-wrapper.horizon-pill-expanded .horizon-pill-extra,
+.ruta-hud-wrapper.ruta-pill-expanded .horizon-pill-extra { max-width: 240px; opacity: 1; pointer-events: auto; }
+
+.horizon-hud-wrapper.horizon-pill-expanded .horizon-expand-arrow { animation: none; transform: rotate(90deg); background: rgba(145, 200, 255, 0.2); border-color: rgba(145, 200, 255, 0.5); color: #91C8FF; box-shadow: 0 0 10px rgba(145, 200, 255, 0.35); }
+.ruta-hud-wrapper.ruta-pill-expanded .ruta-expand-arrow { animation: none; transform: rotate(90deg); background: rgba(253, 146, 39, 0.2); border-color: rgba(253, 146, 39, 0.5); color: #FD9227; box-shadow: 0 0 10px rgba(253, 146, 39, 0.35); }
+
+.horizon-hud-wrapper.horizon-pill-expanded .ruta-glass-pill { padding-right: 10px; border-color: rgba(145, 200, 255, 0.35); }
+.ruta-hud-wrapper.ruta-pill-expanded .ruta-glass-pill { padding-right: 10px; border-color: rgba(253, 146, 39, 0.35); }
+
+body.dev-mode-pins-active .horizon-expand-arrow, 
+body.dev-mode-pins-active .ruta-expand-arrow { display: none !important; }
+body.dev-mode-pins-active .horizon-pill-extra { max-width: none !important; opacity: 1 !important; overflow: visible !important; pointer-events: auto !important; }
+.ruta-hud-wrapper .horizon-expand-arrow { display: none !important; }
 /* --- PIN CASA 360 (TOUR/VIDEO) --- */
 .casa-hud-wrapper { position: absolute; top: 0; left: 0; transform: translate(-50%, -50%); z-index: 10; pointer-events: none; animation: fadeInHUD 1s ease-out forwards; opacity: 0; }
 .casa-hud-wrapper:hover { z-index: 999999; }
@@ -328,7 +345,10 @@ body.is-embedded #inapp-modal .btn-volver-360 {
     .poi-trigger-btn { top: 75px; left: 8px; } body.has-banner .poi-trigger-btn { top: 100px; } .poi-panel { top: 75px; left: 58px; } body.has-banner .poi-panel { top: 100px; }
 }
 @media (max-width: 768px) {
-    .premium-header { top: 12px; left: 50% !important; transform: translateX(-50%) translateY(0) !important; width: 92%; max-width: 340px; text-align: center; padding: 8px 16px; z-index: 999999; white-space: nowrap; } body.has-banner .premium-header { top: 40px; } .premium-header h1 { font-size: 11px; margin-bottom: 2px; } .premium-header p { font-size: 7px; letter-spacing: 1px; }
+    .premium-header { top: 12px; left: 50% !important; transform: translateX(-50%) translateY(0) !important; width: max-content !important; max-width: calc(100vw - 36px) !important; text-align: center; padding: 8px 16px; z-index: 999999; white-space: nowrap; overflow: hidden; }
+    body.has-banner .premium-header { top: 40px; }
+    .premium-header h1 { font-size: 11px; margin-bottom: 2px; overflow: hidden; text-overflow: ellipsis; }
+    .premium-header p { font-size: 7px; letter-spacing: 1px; overflow: hidden; text-overflow: ellipsis; }
     .premium-compass-container { top: 12px; right: 12px; width: 34px; height: 34px; z-index: 999999; } body.has-banner .premium-compass-container { top: 40px; } .compass-n { font-size: 8px; top: 2px; } .compass-s, .compass-e, .compass-w { font-size: 6px; }
     .premium-dock { flex-wrap: nowrap; width: calc(100% - 24px) !important; max-width: none; border-radius: 16px; bottom: max(16px, env(safe-area-inset-bottom)) !important; padding: 3px 2px !important; gap: 4px; left: 50% !important; transform: translateX(-50%) !important; margin: 0 !important; z-index: 99999; opacity: 1 !important; animation: none !important;} .dock-btn { flex: 1; flex-direction: column; padding: 4px 2px !important; gap: 4px; border-radius: 10px; } .dock-btn svg { width: 14px; height: 14px; } .dock-btn span { font-size: 6px !important; text-align: center; line-height: 1.1; color: #fff; } .dock-btn.primary { flex: 1.1; flex-direction: column; padding: 4px 2px !important; background: linear-gradient(135deg, #10b981, #059669); }
     .pegman-dock-btn { position: static !important; width: auto !important; height: auto !important; background: transparent !important; border-radius: 10px !important; border: none !important; box-shadow: none !important; opacity: 1 !important; animation: none !important; transform: none !important; padding: 4px 2px !important; flex: 1; flex-direction: column; gap: 4px; } .pegman-dock-btn:hover { transform: none !important; box-shadow: none !important; background: rgba(255,255,255,0.1) !important; } .pegman-img { width: 14px !important; margin: 0 auto; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.5)) !important; }
@@ -341,38 +361,11 @@ body.is-embedded #inapp-modal .btn-volver-360 {
     .poi-trigger-btn { top: 56px; right: 12px; left: auto !important; transform: none !important; width: 34px; height: 34px; justify-content: center; opacity: 1; z-index: 999999; padding: 0; } body.has-banner .poi-trigger-btn { top: 84px; } .poi-icon { font-size: 16px; margin: 0; } .poi-panel { top: 100px; right: 12px; left: auto !important; transform: scale(0.95); transform-origin: top right; width: 280px; max-width: calc(100vw - 24px); } body.has-banner .poi-panel { top: 128px; } .poi-panel.open { transform: scale(1) !important; }
     .horizon-hud-wrapper .horizon-detail-card { display: none !important; }
     .horizon-hud-wrapper .ruta-glass-pill { gap: 6px; padding: 4px 8px 4px 14px; max-width: none; }
-    .horizon-hud-wrapper .horizon-expand-arrow { display: flex; }
-    .horizon-hud-wrapper .horizon-pill-extra { max-width: 0; opacity: 0; overflow: hidden; gap: 8px; transition: max-width 0.38s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.28s ease; pointer-events: none; }
-    .horizon-hud-wrapper.horizon-pill-expanded .horizon-pill-extra { max-width: 240px; opacity: 1; pointer-events: auto; }
-    .horizon-hud-wrapper.horizon-pill-expanded .horizon-expand-arrow { animation: none; transform: rotate(90deg); background: rgba(145, 200, 255, 0.2); border-color: rgba(145, 200, 255, 0.5); color: #91C8FF; box-shadow: 0 0 10px rgba(145, 200, 255, 0.35); }
-    .horizon-hud-wrapper.horizon-pill-expanded .ruta-glass-pill { padding-right: 10px; border-color: rgba(145, 200, 255, 0.35); }
-    body.dev-mode-pins-active .horizon-hud-wrapper .horizon-expand-arrow { display: none !important; }
-    body.dev-mode-pins-active .horizon-hud-wrapper .horizon-pill-extra { max-width: none !important; opacity: 1 !important; overflow: visible !important; pointer-events: auto !important; }
-    .ruta-hud-wrapper .horizon-expand-arrow { display: none !important; }
-    .ruta-hud-wrapper .ruta-expand-arrow { display: flex; }
-    .ruta-hud-wrapper .horizon-pill-extra { max-width: 0; opacity: 0; overflow: hidden; gap: 8px; transition: max-width 0.38s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.28s ease; pointer-events: none; }
-    .ruta-hud-wrapper.ruta-pill-expanded .horizon-pill-extra { max-width: 240px; opacity: 1; pointer-events: auto; }
-    .ruta-hud-wrapper.ruta-pill-expanded .ruta-expand-arrow { animation: none; transform: rotate(90deg); background: rgba(253, 146, 39, 0.2); border-color: rgba(253, 146, 39, 0.5); color: #FD9227; box-shadow: 0 0 10px rgba(253, 146, 39, 0.35); }
-    .ruta-hud-wrapper.ruta-pill-expanded .ruta-glass-pill { padding-right: 10px; border-color: rgba(253, 146, 39, 0.35); }
-    body.dev-mode-pins-active .ruta-hud-wrapper .ruta-expand-arrow { display: none !important; }
-    body.dev-mode-pins-active .ruta-hud-wrapper .horizon-pill-extra { max-width: none !important; opacity: 1 !important; overflow: visible !important; pointer-events: auto !important; }
     #mac-gallery-modal { padding: 12px; align-items: center; justify-content: center; } .mac-g-window { width: 100%; height: 80vh; max-height: 700px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.2); margin: auto; box-shadow: 0 20px 40px rgba(0,0,0,0.6); } .mac-g-header { height: 48px; padding: 0 16px; } .mac-g-traffic span { width: 14px; height: 14px; margin-right: 4px; } .mac-g-nav { width: 36px; height: 36px; background: rgba(0,0,0,0.6); border-color: rgba(255,255,255,0.3); } .mac-g-prev { left: 10px; } .mac-g-next { right: 10px; } .mac-g-main-img.zoomed { transform: scale(2.5); } .mac-g-footer { height: 75px; padding: 0 12px; } .mac-g-thumb { width: 50px; height: 50px; }
 }
 @media (max-width: 960px) {
     body.is-embedded .horizon-hud-wrapper .horizon-detail-card { display: none !important; }
     body.is-embedded .horizon-hud-wrapper .ruta-glass-pill { gap: 6px; padding: 4px 8px 4px 14px; max-width: none; }
-    body.is-embedded .horizon-hud-wrapper .horizon-expand-arrow { display: flex; }
-    body.is-embedded .horizon-hud-wrapper .horizon-pill-extra { max-width: 0; opacity: 0; overflow: hidden; gap: 8px; transition: max-width 0.38s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.28s ease; pointer-events: none; }
-    body.is-embedded .horizon-hud-wrapper.horizon-pill-expanded .horizon-pill-extra { max-width: 240px; opacity: 1; pointer-events: auto; }
-    body.is-embedded .horizon-hud-wrapper.horizon-pill-expanded .horizon-expand-arrow { animation: none; transform: rotate(90deg); background: rgba(145, 200, 255, 0.2); border-color: rgba(145, 200, 255, 0.5); color: #91C8FF; box-shadow: 0 0 10px rgba(145, 200, 255, 0.35); }
-    body.is-embedded .horizon-hud-wrapper.horizon-pill-expanded .ruta-glass-pill { padding-right: 10px; border-color: rgba(145, 200, 255, 0.35); }
-    body.is-embedded .ruta-hud-wrapper .ruta-expand-arrow { display: flex; }
-    body.is-embedded .ruta-hud-wrapper .horizon-pill-extra { max-width: 0; opacity: 0; overflow: hidden; gap: 8px; transition: max-width 0.38s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.28s ease; pointer-events: none; }
-    body.is-embedded .ruta-hud-wrapper.ruta-pill-expanded .horizon-pill-extra { max-width: 240px; opacity: 1; pointer-events: auto; }
-    body.is-embedded .ruta-hud-wrapper.ruta-pill-expanded .ruta-expand-arrow { animation: none; transform: rotate(90deg); background: rgba(253, 146, 39, 0.2); border-color: rgba(253, 146, 39, 0.5); color: #FD9227; box-shadow: 0 0 10px rgba(253, 146, 39, 0.35); }
-    body.is-embedded .ruta-hud-wrapper.ruta-pill-expanded .ruta-glass-pill { padding-right: 10px; border-color: rgba(253, 146, 39, 0.35); }
-    body.is-embedded.dev-mode-pins-active .horizon-hud-wrapper .horizon-expand-arrow, body.is-embedded.dev-mode-pins-active .ruta-hud-wrapper .ruta-expand-arrow { display: none !important; }
-    body.is-embedded.dev-mode-pins-active .horizon-hud-wrapper .horizon-pill-extra, body.is-embedded.dev-mode-pins-active .ruta-hud-wrapper .horizon-pill-extra { max-width: none !important; opacity: 1 !important; overflow: visible !important; pointer-events: auto !important; }
 }
 /* --- FASE 1 PERF MÓVIL: HUD sólido + animaciones pausadas al pan --- */
 body.is-touch-device .premium-header,
