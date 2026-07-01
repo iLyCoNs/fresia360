@@ -1210,10 +1210,16 @@ function getCalleBorderThinPx() {
 }
 function getCalleHalfWidthPx(anchoFactor) {
     const sw = getCalleStrokeWidths(anchoFactor);
-    // Sumamos la mitad del borde blanco de la calle + la mitad del grosor de la línea del lote
-    // Esto garantiza un beso matemático perfecto (kissing edges) sin superposición.
-    const lotBorderHalf = getCalleDynBasePx() * 0.5; 
-    return (sw.borde * 0.5) + lotBorderHalf;
+    const basePx = getCalleDynBasePx();
+    
+    // Mitad matemática del borde de la franja
+    const lotBorderHalf = basePx * 0.5; 
+    
+    // FIX: Margen anti-derrame de sub-píxeles (mayor en móviles por el escalado de retina)
+    const isMobile = window.innerWidth <= 768;
+    const safetyMargin = isMobile ? (basePx * 1.5) : (basePx * 0.1); 
+    
+    return (sw.borde * 0.5) + lotBorderHalf + safetyMargin;
 }
 function getCalleStrokeWidths(anchoFactor) {
     const base = getCalleDynBasePx();
