@@ -1018,11 +1018,22 @@ function weldFranjaCurvaToNeighbors(gid) {
     getFranjaGrupoScreenRects().forEach(or => {
         if (or.gid === gid) return;
         const neighbor = getFranjaStripById(or.gid);
-        if (!neighbor || neighbor.puntos?.length < 4) return;
-        const corners = { TL: neighbor.puntos[0], TR: neighbor.puntos[1], BR: neighbor.puntos[2], BL: neighbor.puntos[3] };
+        if (!neighbor) return;
+        
+        let cornerList = [];
+        if (neighbor.tipo === 'franja-grupo' && neighbor.puntos?.length >= 4) {
+            cornerList = [neighbor.puntos[0], neighbor.puntos[1], neighbor.puntos[2], neighbor.puntos[3]];
+        } else if (neighbor.tipo === 'franja-curva-grupo' && neighbor.frente?.length && neighbor.fondo?.length) {
+            cornerList = [
+                neighbor.frente[0], neighbor.frente[neighbor.frente.length - 1],
+                neighbor.fondo[0], neighbor.fondo[neighbor.fondo.length - 1]
+            ];
+        }
+        
         const nF = grp.frente.length - 1, nB = grp.fondo.length - 1;
         if (nF < 1 || nB < 1) return;
         const ovl = getScreenOverlapX(nr, or);
+        
         if (ovl && Math.abs(nr.bottom - or.top) < SNAP) {
             const pL = proj.toPY(ovl.left, or.top), pR = proj.toPY(ovl.right, or.top);
             if (pL && pR) {
@@ -1034,27 +1045,8 @@ function weldFranjaCurvaToNeighbors(gid) {
                 for (let i = 0; i <= nF; i++) assignPyIfChanged(grp.frente, i, lerpPY(pL, pR, i / nF), changed, TOL);
             }
         }
-        if (ovl && Math.abs(nr.left - or.right) < SNAP) {
-            const yTop = Math.max(nr.top, or.top), yBot = Math.min(nr.bottom, or.bottom);
-            if (yBot - yTop > 10) {
-                const pT = proj.toPY(or.right, yTop), pB = proj.toPY(or.right, yBot);
-                if (pT && pB) {
-                    for (let i = 0; i <= nF; i++) assignPyIfChanged(grp.frente, i, lerpPY(pT, pB, i / nF), changed, TOL);
-                    for (let i = 0; i <= nB; i++) assignPyIfChanged(grp.fondo, i, lerpPY(pT, pB, i / nB), changed, TOL);
-                }
-            }
-        } else if (ovl && Math.abs(nr.right - or.left) < SNAP) {
-            const yTop = Math.max(nr.top, or.top), yBot = Math.min(nr.bottom, or.bottom);
-            if (yBot - yTop > 10) {
-                const pT = proj.toPY(or.left, yTop), pB = proj.toPY(or.left, yBot);
-                if (pT && pB) {
-                    for (let i = 0; i <= nF; i++) assignPyIfChanged(grp.frente, i, lerpPY(pT, pB, i / nF), changed, TOL);
-                    for (let i = 0; i <= nB; i++) assignPyIfChanged(grp.fondo, i, lerpPY(pT, pB, i / nB), changed, TOL);
-                }
-            }
-        }
-        if (neighbor.tipo === 'franja-grupo') {
-            const cornerList = [corners.TL, corners.TR, corners.BR, corners.BL];
+        
+        if (cornerList.length === 4) {
             const snapIdx = (arr, idx) => {
                 const sc = proj.toScreen(arr[idx][0], arr[idx][1]);
                 if (!sc) return;
@@ -1071,6 +1063,7 @@ function weldFranjaCurvaToNeighbors(gid) {
             snapIdx(grp.fondo, 0); snapIdx(grp.fondo, nB);
         }
     });
+    
     if (changed.v) {
         rebuildFranjaCurvaGroup(gid);
         ensureStitchedDivisorias();
@@ -1908,49 +1901,91 @@ function edgeMatchesLine(p1, p2, q1, q2, tol) {
     const d12 = Math.hypot(p1[0]-q2[0], p1[1]-q2[1]), d21 = Math.hypot(p2[0]-q1[0], p2[1]-q1[1]);
     return (d11 < tol && d22 < tol) || (d12 < tol && d21 < tol);
 }
+function getScreenOverlapY(a, b) {
+    const top = Math.max(a.top, b.top), bottom = Math.min(a.bottom, b.bottom);
+    return bottom - top >= 10 ? { top, bottom, height: bottom - top } : null;
+}
+
+function applyStitchToSharedEdge(gid1, gid2, p1, p2, i, j) {
+    const tol = 0.18;
+    allDrawnLines = allDrawnLines.filter(l => {
+        if (!l.franjaGrupo || l.tipo !== 'borde-macro') return true;
+        if (l.franjaGrupo !== gid1 && l.franjaGrupo !== gid2) return true;
+        if (l.puntos.length < 2) return true;
+        return !edgeMatchesLine(l.puntos[0], l.puntos[1], p1, p2, tol);
+    });
+    allDrawnLines = allDrawnLines.filter(l => {
+        if (l.tipo !== 'divisoria' || l.puntos?.length < 2) return true;
+        if (l.franjaGrupo !== gid1 && l.franjaGrupo !== gid2 && !l.franjaStitch) return true;
+        return !edgeMatchesLine(l.puntos[0], l.puntos[1], p1, p2, tol);
+    });
+    const exists = allDrawnLines.some(l => l.tipo === 'divisoria' && l.puntos.length >= 2 &&
+        edgeMatchesLine(l.puntos[0], l.puntos[1], p1, p2, tol));
+    if (!exists) {
+        allDrawnLines.push({
+            id: 'div_stitch_' + Date.now() + '_' + i + '_' + j + Math.floor(Math.random()*100),
+            tipo: 'divisoria', puntos: [p1.map(v => v), p2.map(v => v)],
+            franjaGrupo: gid1, franjaStitch: gid2, franjaSeam: true
+        });
+    }
+}
+
 function ensureStitchedDivisorias() {
     const rects = getFranjaGrupoScreenRects();
-    if (rects.length < 2) return;
-    const SNAP = 48;
-    const proj = getPanoramaScreenProjector();
-    if (!proj) return;
-    for (let i = 0; i < rects.length; i++) {
-        for (let j = i + 1; j < rects.length; j++) {
-            const a = rects[i], b = rects[j];
-            const ovl = getScreenOverlapX(a, b);
-            if (!ovl) continue;
-            let upper = null, lower = null, seamY = null;
-            if (Math.abs(a.bottom - b.top) < SNAP) { upper = a; lower = b; seamY = (a.bottom + b.top) * 0.5; }
-            else if (Math.abs(b.bottom - a.top) < SNAP) { upper = b; lower = a; seamY = (b.bottom + a.top) * 0.5; }
-            if (upper && lower && seamY !== null) {
-                const p1 = proj.toPY(ovl.left, seamY), p2 = proj.toPY(ovl.right, seamY);
-                if (!p1 || !p2) continue;
-                const tol = 0.18;
-                allDrawnLines = allDrawnLines.filter(l => {
-                    if (!l.franjaGrupo || l.tipo !== 'borde-macro') return true;
-                    if (l.franjaGrupo !== upper.gid && l.franjaGrupo !== lower.gid) return true;
-                    if (l.puntos.length < 2) return true;
-                    return !edgeMatchesLine(l.puntos[0], l.puntos[1], p1, p2, tol);
-                });
-                allDrawnLines = allDrawnLines.filter(l => {
-                    if (l.tipo !== 'divisoria' || l.puntos?.length < 2) return true;
-                    if (l.franjaGrupo !== upper.gid && l.franjaGrupo !== lower.gid && !l.franjaStitch) return true;
-                    return !edgeMatchesLine(l.puntos[0], l.puntos[1], p1, p2, tol);
-                });
-                const exists = allDrawnLines.some(l => l.tipo === 'divisoria' && l.puntos.length >= 2 &&
-                    edgeMatchesLine(l.puntos[0], l.puntos[1], p1, p2, tol));
-                if (!exists) {
-                    allDrawnLines.push({
-                        id: 'div_stitch_' + Date.now() + '_' + i + '_' + j,
-                        tipo: 'divisoria', puntos: [p1.map(v => v), p2.map(v => v)],
-                        franjaGrupo: upper.gid, franjaStitch: lower.gid, franjaSeam: true
-                    });
+    if (rects.length >= 2) {
+        const SNAP = 48;
+        const proj = getPanoramaScreenProjector();
+        if (proj) {
+            for (let i = 0; i < rects.length; i++) {
+                for (let j = i + 1; j < rects.length; j++) {
+                    const a = rects[i], b = rects[j];
+                    const ovlX = getScreenOverlapX(a, b);
+                    if (ovlX) {
+                        let upper = null, lower = null, seamY = null;
+                        if (Math.abs(a.bottom - b.top) < SNAP) { upper = a; lower = b; seamY = (a.bottom + b.top) * 0.5; }
+                        else if (Math.abs(b.bottom - a.top) < SNAP) { upper = b; lower = a; seamY = (b.bottom + a.top) * 0.5; }
+                        if (upper && lower && seamY !== null) {
+                            const p1 = proj.toPY(ovlX.left, seamY), p2 = proj.toPY(ovlX.right, seamY);
+                            if (p1 && p2) applyStitchToSharedEdge(upper.gid, lower.gid, p1, p2, i, j);
+                        }
+                    }
                 }
-                continue;
             }
-            const aCurva = a.grp?.tipo === 'franja-curva-grupo', bCurva = b.grp?.tipo === 'franja-curva-grupo';
-            if (!aCurva && !bCurva && !rectsSameWidth(a, b, SNAP)) continue;
         }
+    }
+    
+    // Pass 2: Exact matching borders across ANY two different franjas (Handles sides automatically)
+    const tol = 0.08;
+    const toDelete = new Set();
+    const newDivs = [];
+    const borders = allDrawnLines.filter(l => l.tipo === 'borde-macro' && l.franjaGrupo);
+    
+    for (let i = 0; i < borders.length; i++) {
+        for (let j = i + 1; j < borders.length; j++) {
+            const b1 = borders[i];
+            const b2 = borders[j];
+            if (b1.franjaGrupo === b2.franjaGrupo) continue;
+            
+            if (b1.puntos.length >= 2 && b2.puntos.length >= 2) {
+                if (edgeMatchesLine(b1.puntos[0], b1.puntos[1], b2.puntos[0], b2.puntos[1], tol)) {
+                    toDelete.add(b1.id);
+                    toDelete.add(b2.id);
+                    const exists = allDrawnLines.some(l => l.tipo === 'divisoria' && l.puntos.length >= 2 && edgeMatchesLine(l.puntos[0], l.puntos[1], b1.puntos[0], b1.puntos[1], tol));
+                    if (!exists && !newDivs.some(d => edgeMatchesLine(d.puntos[0], d.puntos[1], b1.puntos[0], b1.puntos[1], tol))) {
+                        newDivs.push({
+                            id: 'div_stitch_exact_' + Date.now() + '_' + i + '_' + j,
+                            tipo: 'divisoria', puntos: [b1.puntos[0].map(v => v), b1.puntos[1].map(v => v)],
+                            franjaGrupo: b1.franjaGrupo, franjaStitch: b2.franjaGrupo, franjaSeam: true
+                        });
+                    }
+                }
+            }
+        }
+    }
+    
+    if (toDelete.size > 0) {
+        allDrawnLines = allDrawnLines.filter(l => !toDelete.has(l.id));
+        allDrawnLines.push(...newDivs);
     }
 }
 function mergeVerticalFranjaChain(gids) {
