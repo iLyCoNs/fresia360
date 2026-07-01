@@ -72,8 +72,25 @@
         .franja-modal-tools button { flex: 1; min-width: 120px; padding: 8px 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.05); color: #e2e8f0; font-size: 10px; font-weight: 700; cursor: pointer; }
         .linea-corte { stroke: #f59e0b !important; stroke-width: calc(var(--stroke-dyn) * 1.5) !important; stroke-dasharray: 6 6; filter: drop-shadow(0 0 8px #f59e0b); pointer-events: none; }
         g.lote-interactivo.hovered path, g.lote-interactivo:hover path { fill: transparent !important; stroke: #ffffff !important; stroke-width: var(--stroke-dyn-hover) !important; filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.9)); }
-        .linea-calle-borde { fill: none; stroke: rgba(255, 255, 255, 0.6); pointer-events: none; stroke-linecap: butt; stroke-linejoin: round; }
-        .linea-calle-asfalto { fill: none; stroke: rgba(30, 35, 45, 0.85); pointer-events: auto; cursor: pointer; stroke-linecap: butt; stroke-linejoin: round; }
+        /* --- CALLES PREMIUM --- */
+        .linea-calle-borde {
+            fill: none;
+            stroke: #ffffff !important;
+            stroke-width: calc(var(--stroke-dyn) * 4.5) !important;
+            stroke-linecap: butt !important;
+            stroke-linejoin: miter !important;
+            pointer-events: none;
+        }
+        .linea-calle-asfalto {
+            fill: none;
+            stroke: rgba(30, 35, 45, 0.85) !important;
+            stroke-width: calc(var(--stroke-dyn) * 3.0) !important;
+            stroke-linecap: butt !important;
+            stroke-linejoin: miter !important;
+            pointer-events: auto;
+            cursor: pointer;
+            transition: stroke 0.3s;
+        }
         .linea-calle-asfalto:hover { filter: brightness(1.15); }
         .linea-pines-guia { fill: none; stroke: #a855f7; stroke-width: calc(var(--stroke-dyn) * 2); stroke-dasharray: 10 7; pointer-events: none; filter: drop-shadow(0 0 8px rgba(168, 85, 247, 0.75)); stroke-linecap: round; stroke-linejoin: round; }
         body.linea-pines-active { cursor: crosshair !important; }
@@ -1546,7 +1563,7 @@
             const base = getCalleDynBasePx();
             const factor = anchoFactor || draftCalleAncho || 8;
             const asf = Math.max(4, base * factor);
-            return { asfalto: asf, borde: asf * 1.36 };
+            return { asfalto: asf, borde: asf * 1.5 };
         }
         function getCalleStyleForLine(line) {
             return {
@@ -1562,11 +1579,15 @@
             const a = Math.max(0.12, Math.min(1, alpha ?? draftCalleAlpha ?? 0.85));
             if (paths[0]) {
                 paths[0].style.setProperty('stroke-width', sw.borde + 'px', 'important');
-                paths[0].style.setProperty('stroke', `rgba(255,255,255,${Math.min(1, a + 0.12)})`, 'important');
+                paths[0].style.setProperty('stroke', '#ffffff', 'important');
+                paths[0].style.setProperty('stroke-linecap', 'butt', 'important');
+                paths[0].style.setProperty('stroke-linejoin', 'miter', 'important');
             }
             if (paths[1]) {
                 paths[1].style.setProperty('stroke-width', sw.asfalto + 'px', 'important');
                 paths[1].style.setProperty('stroke', `rgba(30,35,45,${a})`, 'important');
+                paths[1].style.setProperty('stroke-linecap', 'butt', 'important');
+                paths[1].style.setProperty('stroke-linejoin', 'miter', 'important');
             }
         }
         function syncCallePanelUI() {
