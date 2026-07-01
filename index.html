@@ -79,7 +79,22 @@
         .linea-calle-borde { fill: none; stroke: rgba(255, 255, 255, 0.6); stroke-width: calc(var(--stroke-dyn) * 3); pointer-events: none; }
         .linea-calle-asfalto { fill: none; stroke: rgba(30, 35, 45, 0.85); stroke-width: calc(var(--stroke-dyn) * 2.2); pointer-events: auto; cursor: pointer; transition: stroke 0.3s; }
         .linea-calle-asfalto:hover { stroke: rgba(80, 85, 95, 0.9); }
-        .calle-servidumbre-label { position: absolute; transform: translate(-50%, -50%); background: rgba(22, 27, 38, 0.94); color: #f1f5f9; font-size: 7px; font-weight: 800; letter-spacing: 0.55px; text-transform: uppercase; padding: 4px 7px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.28); white-space: nowrap; pointer-events: none; z-index: 99998; box-shadow: 0 2px 12px rgba(0,0,0,0.5); line-height: 1.2; }
+        .calle-servidumbre-label { position: absolute; transform: translate(-50%, -50%); transform-origin: center center; background: rgba(22, 27, 38, 0.94); color: #f1f5f9; font-size: 7px; font-weight: 800; letter-spacing: 0.55px; text-transform: uppercase; padding: 4px 7px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.28); white-space: nowrap; pointer-events: none; z-index: 99998; box-shadow: 0 2px 12px rgba(0,0,0,0.5); line-height: 1.2; }
+        .calle-move-handle { position: absolute; transform: translate(-50%, -50%); width: 28px; height: 28px; border-radius: 50%; background: rgba(59,130,246,0.92); border: 2px solid #fff; color: #fff; font-size: 14px; font-weight: 900; display: flex; align-items: center; justify-content: center; cursor: grab; pointer-events: auto; z-index: 100001; box-shadow: 0 4px 14px rgba(59,130,246,0.45); line-height: 1; user-select: none; }
+        .calle-move-handle.is-dragging { cursor: grabbing; background: rgba(16,185,129,0.95); box-shadow: 0 0 0 6px rgba(16,185,129,0.2); }
+        #calle-tool-panel { position: fixed; left: 16px; bottom: 96px; z-index: 999999; width: 248px; background: rgba(12, 16, 26, 0.96); border: 1px solid rgba(255,255,255,0.12); border-radius: 14px; padding: 12px 14px; box-shadow: 0 16px 40px rgba(0,0,0,0.55); visibility: hidden; opacity: 0; pointer-events: none; transition: opacity 0.2s, visibility 0.2s; }
+        #calle-tool-panel.open { visibility: visible; opacity: 1; pointer-events: auto; }
+        #calle-tool-panel h4 { margin: 0 0 8px; font-size: 11px; font-weight: 800; color: #e2e8f0; letter-spacing: 0.4px; }
+        #calle-tool-panel label { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 9px; font-weight: 700; color: #94a3b8; margin: 8px 0 4px; }
+        #calle-tool-panel label span { color: #60a5fa; min-width: 36px; text-align: right; }
+        #calle-tool-panel input[type="range"] { width: 100%; accent-color: #3b82f6; margin: 0; }
+        #calle-width-preview { height: 36px; margin: 6px 0 4px; background: rgba(255,255,255,0.04); border-radius: 8px; border: 1px dashed rgba(255,255,255,0.12); display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        #calle-width-preview-bar { height: 100%; min-width: 4px; background: rgba(30,35,45,0.85); border: 2px solid rgba(255,255,255,0.55); border-radius: 4px; box-shadow: inset 0 0 8px rgba(0,0,0,0.35); transition: width 0.12s, opacity 0.12s; }
+        .calle-ui-check { justify-content: flex-start !important; gap: 6px !important; cursor: pointer; }
+        .calle-ui-check input { width: auto; margin: 0; accent-color: #3b82f6; }
+        .calle-ui-hint { margin: 10px 0 0; font-size: 8px; line-height: 1.45; color: #64748b; font-weight: 600; }
+        body.is-embedded #calle-tool-panel { bottom: 72px; left: 8px; width: min(248px, calc(100vw - 16px)); }
+        #snap-cursor.is-calle-finish { border-color: #10b981 !important; background: rgba(16,185,129,0.3) !important; width: 26px !important; height: 26px !important; box-shadow: 0 0 0 5px rgba(16,185,129,0.15), 0 0 18px rgba(16,185,129,0.65); }
         #snap-cursor.is-calle-edge { border-color: #3b82f6 !important; background: rgba(59,130,246,0.28) !important; box-shadow: 0 0 0 4px rgba(59,130,246,0.12), 0 0 18px rgba(59,130,246,0.55); }
         .vertex-marker { width: 12px; height: 12px; background: #ffffff; border: 3px solid #1e293b; border-radius: 50%; transform: translate(-50%, -50%); cursor: grab; pointer-events: auto; box-shadow: 0 2px 5px rgba(0,0,0,0.6); transition: background 0.2s, border-color 0.2s, box-shadow 0.2s; z-index: 1000 !important; }
         .vertex-marker::after { content: ''; position: absolute; top: -20px; left: -20px; right: -20px; bottom: -20px; border-radius: 50%; background: transparent; }
@@ -406,6 +421,7 @@
                 </div>
             </div>
         </div>
+        <div id="calle-tool-panel"><h4>🛣️ Servidumbre de paso</h4><label>Grosor <span id="calle-ui-ancho-val">2.2</span></label><input type="range" id="calle-ui-ancho" min="0.5" max="12" step="0.1" value="2.2"><div id="calle-width-preview"><div id="calle-width-preview-bar"></div></div><label>Transparencia <span id="calle-ui-alpha-val">85%</span></label><input type="range" id="calle-ui-alpha" min="0.15" max="1" step="0.05" value="0.85"><label>Tamaño texto <span id="calle-ui-label-val">1.0×</span></label><input type="range" id="calle-ui-label" min="0.5" max="2.5" step="0.1" value="1"><label class="calle-ui-check"><input type="checkbox" id="calle-ui-show-label" checked> Etiqueta SERVIDUMBRE DE PASO</label><label class="calle-ui-check"><input type="checkbox" id="calle-ui-snap-franja"> Pegar a borde franja (opcional)</label><p class="calle-ui-hint">Doble clic en el mismo punto para terminar esta calle. Arrastra ✥ para mover la calle entera.</p></div>
         <div id="franja-lotes-modal"><div class="modal-content franja-modal-box"><h3>🏘️ Franja de Lotes</h3><p class="franja-modal-hint">Indica cuántos lotes y el tamaño de cada uno en m². El ancho en el mapa será proporcional (ej. 7000 m² = 40% más ancho que 5000 m²).</p><div class="franja-modal-count-row"><input type="number" id="franja-modal-count" min="1" max="40" value="10"><button type="button" id="franja-modal-apply-count">Actualizar</button></div><div class="franja-scale-preview" id="franja-modal-scale-preview"></div><div class="franja-modal-rows" id="franja-modal-rows"></div><div class="franja-modal-tools"><button type="button" id="franja-modal-equal">Igualar todos</button><button type="button" id="franja-modal-last-big">Último +40% (7000)</button></div><div class="modal-btns"><button class="btn-cancel" id="franja-modal-cancel">Cancelar</button><button class="btn-save" id="franja-modal-confirm">Crear franja</button></div></div></div>
         <div id="global-event-interceptor" style="position: absolute; top:0; left:0; width:100%; height:100%; pointer-events: none; z-index: 9999999;"></div>
         <div id="snap-cursor"></div>
@@ -416,7 +432,7 @@
             <div class="filter-group"><button class="filter-btn active" data-status="todos">Todos</button><button class="filter-btn" data-status="favoritos">❤️ Favs</button><button class="filter-btn" data-status="disponible">Disp.</button><button class="filter-btn" data-status="reservado">Reser.</button><button class="filter-btn" data-status="vendido">Vend.</button><button class="filter-btn" data-status="no_disponible">No Disp.</button></div>
             <div class="lotes-list" id="js-lotes-list"></div>
         </div>
-        <div id="dev-toolbar-draw" class="dev-toolbar"><div class="macos-header"><div class="macos-dots"><i></i><i></i><i></i></div><div class="dev-toolbar-title">MODO ARQUITECTO (DIBUJO LIBRE)</div><div style="width: 42px;"></div></div><div class="dev-tools-row"><button class="dev-btn active" id="btn-draw-solid">Sólida</button><button class="dev-btn" id="btn-draw-dash">Punteada</button><button class="dev-btn" id="btn-draw-street" title="Servidumbre de paso: elige ancho, dibuja paralela y pegada a franjas (snap azul). Doble clic termina.">🛣️ Calle</button><button class="dev-btn" id="btn-draw-cut" style="color: #f59e0b;" title="Apunta hacia donde quieres cortar">✂️ Subdividir</button><button class="dev-btn" id="btn-draw-divisoria" title="Dibuja una línea punteada interna (no se cierra automáticamente)">📏 Divisoria</button><button class="dev-btn btn-franja-lotes" id="btn-draw-franja" style="color: #10b981; font-weight: 800;" title="2 clics: dibuja el rectángulo → cantidad de lotes y m² de cada uno (ancho proporcional)">Franja Lotes</button><button class="dev-btn" id="btn-straighten-franja" style="color: #f59e0b; font-weight: 800;" title="Endereza franja(s): bordes y divisiones en líneas rectas para levantamiento">📏 Enderezar</button><div style="width: 1px; height: 20px; background: rgba(255,255,255,0.2); margin: 0 5px;"></div><button class="dev-btn" id="btn-auto-macro" style="color: #a855f7; font-weight: 800;" title="Convierte lotes adyacentes en un Macro-Lote">✨ AUTO-MACRO</button><button class="dev-btn" id="btn-eraser" style="color: #fca5a5;">🧹 Goma</button><div style="width: 1px; height: 20px; background: rgba(255,255,255,0.2); margin: 0 5px;"></div><button class="dev-btn action" id="btn-undo-point" title="Borrar último vértice trazado">Deshacer Punto</button><button class="dev-btn nuke" id="btn-nuke">🗑️ Limpiar Todo</button><button class="dev-btn export-ai" title="Guardar directamente en el servidor">☁️ GUARDAR EN LA NUBE</button></div></div>
+        <div id="dev-toolbar-draw" class="dev-toolbar"><div class="macos-header"><div class="macos-dots"><i></i><i></i><i></i></div><div class="dev-toolbar-title">MODO ARQUITECTO (DIBUJO LIBRE)</div><div style="width: 42px;"></div></div><div class="dev-tools-row"><button class="dev-btn active" id="btn-draw-solid">Sólida</button><button class="dev-btn" id="btn-draw-dash">Punteada</button><button class="dev-btn" id="btn-draw-street" title="Servidumbre: panel de grosor/transparencia/texto. Doble clic mismo punto termina. ✥ mueve la calle.">🛣️ Calle</button><button class="dev-btn" id="btn-draw-cut" style="color: #f59e0b;" title="Apunta hacia donde quieres cortar">✂️ Subdividir</button><button class="dev-btn" id="btn-draw-divisoria" title="Dibuja una línea punteada interna (no se cierra automáticamente)">📏 Divisoria</button><button class="dev-btn btn-franja-lotes" id="btn-draw-franja" style="color: #10b981; font-weight: 800;" title="2 clics: dibuja el rectángulo → cantidad de lotes y m² de cada uno (ancho proporcional)">Franja Lotes</button><button class="dev-btn" id="btn-straighten-franja" style="color: #f59e0b; font-weight: 800;" title="Endereza franja(s): bordes y divisiones en líneas rectas para levantamiento">📏 Enderezar</button><div style="width: 1px; height: 20px; background: rgba(255,255,255,0.2); margin: 0 5px;"></div><button class="dev-btn" id="btn-auto-macro" style="color: #a855f7; font-weight: 800;" title="Convierte lotes adyacentes en un Macro-Lote">✨ AUTO-MACRO</button><button class="dev-btn" id="btn-eraser" style="color: #fca5a5;">🧹 Goma</button><div style="width: 1px; height: 20px; background: rgba(255,255,255,0.2); margin: 0 5px;"></div><button class="dev-btn action" id="btn-undo-point" title="Borrar último vértice trazado">Deshacer Punto</button><button class="dev-btn nuke" id="btn-nuke">🗑️ Limpiar Todo</button><button class="dev-btn export-ai" title="Guardar directamente en el servidor">☁️ GUARDAR EN LA NUBE</button></div></div>
         <div id="dev-toolbar-pins" class="dev-toolbar"><div class="macos-header"><div class="macos-dots"><i></i><i></i><i></i></div><div class="dev-toolbar-title">MODO PINES (MAPEO)</div><div style="width: 42px;"></div></div><div class="dev-tools-row"><button class="dev-btn active btn-pin-disp" data-pintype="disponible">Disp.</button><button class="dev-btn btn-pin-res" data-pintype="reservado">Res.</button><button class="dev-btn btn-pin-vend" data-pintype="vendido">Vend.</button><button class="dev-btn btn-pin-nodisp" data-pintype="no_disponible">No Disp.</button><div style="width: 1px; height: 20px; background: rgba(255,255,255,0.2); margin: 0 5px;"></div><button class="dev-btn btn-pin-360" data-pintype="vista360">Pin 360</button><button class="dev-btn btn-pin-casa" data-pintype="casa360">Casa 360</button><button class="dev-btn btn-pin-hor" data-pintype="horizonte">Horizonte</button><button class="dev-btn btn-pin-ruta" data-pintype="ruta">Ruta</button><button class="dev-btn" id="btn-set-drone" style="color: #f59e0b;" title="Establecer Coordenadas Base (Lat, Lng)">📍 Origen Drone</button><button class="dev-btn" id="btn-set-north" style="color: #34d399;" title="Fijar la vista actual como el Norte Magnético">🧭 Fijar Norte</button><div style="width: 1px; height: 20px; background: rgba(255,255,255,0.2); margin: 0 5px;"></div><button class="dev-btn action" id="btn-heatmap" title="Activa Telemetría Visual">🔥 Mapa Calor</button><button class="dev-btn" id="btn-edit-titles" style="color: #cbd5e1;" title="Editar Título y Subtítulo Central">📝 Títulos</button><button class="dev-btn nuke" id="btn-nuke-pins">🗑️ Limpiar Todo</button><button class="dev-btn export-ai" title="Guardar directamente en el servidor">☁️ GUARDAR EN LA NUBE</button></div></div>
         <div class="premium-dock" id="js-dock">
             <div class="dock-legend"><div class="legend-item"><div class="legend-dot dot-disp"></div><span class="legend-text">Disponible</span></div><div class="legend-item"><div class="legend-dot dot-res"></div><span class="legend-text">Reservado</span></div><div class="legend-item"><div class="legend-dot dot-vend"></div><span class="legend-text">Vendido</span></div><div class="legend-item"><div class="legend-dot dot-nodisp"></div><span class="legend-text">No Disp.</span></div></div>
@@ -645,7 +661,7 @@
         async function fetchValorUFOnline() { try { const response = await fetch('https://mindicador.cl/api/uf', { cache: 'no-store' }); if (response.ok) { const data = await response.json(); if(data && data.serie && data.serie.length > 0) { UF_Online = data.serie[0].valor; return; } } } catch (error) {} }
         async function fetchMasterData() { try { const response = await fetch('datos.json?v=' + new Date().getTime()); if(response.ok) { const data = await response.json(); ConfigProyecto = data.configProyecto || ConfigProyecto; OrigenDrone = data.origen || null; NorteOffset = data.norte || 0; BaseDatosLotes = data.lotes || []; PuntosHorizonte = data.horizontes || []; allDrawnLines = data.trazos || []; } else { loadFromLocal(); } } catch(e) { loadFromLocal(); } applyProjectConfig(); await syncRutasDesdeOrigen(); }
 
-        let visor360, currentPinSizeIndex = 1, isIntroAnimating = true, isDevModeDrawActive = false, isDevModePinsActive = false, currentLineType = 'solida', currentLinePoints = [], currentPinTypeMap = 'disponible', currentTempLineId = 'temp_' + Date.now(), draggingVertex = null, draggingFranjaDiv = null, pickedPin = null, snapCursor = null, ghostPin = null, snappedCoords = null, activePinArgs = null, isCreatingNewPin = false, isSnapToClose = false, franjaCornerA = null, franjaPreviewQuad = null, franjaPreviewDivs = [], franjaDraftCount = 10, franjaDraftBaseM2 = 5000, franjaPendingCreate = null, guardarNubeEnCurso = false, draftCalleAncho = 2.2, calleSnapIsFranjaEdge = false;
+        let visor360, currentPinSizeIndex = 1, isIntroAnimating = true, isDevModeDrawActive = false, isDevModePinsActive = false, currentLineType = 'solida', currentLinePoints = [], currentPinTypeMap = 'disponible', currentTempLineId = 'temp_' + Date.now(), draggingVertex = null, draggingFranjaDiv = null, draggingCalleMove = null, pickedPin = null, snapCursor = null, ghostPin = null, snappedCoords = null, activePinArgs = null, isCreatingNewPin = false, isSnapToClose = false, franjaCornerA = null, franjaPreviewQuad = null, franjaPreviewDivs = [], franjaDraftCount = 10, franjaDraftBaseM2 = 5000, franjaPendingCreate = null, guardarNubeEnCurso = false, draftCalleAncho = 2.2, draftCalleAlpha = 0.85, draftCalleLabelScale = 1, draftCalleShowLabel = true, draftCalleSnapFranja = false, calleSnapIsFranjaEdge = false, lastCalleTap = null;
         function revealLoteoOverlay() {
             isIntroAnimating = false;
             document.body.classList.add('loteo-overlay-ready');
@@ -1373,6 +1389,74 @@
             const asf = getCalleHalfWidthPx(anchoFactor) * 2;
             return { asfalto: asf, borde: asf * (3 / 2.2) };
         }
+        function getCalleStyleForLine(line) {
+            return {
+                ancho: line?.calleAncho ?? draftCalleAncho ?? 2.2,
+                alpha: line?.calleAlpha ?? draftCalleAlpha ?? 0.85,
+                labelScale: line?.calleLabelScale ?? draftCalleLabelScale ?? 1,
+                showLabel: line?.calleShowLabel !== undefined ? line.calleShowLabel : draftCalleShowLabel
+            };
+        }
+        function applyCallePathStyles(paths, ancho, alpha) {
+            if (!paths || !paths.length) return;
+            const sw = getCalleStrokeWidths(ancho);
+            const a = Math.max(0.12, Math.min(1, alpha ?? draftCalleAlpha ?? 0.85));
+            if (paths[0]) {
+                paths[0].setAttribute('stroke-width', sw.borde);
+                paths[0].setAttribute('stroke', `rgba(255,255,255,${Math.min(1, a + 0.12)})`);
+            }
+            if (paths[1]) {
+                paths[1].setAttribute('stroke-width', sw.asfalto);
+                paths[1].setAttribute('stroke', `rgba(30,35,45,${a})`);
+            }
+        }
+        function syncCallePanelUI() {
+            const panel = document.getElementById('calle-tool-panel');
+            if (!panel) return;
+            const anchoEl = document.getElementById('calle-ui-ancho');
+            const alphaEl = document.getElementById('calle-ui-alpha');
+            const labelEl = document.getElementById('calle-ui-label');
+            const showEl = document.getElementById('calle-ui-show-label');
+            const snapEl = document.getElementById('calle-ui-snap-franja');
+            if (anchoEl) anchoEl.value = draftCalleAncho;
+            if (alphaEl) alphaEl.value = draftCalleAlpha;
+            if (labelEl) labelEl.value = draftCalleLabelScale;
+            if (showEl) showEl.checked = draftCalleShowLabel;
+            if (snapEl) snapEl.checked = draftCalleSnapFranja;
+            const anchoVal = document.getElementById('calle-ui-ancho-val');
+            const alphaVal = document.getElementById('calle-ui-alpha-val');
+            const labelVal = document.getElementById('calle-ui-label-val');
+            if (anchoVal) anchoVal.textContent = draftCalleAncho.toFixed(1);
+            if (alphaVal) alphaVal.textContent = Math.round(draftCalleAlpha * 100) + '%';
+            if (labelVal) labelVal.textContent = draftCalleLabelScale.toFixed(1) + '×';
+            const bar = document.getElementById('calle-width-preview-bar');
+            if (bar) {
+                const pct = Math.max(8, Math.min(100, (draftCalleAncho / 12) * 100));
+                bar.style.width = pct + '%';
+                bar.style.opacity = String(draftCalleAlpha);
+            }
+        }
+        function openCalleToolPanel() {
+            document.getElementById('calle-tool-panel')?.classList.add('open');
+            document.body.classList.add('calle-mode-active');
+            syncCallePanelUI();
+        }
+        function closeCalleToolPanel() {
+            document.getElementById('calle-tool-panel')?.classList.remove('open');
+            document.body.classList.remove('calle-mode-active');
+            lastCalleTap = null;
+        }
+        function isNearFranjaCornerScreen(clientX, clientY, pxRadius) {
+            const sx = clientX - DOMCache.viewport.left, sy = clientY - DOMCache.viewport.top;
+            const r = pxRadius || 28;
+            let near = false;
+            getAllStripSnapTargets().forEach(rect => {
+                [rect.tl, rect.tr, rect.br, rect.bl].forEach(c => {
+                    if (Math.hypot(sx - c[0], sy - c[1]) < r) near = true;
+                });
+            });
+            return near;
+        }
         function getCalleMidpointPY(puntos) {
             if (!puntos || puntos.length < 2) return null;
             let total = 0;
@@ -1448,20 +1532,23 @@
             snappedCoords = null;
             isSnapToClose = false;
             calleSnapIsFranjaEdge = false;
-            if (!coords) return;
+            if (!coords || !snapCursor) return;
             if (currentLineType === 'calle') {
-                const edgeSnap = snapCalleToFranjaParallelEdge(mock.clientX, mock.clientY, draftCalleAncho);
-                if (edgeSnap) {
-                    foundSnap = true;
-                    snappedCoords = [edgeSnap.pitch, edgeSnap.yaw];
-                    calleSnapIsFranjaEdge = true;
+                if (draftCalleSnapFranja && !isNearFranjaCornerScreen(mock.clientX, mock.clientY, 32)) {
+                    const edgeSnap = snapCalleToFranjaParallelEdge(mock.clientX, mock.clientY, draftCalleAncho);
+                    if (edgeSnap) {
+                        foundSnap = true;
+                        snappedCoords = [edgeSnap.pitch, edgeSnap.yaw];
+                        calleSnapIsFranjaEdge = true;
+                    }
                 }
-                if (!foundSnap) {
-                    const callePts = [...currentLinePoints];
-                    allDrawnLines.forEach(l => { if (l.tipo === 'calle') callePts.push(...l.puntos); });
-                    for (const pt of callePts) {
-                        const dist = Math.hypot(pt[0] - coords[0], pt[1] - coords[1]);
-                        if (dist < SNAP_DISTANCE) { foundSnap = true; snappedCoords = [...pt]; break; }
+                if (!foundSnap && currentLinePoints.length > 0) {
+                    const last = currentLinePoints[currentLinePoints.length - 1];
+                    const d = Math.hypot(last[0] - coords[0], last[1] - coords[1]);
+                    if (d < SNAP_DISTANCE * 0.65) {
+                        foundSnap = true;
+                        snappedCoords = [...last];
+                        isSnapToClose = true;
                     }
                 }
             } else {
@@ -1478,16 +1565,39 @@
                     }
                 }
             }
-            if (!snapCursor) return;
             if (foundSnap) {
                 snapCursor.style.left = mock.clientX + 'px';
                 snapCursor.style.top = mock.clientY + 'px';
                 snapCursor.classList.add('active');
-                snapCursor.classList.toggle('is-closing', isSnapToClose);
+                snapCursor.classList.toggle('is-closing', isSnapToClose && currentLineType !== 'calle');
+                snapCursor.classList.toggle('is-calle-finish', isSnapToClose && currentLineType === 'calle');
                 snapCursor.classList.toggle('is-calle-edge', calleSnapIsFranjaEdge);
             } else {
-                snapCursor.classList.remove('active', 'is-closing', 'is-calle-edge');
+                snapCursor.classList.remove('active', 'is-closing', 'is-calle-edge', 'is-calle-finish');
             }
+        }
+        function handleCalleDrawClick(mock) {
+            const coords = visor360.mouseEventToCoords(mock);
+            if (!coords) return;
+            let p = coords[0], y = coords[1];
+            if (draftCalleSnapFranja && snappedCoords && !isNearFranjaCornerScreen(mock.clientX, mock.clientY, 32)) {
+                p = snappedCoords[0]; y = snappedCoords[1];
+            }
+            const now = Date.now();
+            if (lastCalleTap && now - lastCalleTap.time < 380 && Math.hypot(mock.clientX - lastCalleTap.x, mock.clientY - lastCalleTap.y) < 20) {
+                if (currentLinePoints.length >= 2) {
+                    anclarTrazoActivo();
+                    lastCalleTap = null;
+                    return;
+                }
+            }
+            lastCalleTap = { x: mock.clientX, y: mock.clientY, time: now, p, y };
+            currentLinePoints.push([p, y]);
+            const _hid = 'temp_base_pt_' + Date.now();
+            visor360.addHotSpot({ pitch: p, yaw: y, id: _hid, createTooltipFunc: renderHiddenVertex, createTooltipArgs: { lineId: currentTempLineId, type: 'calle', isGuide: true, idx: currentLinePoints.length - 1, hsId: _hid } });
+            syncSVGElements();
+            updateSVGPaths();
+            refreshAllHotspots(true);
         }
         function getAllStripSnapTargets() {
             const targets = getFranjaGrupoScreenRects();
@@ -1999,8 +2109,10 @@
             if (isSvgRenderAllowed()) {
                 allDrawnLines.forEach(linea => {
                     if (linea.tipo === 'calle' && linea.puntos.length >= 2) {
+                        const st = getCalleStyleForLine(linea);
                         const mid = getCalleMidpointPY(linea.puntos);
-                        if (mid) hotspots.push({ "id": "calle_lbl_" + linea.id, "pitch": mid[0], "yaw": mid[1], "createTooltipFunc": renderCalleServidumbreLabel, "createTooltipArgs": { lineId: linea.id } });
+                        if (mid && st.showLabel) hotspots.push({ "id": "calle_lbl_" + linea.id, "pitch": mid[0], "yaw": mid[1], "createTooltipFunc": renderCalleServidumbreLabel, "createTooltipArgs": { lineId: linea.id, labelScale: st.labelScale } });
+                        if (isDevModeDrawActive && mid) hotspots.push({ "id": "calle_move_" + linea.id, "pitch": mid[0], "yaw": mid[1], "createTooltipFunc": renderCalleMoveHandle, "createTooltipArgs": { lineId: linea.id } });
                     }
                 });
             }
@@ -2036,9 +2148,9 @@
                     }
                 });
                 currentLinePoints.forEach((coord, idx) => { hotspots.push({ "id": "temp_base_" + currentTempLineId + "_" + idx, "pitch": coord[0], "yaw": coord[1], "createTooltipFunc": renderHiddenVertex, "createTooltipArgs": { lineId: currentTempLineId, type: currentLineType, isGuide: isDevModeDrawActive, idx: idx, hsId: "temp_base_" + currentTempLineId + "_" + idx } }); });
-                if (currentLineType === 'calle' && currentLinePoints.length >= 2) {
+                if (currentLineType === 'calle' && currentLinePoints.length >= 2 && draftCalleShowLabel) {
                     const mid = getCalleMidpointPY(currentLinePoints);
-                    if (mid) hotspots.push({ "id": "calle_lbl_" + currentTempLineId, "pitch": mid[0], "yaw": mid[1], "createTooltipFunc": renderCalleServidumbreLabel, "createTooltipArgs": { lineId: currentTempLineId, isDraft: true } });
+                    if (mid) hotspots.push({ "id": "calle_lbl_" + currentTempLineId, "pitch": mid[0], "yaw": mid[1], "createTooltipFunc": renderCalleServidumbreLabel, "createTooltipArgs": { lineId: currentTempLineId, isDraft: true, labelScale: draftCalleLabelScale } });
                 }
             }
             return hotspots;
@@ -2109,7 +2221,7 @@
             function getCam(pitch, yaw) { const p = pitch * Math.PI / 180, y = yaw * Math.PI / 180, sin_p = Math.sin(p), cos_p = Math.cos(p); let y_diff = y - cy; while (y_diff > Math.PI) y_diff -= 2 * Math.PI; while (y_diff < -Math.PI) y_diff += 2 * Math.PI; const sin_yd = Math.sin(y_diff), cos_yd = Math.cos(y_diff); return { x: cos_p * sin_yd, y: sin_p * cos_cp - cos_p * cos_yd * sin_cp, z: sin_p * sin_cp + cos_p * cos_yd * cos_cp }; }
             Object.keys(DOMCache.paths).forEach(lineId => {
                 const cacheObj = DOMCache.paths[lineId]; if (!cacheObj) return;
-                let lineData = allDrawnLines.find(l => l.id === lineId); if (!lineData && lineId === currentTempLineId) lineData = { tipo: currentLineType, puntos: currentLinePoints, calleAncho: currentLineType === 'calle' ? draftCalleAncho : undefined }; if (!lineData && lineId === 'franja_preview_quad' && franjaPreviewQuad) lineData = { tipo: 'franja-preview', puntos: franjaPreviewQuad }; if (!lineData && lineId.startsWith('franja_preview_div_')) lineData = franjaPreviewDivs.find(d => d.id === lineId); if (!lineData) return;
+                let lineData = allDrawnLines.find(l => l.id === lineId); if (!lineData && lineId === currentTempLineId) lineData = { tipo: currentLineType, puntos: currentLinePoints, calleAncho: currentLineType === 'calle' ? draftCalleAncho : undefined, calleAlpha: currentLineType === 'calle' ? draftCalleAlpha : undefined, calleLabelScale: currentLineType === 'calle' ? draftCalleLabelScale : undefined, calleShowLabel: currentLineType === 'calle' ? draftCalleShowLabel : undefined }; if (!lineData && lineId === 'franja_preview_quad' && franjaPreviewQuad) lineData = { tipo: 'franja-preview', puntos: franjaPreviewQuad }; if (!lineData && lineId.startsWith('franja_preview_div_')) lineData = franjaPreviewDivs.find(d => d.id === lineId); if (!lineData) return;
                 let isClosed = (lineData.tipo !== 'calle' && lineData.tipo !== 'cortar' && lineData.tipo !== 'divisoria' && lineData.tipo !== 'borde-macro' && lineData.tipo !== 'arista_solida' && lineData.tipo !== 'arista_punteada' && lineData.tipo !== 'franja-preview-div' && lineId !== currentTempLineId);
                 if (cacheObj.gNode && lineData.tipo !== 'calle' && lineData.tipo !== 'franja-grupo') { if (lineData.puntos && lineData.puntos.length > 0) { let polyStatus = 'disponible'; if (lineData.franjaNumero || lineData.tipo === 'area-invisible') polyStatus = 'disponible'; else { let cP = 0, cY = 0; lineData.puntos.forEach(pt => { cP += pt[0]; cY += pt[1]; }); cP /= lineData.puntos.length; cY /= lineData.puntos.length; let closestPin = null; let minDist = 30; BaseDatosLotes.forEach(pin => { if(pin.tipo === 'lote') { let dist = Math.pow(pin.pitch - cP, 2) + Math.pow(pin.yaw - cY, 2); if(dist < minDist) { minDist = dist; closestPin = pin; } } }); if (closestPin) polyStatus = closestPin.status; } cacheObj.gNode.setAttribute('data-status', polyStatus); } }
                 let dBase = '', pts = lineData.puntos, hasVisiblePoints = false;
@@ -2129,10 +2241,8 @@
                 if (cacheObj.base) {
                     cacheObj.base.forEach(path => path.setAttribute("d", dBase.trim() !== '' ? dBase : 'M -999 -999'));
                     if (lineData.tipo === 'calle') {
-                        const ancho = lineData.calleAncho || draftCalleAncho || 2.2;
-                        const sw = getCalleStrokeWidths(ancho);
-                        if (cacheObj.base[0]) cacheObj.base[0].setAttribute('stroke-width', sw.borde);
-                        if (cacheObj.base[1]) cacheObj.base[1].setAttribute('stroke-width', sw.asfalto);
+                        const st = getCalleStyleForLine(lineData);
+                        applyCallePathStyles(cacheObj.base, st.ancho, st.alpha);
                     }
                 }
             });
@@ -2212,6 +2322,13 @@
             const container = document.getElementById('panorama-container'); let startX, startY, startTime; let lastClickTime = 0;
             function handleStart(e) { let mock = getMockEvent(e); startX = mock.clientX; startY = mock.clientY; startTime = Date.now(); }
             function handleEnd(e) {
+                if (draggingCalleMove) {
+                    if (draggingCalleMove.el) draggingCalleMove.el.classList.remove('is-dragging');
+                    draggingCalleMove = null;
+                    refreshAllHotspots();
+                    saveToLocal();
+                    return;
+                }
                 if (draggingFranjaDiv) {
                     if (draggingFranjaDiv.el) draggingFranjaDiv.el.classList.remove('is-dragging');
                     draggingFranjaDiv = null;
@@ -2242,7 +2359,7 @@
                 }
                 const timeDiff = Date.now() - startTime; const moveDist = Math.sqrt( Math.pow(mock.clientX - startX, 2) + Math.pow(mock.clientY - startY, 2) );
                 if (timeDiff < 500 && moveDist < 10) {
-                    if (Date.now() - lastClickTime < 300 && isDevModeDrawActive && currentLineType !== 'franja') { anclarTrazoActivo(); lastClickTime = 0; return; }
+                    if (Date.now() - lastClickTime < 300 && isDevModeDrawActive && currentLineType !== 'franja' && currentLineType !== 'calle') { anclarTrazoActivo(); lastClickTime = 0; return; }
                     lastClickTime = Date.now();
                     if (isDevModeDrawActive && currentLineType === 'eraser') { runEraserAtEvent(mock); return; }
                     if (isDevModeDrawActive && currentLineType === 'franja') {
@@ -2281,6 +2398,7 @@
                         return;
                     }
                     if (isDevModeDrawActive) {
+                        if (currentLineType === 'calle') { handleCalleDrawClick(mock); return; }
                         const coords = visor360.mouseEventToCoords(mock); if (!coords) return; let p = coords[0], y = coords[1]; let isClosingShape = false;
                         if (currentLineType === 'cortar') {
                             currentLinePoints.push([p, y]);
@@ -2315,6 +2433,19 @@
             }
             function handleMove(e) {
                 let mock = getMockEvent(e); if (mock.clientX === undefined) return;
+                if (draggingCalleMove) {
+                    if (e.cancelable) e.preventDefault();
+                    const coords = visor360?.mouseEventToCoords(mock);
+                    const line = allDrawnLines.find(l => l.id === draggingCalleMove.lineId);
+                    if (coords && line && draggingCalleMove.origPts) {
+                        const dP = coords[0] - draggingCalleMove.startPY[0];
+                        const dY = coords[1] - draggingCalleMove.startPY[1];
+                        line.puntos = draggingCalleMove.origPts.map(pt => [pt[0] + dP, pt[1] + dY]);
+                    }
+                    syncSVGElements(); updateSVGPaths();
+                    refreshAllHotspots(true);
+                    return;
+                }
                 if (draggingFranjaDiv) {
                     if (e.cancelable) e.preventDefault();
                     applyFranjaDivDrag(draggingFranjaDiv.gid, draggingFranjaDiv.splitIdx, mock.clientX, mock.clientY);
@@ -2549,19 +2680,22 @@
                     const entry = { id: currentTempLineId, tipo: currentLineType, puntos: [...currentLinePoints] };
                     if (currentLineType === 'calle') {
                         entry.calleAncho = draftCalleAncho;
+                        entry.calleAlpha = draftCalleAlpha;
+                        entry.calleLabelScale = draftCalleLabelScale;
+                        entry.calleShowLabel = draftCalleShowLabel;
                         allDrawnLines.push(entry);
-                        tryMergeCallesAtAnchor(entry.id);
                     } else {
                         allDrawnLines.push(entry);
                     }
                 }
                 currentLinePoints = [];
                 currentTempLineId = 'temp_' + Date.now();
+                lastCalleTap = null;
                 refreshAllHotspots();
                 saveToLocal();
             }
         }
-        function toggleDrawMode(forceActive) { isDevModeDrawActive = forceActive; if (!forceActive) clearFranjaDraft(); document.getElementById('dev-toolbar-draw')?.classList.toggle('show', isDevModeDrawActive); document.body.classList.toggle('dev-mode-active', isDevModeDrawActive); refreshAllHotspots(); }
+        function toggleDrawMode(forceActive) { isDevModeDrawActive = forceActive; if (!forceActive) { clearFranjaDraft(); closeCalleToolPanel(); } document.getElementById('dev-toolbar-draw')?.classList.toggle('show', isDevModeDrawActive); document.body.classList.toggle('dev-mode-active', isDevModeDrawActive); refreshAllHotspots(); }
         function togglePinsMode(forceActive) { isDevModePinsActive = forceActive; document.getElementById('dev-toolbar-pins')?.classList.toggle('show', isDevModePinsActive); document.body.classList.toggle('dev-mode-pins-active', isDevModePinsActive); refreshAllHotspots(); }
 
         function setupDevModes() {
@@ -2570,21 +2704,22 @@
             
             document.getElementById('btn-draw-solid')?.addEventListener('click', (e) => { setDrawMode('solida', e.target); }); 
             document.getElementById('btn-draw-dash')?.addEventListener('click', (e) => { setDrawMode('punteada', e.target); }); 
-            document.getElementById('btn-draw-street')?.addEventListener('click', (e) => {
-                const val = prompt('Ancho de calle / servidumbre (0.5–12 · default 2.2):\nEl valor controla el grosor del asfalto en pantalla.', String(draftCalleAncho));
-                if (val !== null) {
-                    const n = parseFloat(String(val).replace(',', '.'));
-                    if (!isNaN(n) && n >= 0.5 && n <= 12) draftCalleAncho = n;
-                }
-                setDrawMode('calle', e.target);
-            }); 
+            document.getElementById('btn-draw-street')?.addEventListener('click', (e) => { setDrawMode('calle', e.target); openCalleToolPanel(); }); 
             document.getElementById('btn-draw-cut')?.addEventListener('click', (e) => { setDrawMode('cortar', e.target); });
             document.getElementById('btn-draw-divisoria')?.addEventListener('click', (e) => { clearFranjaDraft(); setDrawMode('divisoria', e.target); });
             document.getElementById('btn-draw-franja')?.addEventListener('click', (e) => { clearFranjaDraft(); closeFranjaLotesModal(); setDrawMode('franja', e.target); });
             document.getElementById('btn-straighten-franja')?.addEventListener('click', enderezarFranjas);
             document.getElementById('btn-eraser')?.addEventListener('click', (e) => { setDrawMode('eraser', e.target); });
             
-            function setDrawMode(mode, targetBtn) { if (mode !== 'franja') clearFranjaDraft(); currentLineType = mode; document.body.classList.toggle('eraser-mode-active', mode === 'eraser'); document.querySelectorAll('#dev-toolbar-draw .dev-btn:not(.action):not(.export):not(.export-ai):not(.nuke)').forEach(b => b.classList.remove('active')); if(targetBtn) targetBtn.classList.add('active'); }
+            function setDrawMode(mode, targetBtn) { if (mode !== 'franja') clearFranjaDraft(); if (mode !== 'calle') closeCalleToolPanel(); currentLineType = mode; document.body.classList.toggle('eraser-mode-active', mode === 'eraser'); document.querySelectorAll('#dev-toolbar-draw .dev-btn:not(.action):not(.export):not(.export-ai):not(.nuke)').forEach(b => b.classList.remove('active')); if(targetBtn) targetBtn.classList.add('active'); }
+            const bindCallePanel = (id, fn) => { const el = document.getElementById(id); if (!el) return; el.addEventListener('input', fn); el.addEventListener('change', fn); };
+            bindCallePanel('calle-ui-ancho', (e) => { draftCalleAncho = Math.max(0.5, Math.min(12, parseFloat(e.target.value) || 2.2)); syncCallePanelUI(); updateSVGPaths(); refreshAllHotspots(true); });
+            bindCallePanel('calle-ui-alpha', (e) => { draftCalleAlpha = Math.max(0.15, Math.min(1, parseFloat(e.target.value) || 0.85)); syncCallePanelUI(); updateSVGPaths(); });
+            bindCallePanel('calle-ui-label', (e) => { draftCalleLabelScale = Math.max(0.5, Math.min(2.5, parseFloat(e.target.value) || 1)); syncCallePanelUI(); refreshAllHotspots(true); });
+            bindCallePanel('calle-ui-show-label', (e) => { draftCalleShowLabel = !!e.target.checked; refreshAllHotspots(true); });
+            bindCallePanel('calle-ui-snap-franja', (e) => { draftCalleSnapFranja = !!e.target.checked; });
+            document.getElementById('calle-tool-panel')?.addEventListener('mousedown', e => e.stopPropagation());
+            document.getElementById('calle-tool-panel')?.addEventListener('touchstart', e => e.stopPropagation(), { passive: true });
             
             document.getElementById('franja-modal-apply-count')?.addEventListener('click', () => {
                 const n = parseInt(document.getElementById('franja-modal-count')?.value, 10) || franjaDraftCount;
@@ -2773,7 +2908,27 @@
         function renderCalleServidumbreLabel(hotSpotDiv, args) {
             hotSpotDiv.className = 'calle-servidumbre-label';
             hotSpotDiv.textContent = 'SERVIDUMBRE DE PASO';
+            const scale = args?.labelScale ?? draftCalleLabelScale ?? 1;
+            hotSpotDiv.style.transform = `translate(-50%, -50%) scale(${scale})`;
             if (args?.isDraft) hotSpotDiv.style.opacity = '0.72';
+        }
+        function renderCalleMoveHandle(hotSpotDiv, args) {
+            hotSpotDiv.className = 'calle-move-handle';
+            hotSpotDiv.textContent = '✥';
+            hotSpotDiv.title = 'Arrastra para mover toda la calle';
+            const startDrag = (e) => {
+                if (currentLineType === 'eraser') return;
+                e.stopPropagation(); e.preventDefault();
+                const line = allDrawnLines.find(l => l.id === args.lineId && l.tipo === 'calle');
+                if (!line) return;
+                const mock = getMockEvent(e);
+                const coords = visor360?.mouseEventToCoords(mock);
+                if (!coords) return;
+                hotSpotDiv.classList.add('is-dragging');
+                draggingCalleMove = { lineId: args.lineId, origPts: line.puntos.map(pt => [...pt]), startPY: [coords[0], coords[1]], el: hotSpotDiv };
+            };
+            hotSpotDiv.addEventListener('mousedown', startDrag);
+            hotSpotDiv.addEventListener('touchstart', startDrag, { passive: false });
         }
         function renderFranjaDivHandle(hotSpotDiv, args) {
             hotSpotDiv.className = 'franja-div-handle';
@@ -2809,7 +2964,7 @@
             };
             hotSpotDiv.addEventListener('mousedown', onEraseVertex);
             hotSpotDiv.addEventListener('touchstart', onEraseVertex, { passive: false });
-            if (args.isGuide && currentLineType !== 'eraser' && currentLineType !== 'cortar' && args.type !== 'divisoria' && args.type !== 'borde-macro') { 
+            if (args.isGuide && currentLineType !== 'eraser' && currentLineType !== 'cortar' && args.type !== 'divisoria' && args.type !== 'borde-macro' && (args.type !== 'calle' || currentLineType === 'calle')) { 
                 const startDragGuide = (e) => { e.stopPropagation(); e.preventDefault(); hotSpotDiv.classList.add('is-dragging'); draggingVertex = { lineId: args.lineId, idx: args.idx, el: hotSpotDiv, hsId: args.hsId }; }; 
                 hotSpotDiv.addEventListener('mousedown', startDragGuide); hotSpotDiv.addEventListener('touchstart', startDragGuide, {passive: false}); 
             } 
