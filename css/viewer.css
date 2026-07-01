@@ -462,3 +462,8 @@ body.is-touch-device .arq2-panel { backdrop-filter: none; background: rgba(9, 11
 #layer-arq2-feedback { pointer-events: none; }
 g.lote-organico path.linea-solida, g.fila-variable-lote path.linea-solida { fill: rgba(16, 185, 129, 0.16) !important; fill-opacity: 1 !important; stroke: #ffffff !important; stroke-width: 2 !important; vector-effect: non-scaling-stroke; }
 .linea-punteada-costura { fill: none !important; stroke: rgba(255,255,255,0.75); stroke-width: 2; stroke-dasharray: 3 5; vector-effect: non-scaling-stroke; pointer-events: none; }
+.arq2-smooth-row { display: flex; align-items: center; gap: 8px; margin: 0 0 10px; font-size: 11px; color: #cbd5e1; cursor: pointer; }
+.arq2-smooth-row input { accent-color: #10b981; }
+.arq2-fila-direction-warn { display: none; margin: 0 0 8px; padding: 6px 10px; border-radius: 8px; font-size: 11px; font-weight: 700; color: #fecaca; background: rgba(127,29,29,0.85); border: 1px solid rgba(239,68,68,0.45); }
+.arq2-fila-guide-line { stroke: rgba(148,163,184,0.55); stroke-width: 1; stroke-dasharray: 3 4; pointer-events: none; }
+.arq2-fila-guide-line.arq2-fila-guide-bad { stroke: rgba(239,68,68,0.85); stroke-width: 1.5; }
