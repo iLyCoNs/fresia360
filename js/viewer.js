@@ -292,7 +292,7 @@ function loadFromLocal() { const savedData = localStorage.getItem(FRESIA_CFG.aut
 async function fetchValorUFOnline() { try { const response = await fetch('https://mindicador.cl/api/uf', { cache: 'no-store' }); if (response.ok) { const data = await response.json(); if(data && data.serie && data.serie.length > 0) { UF_Online = data.serie[0].valor; return; } } } catch (error) {} }
 async function fetchMasterData() { try { const response = await fetch(FRESIA_CFG.datosJson + '?v=' + new Date().getTime()); if(response.ok) { const data = await response.json(); ConfigProyecto = data.configProyecto || ConfigProyecto; OrigenDrone = data.origen || null; NorteOffset = data.norte || 0; BaseDatosLotes = data.lotes || []; PuntosHorizonte = data.horizontes || []; allDrawnLines = data.trazos || []; } else { loadFromLocal(); } } catch(e) { loadFromLocal(); } applyProjectConfig(); await syncRutasDesdeOrigen(); }
 
-let visor360, currentPinSizeIndex = 1, isIntroAnimating = true, isDevModeDrawActive = false, isDevModePinsActive = false, currentLineType = 'solida', currentLinePoints = [], currentPinTypeMap = 'disponible', currentTempLineId = 'temp_' + Date.now(), draggingVertex = null, draggingFranjaDiv = null, draggingCalleMove = null, pickedPin = null, snapCursor = null, ghostPin = null, snappedCoords = null, activePinArgs = null, isCreatingNewPin = false, isSnapToClose = false, franjaCornerA = null, franjaPreviewQuad = null, franjaPreviewDivs = [], franjaDraftCount = 10, franjaDraftBaseM2 = 5000, franjaPendingCreate = null, guardarNubeEnCurso = false, draftCalleAncho = 8, draftCalleAlpha = 0, draftCalleLabelScale = 1, draftCalleShowLabel = true, draftCalleSnapFranja = false, calleSnapIsFranjaEdge = false, lastCalleTap = null, isLineaPinesActive = false, lineaPinesPoints = [], lineaPinesTempId = 'linea_pins_' + Date.now(), franjaCurvaFrente = [], franjaCurvaFase = 0;
+let visor360, currentPinSizeIndex = 1, isIntroAnimating = true, isDevModeDrawActive = false, isDevModePinsActive = false, currentLineType = 'solida', currentLinePoints = [], currentPinTypeMap = 'disponible', currentTempLineId = 'temp_' + Date.now(), draggingVertex = null, draggingFranjaDiv = null, draggingCalleMove = null, pickedPin = null, snapCursor = null, ghostPin = null, snappedCoords = null, activePinArgs = null, isCreatingNewPin = false, isSnapToClose = false, franjaCornerA = null, franjaPreviewQuad = null, franjaPreviewDivs = [], franjaCurvaPreviewStrip = null, franjaDraftCount = 10, franjaDraftBaseM2 = 5000, franjaPendingCreate = null, guardarNubeEnCurso = false, draftCalleAncho = 8, draftCalleAlpha = 0, draftCalleLabelScale = 1, draftCalleShowLabel = true, draftCalleSnapFranja = false, calleSnapIsFranjaEdge = false, lastCalleTap = null, isLineaPinesActive = false, lineaPinesPoints = [], lineaPinesTempId = 'linea_pins_' + Date.now(), franjaCurvaFrente = [], franjaCurvaFase = 0;
 function revealLoteoOverlay() {
     isIntroAnimating = false;
     document.body.classList.add('loteo-overlay-ready');
@@ -1930,8 +1930,9 @@ function mergeFranjasHorizontal(keepGid, mergeGid, mergeOnLeft) {
 }
 function tryMergeFranjaHorizontal(newGid) {
     const newG = getFranjaStripById(newGid);
+    if (!newG || newG.tipo === 'franja-curva-grupo') return false;
     const proj = getPanoramaScreenProjector();
-    if (!newG || !proj) return false;
+    if (!proj) return false;
     const nr = getFranjaGrupoScreenRects().find(r => r.gid === newGid);
     if (!nr) return false;
     for (const or of getFranjaGrupoScreenRects()) {
@@ -2137,10 +2138,8 @@ function commitFranjaFromModal() {
         const gid = 'franja_curva_' + Date.now();
         allDrawnLines.push({ id: gid, tipo: 'franja-curva-grupo', franjaCount: N, frente: pending.frente, fondo: pending.fondo, franjaSplits: splits });
         rebuildFranjaCurvaGroup(gid);
-        franjaCurvaFase = 1; franjaCurvaFrente = [];
+        franjaCurvaFase = 1; franjaCurvaFrente = []; franjaCurvaPreviewStrip = null;
         ensureStitchedDivisorias();
-        alignFranjaVerticalNeighbors(gid);
-        tryMergeFranjaHorizontal(gid);
         refreshAllHotspots(); saveToLocal(); flashScreenSuccess();
         return;
     }
@@ -2149,6 +2148,27 @@ function commitFranjaFromModal() {
     if (!finalBuilt) { alert('⚠️ No se pudo proyectar la franja.'); refreshAllHotspots(); return; }
     finalizeNewFranja(finalBuilt.topPts, finalBuilt.botPts, N, pending.snap, splits);
     refreshAllHotspots(); saveToLocal(); flashScreenSuccess();
+}
+
+function refreshFranjaCurvaPreview() {
+    if (currentLineType !== 'franja_curva') { franjaCurvaPreviewStrip = null; return; }
+    if (franjaCurvaFase === 2 && franjaCurvaFrente.length >= 2 && currentLinePoints.length >= 2) {
+        let fondo = [...currentLinePoints];
+        const dDirect = Math.hypot(franjaCurvaFrente[0][0] - fondo[0][0], franjaCurvaFrente[0][1] - fondo[0][1]);
+        const dCross = Math.hypot(franjaCurvaFrente[0][0] - fondo[fondo.length - 1][0], franjaCurvaFrente[0][1] - fondo[fondo.length - 1][1]);
+        if (dCross < dDirect) fondo.reverse();
+        franjaCurvaPreviewStrip = [...franjaCurvaFrente, ...fondo.slice().reverse()];
+    } else {
+        franjaCurvaPreviewStrip = null;
+    }
+}
+function shouldClosePolygonLine(lineId, lineData) {
+    if (!lineData) return false;
+    if (lineData.tipo === 'calle' || lineData.tipo === 'cortar' || lineData.tipo === 'divisoria' || lineData.tipo === 'borde-macro' || lineData.tipo === 'arista_solida' || lineData.tipo === 'arista_punteada') return false;
+    if (lineData.tipo === 'franja-preview-div' || lineData.tipo === 'linea-pines-guia') return false;
+    if (lineId === currentTempLineId || lineId === lineaPinesTempId) return false;
+    if (lineData.tipo === 'franja-preview') return lineId === 'franja_preview_quad' || lineId === 'franja_curva_preview_strip';
+    return true;
 }
 
 // --- MOTOR GEOMÉTRICO FRANJA CURVA ---
@@ -2312,6 +2332,11 @@ function getHotspotsConfig() {
             }
         });
         currentLinePoints.forEach((coord, idx) => { hotspots.push({ "id": "temp_base_" + currentTempLineId + "_" + idx, "pitch": coord[0], "yaw": coord[1], "createTooltipFunc": renderHiddenVertex, "createTooltipArgs": { lineId: currentTempLineId, type: currentLineType, isGuide: isDevModeDrawActive, idx: idx, hsId: "temp_base_" + currentTempLineId + "_" + idx } }); });
+        if (currentLineType === 'franja_curva' && franjaCurvaFrente.length > 0) {
+            franjaCurvaFrente.forEach((coord, idx) => {
+                hotspots.push({ "id": "temp_fcurva_frente_" + idx, "pitch": coord[0], "yaw": coord[1], "createTooltipFunc": renderHiddenVertex, "createTooltipArgs": { lineId: 'franja_curva_preview_frente', type: 'franja-preview', isGuide: true, idx: idx, hsId: "temp_fcurva_frente_" + idx } });
+            });
+        }
         if (currentLineType === 'calle' && currentLinePoints.length >= 2 && draftCalleShowLabel) {
             const mid = getCalleMidpointPY(currentLinePoints);
             if (mid) hotspots.push({ "id": "calle_lbl_" + currentTempLineId, "pitch": mid[0], "yaw": mid[1], "createTooltipFunc": renderCalleServidumbreLabel, "createTooltipArgs": { lineId: currentTempLineId, isDraft: true, labelScale: draftCalleLabelScale } });
@@ -2327,12 +2352,12 @@ function syncSVGElements() {
     const currentLineIds = allDrawnLines.map(l => l.id);
     if (currentLinePoints.length > 0) currentLineIds.push(currentTempLineId);
     if (isLineaPinesActive && lineaPinesPoints.length > 0) currentLineIds.push(lineaPinesTempId);
-    if (franjaPreviewQuad) currentLineIds.push('franja_preview_quad'); if (franjaCurvaFrente.length > 0) currentLineIds.push('franja_curva_preview_frente'); franjaPreviewDivs.forEach(d => currentLineIds.push(d.id));
+    if (franjaPreviewQuad) currentLineIds.push('franja_preview_quad'); if (franjaCurvaFrente.length > 0) currentLineIds.push('franja_curva_preview_frente'); if (franjaCurvaPreviewStrip) currentLineIds.push('franja_curva_preview_strip'); franjaPreviewDivs.forEach(d => currentLineIds.push(d.id));
     Array.from(svg.querySelectorAll('[data-line-id]')).forEach(el => { if (!currentLineIds.includes(el.dataset.lineId)) el.remove(); });
     DOMCache.paths = {}; const allLinesData = [...allDrawnLines];
-    if (currentLinePoints.length > 0) allLinesData.push({ id: currentTempLineId, tipo: currentLineType, puntos: currentLinePoints });
+    if (currentLinePoints.length > 0) allLinesData.push({ id: currentTempLineId, tipo: currentLineType === 'franja_curva' ? 'franja-preview' : currentLineType, puntos: currentLinePoints });
     if (isLineaPinesActive && lineaPinesPoints.length > 0) allLinesData.push({ id: lineaPinesTempId, tipo: 'linea-pines-guia', puntos: lineaPinesPoints });
-    if (franjaPreviewQuad) allLinesData.push({ id: 'franja_preview_quad', tipo: 'franja-preview', puntos: franjaPreviewQuad }); if (franjaCurvaFrente.length > 0) allLinesData.push({ id: 'franja_curva_preview_frente', tipo: 'franja-preview', puntos: franjaCurvaFrente }); franjaPreviewDivs.forEach(d => allLinesData.push(d));
+    if (franjaPreviewQuad) allLinesData.push({ id: 'franja_preview_quad', tipo: 'franja-preview', puntos: franjaPreviewQuad }); if (franjaCurvaFrente.length > 0) allLinesData.push({ id: 'franja_curva_preview_frente', tipo: 'franja-preview', puntos: franjaCurvaFrente }); if (franjaCurvaPreviewStrip) allLinesData.push({ id: 'franja_curva_preview_strip', tipo: 'franja-preview', puntos: franjaCurvaPreviewStrip }); franjaPreviewDivs.forEach(d => allLinesData.push(d));
     allLinesData.forEach(line => {
         const existingElements = svg.querySelectorAll(`[data-line-id="${line.id}"]`);
         if (existingElements.length === 0) {
@@ -2413,9 +2438,11 @@ function updateSVGPaths() {
         if (!lineData && lineId === currentTempLineId) lineData = { tipo: currentLineType, puntos: currentLinePoints, calleAncho: currentLineType === 'calle' ? draftCalleAncho : undefined, calleAlpha: currentLineType === 'calle' ? draftCalleAlpha : undefined, calleLabelScale: currentLineType === 'calle' ? draftCalleLabelScale : undefined, calleShowLabel: currentLineType === 'calle' ? draftCalleShowLabel : undefined };
         if (!lineData && lineId === lineaPinesTempId) lineData = { tipo: 'linea-pines-guia', puntos: lineaPinesPoints };
         if (!lineData && lineId === 'franja_preview_quad' && franjaPreviewQuad) lineData = { tipo: 'franja-preview', puntos: franjaPreviewQuad };
+        if (!lineData && lineId === 'franja_curva_preview_frente' && franjaCurvaFrente.length >= 2) lineData = { tipo: 'franja-preview', puntos: franjaCurvaFrente };
+        if (!lineData && lineId === 'franja_curva_preview_strip' && franjaCurvaPreviewStrip?.length >= 3) lineData = { tipo: 'franja-preview', puntos: franjaCurvaPreviewStrip };
         if (!lineData && lineId.startsWith('franja_preview_div_')) lineData = franjaPreviewDivs.find(d => d.id === lineId);
         if (!lineData) return;
-        let isClosed = (lineData.tipo !== 'calle' && lineData.tipo !== 'cortar' && lineData.tipo !== 'divisoria' && lineData.tipo !== 'borde-macro' && lineData.tipo !== 'arista_solida' && lineData.tipo !== 'arista_punteada' && lineData.tipo !== 'franja-preview-div' && lineData.tipo !== 'linea-pines-guia' && lineId !== currentTempLineId && lineId !== lineaPinesTempId);
+        let isClosed = shouldClosePolygonLine(lineId, lineData);
         if (cacheObj.gNode && lineData.tipo !== 'calle' && lineData.tipo !== 'franja-grupo') { if (lineData.puntos && lineData.puntos.length > 0) { let polyStatus = 'disponible'; if (lineData.franjaNumero || lineData.tipo === 'area-invisible') polyStatus = 'disponible'; else { let cP = 0, cY = 0; lineData.puntos.forEach(pt => { cP += pt[0]; cY += pt[1]; }); cP /= lineData.puntos.length; cY /= lineData.puntos.length; let closestPin = null; let minDist = 30; BaseDatosLotes.forEach(pin => { if(pin.tipo === 'lote') { let dist = Math.pow(pin.pitch - cP, 2) + Math.pow(pin.yaw - cY, 2); if(dist < minDist) { minDist = dist; closestPin = pin; } } }); if (closestPin) polyStatus = closestPin.status; } cacheObj.gNode.setAttribute('data-status', polyStatus); } }
         let dBase = '', pts = lineData.puntos, hasVisiblePoints = false;
         for (let i = 0; i < pts.length; i++) {
@@ -2590,7 +2617,7 @@ function bindPanoramaPointerEvents() {
         }
         const timeDiff = Date.now() - startTime; const moveDist = Math.sqrt( Math.pow(mock.clientX - startX, 2) + Math.pow(mock.clientY - startY, 2) );
         if (timeDiff < 500 && moveDist < 10) {
-            if (Date.now() - lastClickTime < 350 && isDevModeDrawActive && currentLineType !== 'franja') {
+            if (Date.now() - lastClickTime < 350 && isDevModeDrawActive && currentLineType !== 'franja' && currentLineType !== 'franja_curva') {
                 if (currentLineType === 'calle' && currentLinePoints.length >= 2) {
                     finishCalleDrawing();
                     lastClickTime = 0;
@@ -2653,8 +2680,8 @@ function bindPanoramaPointerEvents() {
                     } return;
                 }
                 if (snappedCoords) { p = snappedCoords[0]; y = snappedCoords[1]; }
-                if (currentLineType !== 'calle' && currentLinePoints.length >= 3) { let dOrg = Math.sqrt(Math.pow(p-currentLinePoints[0][0],2)+Math.pow(y-currentLinePoints[0][1],2)); if (dOrg < SNAP_DISTANCE) isClosingShape = true; }
-                if (!isClosingShape && currentLineType !== 'calle' && snappedCoords && currentLinePoints.length >= 2 && Math.abs(p-currentLinePoints[0][0]) < 0.01 && Math.abs(y-currentLinePoints[0][1]) < 0.01) isClosingShape = true;
+                if (currentLineType !== 'calle' && currentLineType !== 'franja_curva' && currentLinePoints.length >= 3) { let dOrg = Math.sqrt(Math.pow(p-currentLinePoints[0][0],2)+Math.pow(y-currentLinePoints[0][1],2)); if (dOrg < SNAP_DISTANCE) isClosingShape = true; }
+                if (!isClosingShape && currentLineType !== 'calle' && currentLineType !== 'franja_curva' && snappedCoords && currentLinePoints.length >= 2 && Math.abs(p-currentLinePoints[0][0]) < 0.01 && Math.abs(y-currentLinePoints[0][1]) < 0.01) isClosingShape = true;
                 if (isClosingShape) { anclarTrazoActivo(); } else { currentLinePoints.push([p, y]); let _hid = 'temp_base_pt_'+Date.now(); visor360.addHotSpot({ pitch: p, yaw: y, id: _hid, createTooltipFunc: renderHiddenVertex, createTooltipArgs: { lineId: currentTempLineId, type: currentLineType, isGuide: true, idx: currentLinePoints.length-1, hsId: _hid }, }); syncSVGElements(); updateSVGPaths(); }
             } else if (isDevModePinsActive && isLineaPinesActive && !pickedPin) {
                 if (e.target && e.target.closest('.qa-btn')) return;
@@ -2718,6 +2745,13 @@ function bindPanoramaPointerEvents() {
             updateFranjaPreview(mock.clientX, mock.clientY);
             syncSVGElements(); updateSVGPaths();
             if (snapCursor) snapCursor.classList.remove('active');
+            return;
+        }
+        if (isDevModeDrawActive && currentLineType === 'franja_curva' && franjaCurvaFase === 2) {
+            window.lastMouseX = mock.clientX; window.lastMouseY = mock.clientY;
+            refreshFranjaCurvaPreview();
+            syncSVGElements(); updateSVGPaths();
+            try { const coords = visor360.mouseEventToCoords(mock); updateDrawModeSnap(mock, coords); } catch (err) {}
             return;
         }
         if (!isDevModeDrawActive || !visor360 || currentLineType === 'eraser') { if (snapCursor) snapCursor.classList.remove('active'); return; }
@@ -2926,6 +2960,7 @@ function openPinEditor(args, isNew) {
 }
 
 function anclarTrazoActivo() {
+    if (currentLineType === 'franja_curva') return;
     if (currentLinePoints.length > 1) {
         if (currentLineType !== 'cortar') {
             const entry = { id: currentTempLineId, tipo: currentLineType, puntos: [...currentLinePoints] };
@@ -2983,14 +3018,20 @@ function setupDevModes() {
             if (franjaCurvaFase === 1 && currentLinePoints.length >= 2) {
                 franjaCurvaFrente = [...currentLinePoints];
                 currentLinePoints = []; franjaCurvaFase = 2;
+                currentTempLineId = 'temp_' + Date.now();
+                franjaCurvaPreviewStrip = null;
                 mostrarToast('Fase 2: Dibuja la curva TRASERA (fondo) y presiona Enter', true);
+                refreshAllHotspots(true); syncSVGElements(); updateSVGPaths();
             } else if (franjaCurvaFase === 2 && currentLinePoints.length >= 2) {
                 let franjaCurvaFondo = [...currentLinePoints];
                 const dDirect = Math.hypot(franjaCurvaFrente[0][0] - franjaCurvaFondo[0][0], franjaCurvaFrente[0][1] - franjaCurvaFondo[0][1]);
                 const dCross = Math.hypot(franjaCurvaFrente[0][0] - franjaCurvaFondo[franjaCurvaFondo.length-1][0], franjaCurvaFrente[0][1] - franjaCurvaFondo[franjaCurvaFondo.length-1][1]);
-                if (dCross < dDirect) franjaCurvaFondo.reverse(); // Auto-alinea la dirección
+                if (dCross < dDirect) franjaCurvaFondo.reverse();
                 currentLinePoints = [];
+                franjaCurvaPreviewStrip = null;
+                refreshFranjaCurvaPreview();
                 franjaPendingCreate = { tipo: 'curva', frente: franjaCurvaFrente, fondo: franjaCurvaFondo };
+                syncSVGElements(); updateSVGPaths();
                 openFranjaLotesModal(franjaDraftCount, commitFranjaFromModal);
             }
             return;
@@ -3024,7 +3065,7 @@ function setupDevModes() {
     function setDrawMode(mode, targetBtn) { 
         if (mode !== 'franja') clearFranjaDraft(); 
         if (mode !== 'calle') closeCalleToolPanel(); 
-        if (mode !== 'franja_curva') { franjaCurvaFase = 0; franjaCurvaFrente = []; }
+        if (mode !== 'franja_curva') { franjaCurvaFase = 0; franjaCurvaFrente = []; franjaCurvaPreviewStrip = null; }
         else { franjaCurvaFase = 1; currentLinePoints = []; mostrarToast('Fase 1: Dibuja la curva FRONTAL (calle) y presiona Enter', true); }
         currentLineType = mode; document.body.classList.toggle('eraser-mode-active', mode === 'eraser'); document.querySelectorAll('#dev-toolbar-draw .dev-btn:not(.action):not(.export):not(.export-ai):not(.nuke)').forEach(b => b.classList.remove('active')); if(targetBtn) targetBtn.classList.add('active'); 
     }
