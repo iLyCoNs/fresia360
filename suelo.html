@@ -73,18 +73,19 @@
         .linea-corte { stroke: #f59e0b !important; stroke-width: calc(var(--stroke-dyn) * 1.5) !important; stroke-dasharray: 6 6; filter: drop-shadow(0 0 8px #f59e0b); pointer-events: none; }
         g.lote-interactivo.hovered path, g.lote-interactivo:hover path { fill: transparent !important; stroke: #ffffff !important; stroke-width: var(--stroke-dyn-hover) !important; filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.9)); }
         /* --- CALLES PREMIUM --- */
+        /* --- CALLES PREMIUM (borde = mismo peso que franja borde-macro) --- */
         .linea-calle-borde {
             fill: none;
-            stroke: #ffffff !important;
-            stroke-width: calc(var(--stroke-dyn) * 4.5) !important;
+            stroke: rgba(255, 255, 255, 0.94) !important;
+            stroke-width: calc(var(--stroke-dyn) * 0.48) !important;
             stroke-linecap: butt !important;
             stroke-linejoin: miter !important;
+            filter: drop-shadow(0 0 1px rgba(255, 255, 255, 0.35));
             pointer-events: none;
         }
         .linea-calle-asfalto {
             fill: none;
             stroke: rgba(30, 35, 45, 0.85) !important;
-            stroke-width: calc(var(--stroke-dyn) * 3.0) !important;
             stroke-linecap: butt !important;
             stroke-linejoin: miter !important;
             pointer-events: auto;
@@ -112,7 +113,7 @@
         #calle-tool-panel label span { color: #60a5fa; min-width: 36px; text-align: right; }
         #calle-tool-panel input[type="range"] { width: 100%; accent-color: #3b82f6; margin: 0; }
         #calle-width-preview { height: 36px; margin: 6px 0 4px; background: rgba(255,255,255,0.04); border-radius: 8px; border: 1px dashed rgba(255,255,255,0.12); display: flex; align-items: center; justify-content: center; overflow: hidden; }
-        #calle-width-preview-bar { height: 100%; min-width: 4px; background: rgba(30,35,45,0.85); border: 2px solid rgba(255,255,255,0.55); border-radius: 4px; box-shadow: inset 0 0 8px rgba(0,0,0,0.35); transition: width 0.12s, opacity 0.12s; }
+        #calle-width-preview-bar { height: 100%; min-width: 4px; background: rgba(30,35,45,0.85); border: 1px solid rgba(255,255,255,0.94); border-radius: 2px; box-shadow: 0 0 1px rgba(255,255,255,0.35), inset 0 0 8px rgba(0,0,0,0.35); transition: width 0.12s, opacity 0.12s; }
         .calle-ui-check { justify-content: flex-start !important; gap: 6px !important; cursor: pointer; }
         .calle-ui-check input { width: auto; margin: 0; accent-color: #3b82f6; }
         .calle-ui-hint { margin: 10px 0 0; font-size: 8px; line-height: 1.45; color: #64748b; font-weight: 600; }
@@ -1637,6 +1638,10 @@
             const raw = getComputedStyle(document.documentElement).getPropertyValue('--stroke-dyn') || '2.5px';
             return Math.max(1.2, parseFloat(raw) || 2.5);
         }
+        const CALLE_BORDER_FRANJA_RATIO = 0.48;
+        function getCalleBorderThinPx() {
+            return Math.max(0.4, getCalleDynBasePx() * CALLE_BORDER_FRANJA_RATIO);
+        }
         function getCalleHalfWidthPx(anchoFactor) {
             return getCalleStrokeWidths(anchoFactor).asfalto * 0.5;
         }
@@ -1644,7 +1649,8 @@
             const base = getCalleDynBasePx();
             const factor = anchoFactor || draftCalleAncho || 8;
             const asf = Math.max(4, base * factor);
-            return { asfalto: asf, borde: asf * 1.5 };
+            const thin = getCalleBorderThinPx();
+            return { asfalto: asf, borde: asf + thin * 2, thin };
         }
         function getCalleStyleForLine(line) {
             return {
@@ -1658,17 +1664,20 @@
             if (!paths || !paths.length) return;
             const sw = getCalleStrokeWidths(ancho);
             const a = Math.max(0.12, Math.min(1, alpha ?? draftCalleAlpha ?? 0.85));
-            if (paths[0]) {
-                paths[0].style.setProperty('stroke-width', sw.borde + 'px', 'important');
-                paths[0].style.setProperty('stroke', '#ffffff', 'important');
-                paths[0].style.setProperty('stroke-linecap', 'butt', 'important');
-                paths[0].style.setProperty('stroke-linejoin', 'miter', 'important');
+            const borde = paths.find(p => p.classList && p.classList.contains('linea-calle-borde')) || paths[0];
+            const asf = paths.find(p => p.classList && p.classList.contains('linea-calle-asfalto')) || paths[1];
+            if (borde) {
+                borde.style.setProperty('stroke-width', sw.borde + 'px', 'important');
+                borde.style.setProperty('stroke', 'rgba(255,255,255,0.94)', 'important');
+                borde.style.setProperty('stroke-linecap', 'butt', 'important');
+                borde.style.setProperty('stroke-linejoin', 'miter', 'important');
+                borde.style.setProperty('filter', 'drop-shadow(0 0 1px rgba(255,255,255,0.35))', 'important');
             }
-            if (paths[1]) {
-                paths[1].style.setProperty('stroke-width', sw.asfalto + 'px', 'important');
-                paths[1].style.setProperty('stroke', `rgba(30,35,45,${a})`, 'important');
-                paths[1].style.setProperty('stroke-linecap', 'butt', 'important');
-                paths[1].style.setProperty('stroke-linejoin', 'miter', 'important');
+            if (asf) {
+                asf.style.setProperty('stroke-width', sw.asfalto + 'px', 'important');
+                asf.style.setProperty('stroke', `rgba(30,35,45,${a})`, 'important');
+                asf.style.setProperty('stroke-linecap', 'butt', 'important');
+                asf.style.setProperty('stroke-linejoin', 'miter', 'important');
             }
         }
         function syncCallePanelUI() {
@@ -2424,7 +2433,7 @@
                 const existingElements = svg.querySelectorAll(`[data-line-id="${line.id}"]`);
                 if (existingElements.length === 0) {
                     if (line.tipo === 'calle') {
-                        const pBorde = document.createElementNS("http://www.w3.org/2000/svg", "path"); pBorde.setAttribute("class", "linea-calle-borde"); pBorde.dataset.lineId = line.id; lBordes.appendChild(pBorde);
+                        const pBorde = document.createElementNS("http://www.w3.org/2000/svg", "path"); pBorde.setAttribute("class", "linea-calle-borde"); pBorde.dataset.lineId = line.id; lAristas.appendChild(pBorde);
                         const pAsfalto = document.createElementNS("http://www.w3.org/2000/svg", "path"); pAsfalto.setAttribute("class", "linea-calle-asfalto"); pAsfalto.dataset.lineId = line.id; bindSvgEraser(pAsfalto, line.id); lAsfalto.appendChild(pAsfalto); DOMCache.paths[line.id] = { base: [pBorde, pAsfalto] };
                     } else if (line.tipo === 'divisoria' || line.tipo === 'borde-macro') {
                         const gMacro = document.createElementNS("http://www.w3.org/2000/svg", "g"); gMacro.dataset.lineId = line.id; gMacro.dataset.tipo = line.tipo;
@@ -2456,7 +2465,10 @@
                     }
                 } else {
                     if (line.tipo === 'calle') {
-                        DOMCache.paths[line.id] = { base: Array.from(svg.querySelectorAll(`path[data-line-id="${line.id}"]`)) };
+                        const bordeEl = svg.querySelector(`.linea-calle-borde[data-line-id="${line.id}"]`);
+                        const asfEl = svg.querySelector(`.linea-calle-asfalto[data-line-id="${line.id}"]`);
+                        if (bordeEl && bordeEl.parentNode !== lAristas) lAristas.appendChild(bordeEl);
+                        DOMCache.paths[line.id] = { base: [bordeEl, asfEl].filter(Boolean) };
                     } else {
                         const gNode = svg.querySelector(`g[data-line-id="${line.id}"]`);
                         if (gNode) {
