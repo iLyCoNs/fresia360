@@ -597,11 +597,12 @@ function buildFranjaPointsFromCorners(TL, TR, BR, BL, N, splits) {
 }
 function syncMacroActiveClass() {
     document.body.classList.toggle('auto-macro-active',
-        allDrawnLines.some(l => isMacroEdgeType(l.tipo) || l.tipo === 'area-invisible' || l.tipo === 'franja-grupo'));
+        allDrawnLines.some(l => isMacroEdgeType(l.tipo) || l.tipo === 'area-invisible' || l.tipo === 'franja-grupo' || l.tipo === 'franja-curva-grupo'));
 }
 function syncFranjaVisualsOnReady() {
     migrateFranjaGroupsFromData();
     allDrawnLines.filter(l => l.tipo === 'franja-grupo').forEach(g => rebuildFranjaGroup(g.id));
+    allDrawnLines.filter(l => l.tipo === 'franja-curva-grupo').forEach(g => rebuildFranjaCurvaGroup(g.id));
     ensureFranjaIntegrity();
     syncMacroActiveClass();
 }
@@ -699,6 +700,10 @@ function ensureFranjaIntegrity() {
     allDrawnLines.filter(l => l.tipo === 'franja-grupo').forEach(g => {
         const nFills = allDrawnLines.filter(l => l.franjaGrupo === g.id && l.tipo === 'area-invisible').length;
         if (nFills !== (g.franjaCount || 0)) rebuildFranjaGroup(g.id);
+    });
+    allDrawnLines.filter(l => l.tipo === 'franja-curva-grupo').forEach(g => {
+        const nFills = allDrawnLines.filter(l => l.franjaGrupo === g.id && l.tipo === 'area-invisible').length;
+        if (nFills !== (g.franjaCount || 0)) rebuildFranjaCurvaGroup(g.id);
     });
     const orphans = allDrawnLines.filter(l => l.tipo === 'area-invisible' && !l.franjaGrupo);
     if (orphans.length >= 2) { promoteClusterToFranja(orphans); return; }
@@ -864,23 +869,30 @@ function promoteClusterToFranja(children) {
     return true;
 }
 function applyFranjaDivDrag(gid, splitIdx, clientX, clientY) {
-    const grp = allDrawnLines.find(l => l.id === gid && l.tipo === 'franja-grupo');
+    const grp = allDrawnLines.find(l => l.id === gid && (l.tipo === 'franja-grupo' || l.tipo === 'franja-curva-grupo'));
     if (!grp) return;
-    const [TL, TR] = grp.puntos;
+    const splits = ensureFranjaSplits(grp);
     const proj = getPanoramaScreenProjector();
     if (!proj) return;
-    const tlSc = proj.toScreen(TL[0], TL[1]), trSc = proj.toScreen(TR[0], TR[1]);
-    if (!tlSc || !trSc) return;
-    const sx = clientX - DOMCache.viewport.left, sy = clientY - DOMCache.viewport.top;
-    const dx = trSc[0] - tlSc[0], dy = trSc[1] - tlSc[1];
-    const len2 = dx * dx + dy * dy;
-    if (len2 < 1) return;
-    let t = ((sx - tlSc[0]) * dx + (sy - tlSc[1]) * dy) / len2;
-    const splits = ensureFranjaSplits(grp);
     const minGap = 0.025;
+    let t;
+    if (grp.tipo === 'franja-curva-grupo') {
+        t = projectScreenTOnPolyline(grp.frente, clientX, clientY, proj);
+        if (t == null) return;
+    } else {
+        const [TL, TR] = grp.puntos;
+        const tlSc = proj.toScreen(TL[0], TL[1]), trSc = proj.toScreen(TR[0], TR[1]);
+        if (!tlSc || !trSc) return;
+        const sx = clientX - DOMCache.viewport.left, sy = clientY - DOMCache.viewport.top;
+        const dx = trSc[0] - tlSc[0], dy = trSc[1] - tlSc[1];
+        const len2 = dx * dx + dy * dy;
+        if (len2 < 1) return;
+        t = ((sx - tlSc[0]) * dx + (sy - tlSc[1]) * dy) / len2;
+    }
     t = Math.max(splits[splitIdx - 1] + minGap, Math.min(splits[splitIdx + 1] - minGap, t));
     splits[splitIdx] = t;
-    rebuildFranjaGroup(gid);
+    if (grp.tipo === 'franja-curva-grupo') rebuildFranjaCurvaGroup(gid);
+    else rebuildFranjaGroup(gid);
 }
 function getPathClassForLine(line) {
     if (line.tipo === 'masterplan_fill') return 'linea-relleno-mp';
@@ -909,8 +921,18 @@ function ensureSvgLayerOrder(svg) {
     });
 }
 function straightenFranjaGroup(gid) {
-    const grp = allDrawnLines.find(l => l.id === gid && l.tipo === 'franja-grupo');
-    if (!grp || grp.puntos.length < 4) return false;
+    const grp = allDrawnLines.find(l => l.id === gid && (l.tipo === 'franja-grupo' || l.tipo === 'franja-curva-grupo'));
+    if (!grp) return false;
+    
+    if (grp.tipo === 'franja-curva-grupo') {
+        grp.tipo = 'franja-grupo';
+        grp.puntos = [grp.frente[0], grp.frente[grp.frente.length-1], grp.fondo[grp.fondo.length-1], grp.fondo[0]];
+        delete grp.frente; delete grp.fondo;
+        rebuildFranjaGroup(gid);
+        return true;
+    }
+
+    if (grp.puntos.length < 4) return false;
     const proj = getPanoramaScreenProjector();
     if (!proj) return false;
     const scPts = grp.puntos.map(py => ({ sc: proj.toScreen(py[0], py[1]) })).filter(p => p.sc);
@@ -928,8 +950,8 @@ function straightenFranjaGroup(gid) {
 }
 function enderezarFranjas() {
     migrateFranjaGroupsFromData();
-    const grupos = allDrawnLines.filter(l => l.tipo === 'franja-grupo');
-    if (!grupos.length) return alert('No hay franjas de lotes.\n\nUsa 🏘️ Franja Lotes o ✨ AUTO-MACRO sobre un recuadro primero.');
+    const grupos = allDrawnLines.filter(l => l.tipo === 'franja-grupo' || l.tipo === 'franja-curva-grupo');
+    if (!grupos.length) return alert('No hay franjas de lotes.\n\nUsa 🏘️ Franja Lotes, 〰️ Franja Curva o ✨ AUTO-MACRO primero.');
     if (!confirm(`📏 ENDEREZAR ${grupos.length} franja(s)\n\n• Bordes superiores/inferiores rectos\n• Divisiones verticales alineadas\n• Estilo levantamiento topográfico\n\n¿Continuar?`)) return;
     let ok = 0;
     grupos.forEach(g => { if (straightenFranjaGroup(g.id)) ok++; });
@@ -947,30 +969,92 @@ function rebuildMacroEdgesForFranjaGroup(gid) {
     macroLines.forEach(m => { m.franjaGrupo = gid; });
     allDrawnLines.push(...macroLines);
 }
+function getFranjaStripById(gid) {
+    return allDrawnLines.find(l => l.id === gid && (l.tipo === 'franja-grupo' || l.tipo === 'franja-curva-grupo'));
+}
+function normalizeFranjaStripToRect(gid) {
+    const grp = getFranjaStripById(gid);
+    if (!grp) return null;
+    if (grp.tipo === 'franja-curva-grupo') straightenFranjaGroup(gid);
+    return allDrawnLines.find(l => l.id === gid && l.tipo === 'franja-grupo') || null;
+}
+function getFranjaSplitRailPoints(grp) {
+    const N = grp.franjaCount || 2;
+    const splits = ensureFranjaSplits(grp);
+    if (grp.tipo === 'franja-grupo' && grp.puntos?.length >= 4) {
+        const built = buildFranjaPointsFromCorners(grp.puntos[0], grp.puntos[1], grp.puntos[2], grp.puntos[3], N, splits);
+        return built ? { topPts: built.topPts, botPts: built.botPts, N, splits } : null;
+    }
+    if (grp.tipo === 'franja-curva-grupo' && grp.frente?.length >= 2 && grp.fondo?.length >= 2) {
+        const topPts = [], botPts = [];
+        for (let i = 0; i <= N; i++) {
+            topPts.push(getPointAlongPolyline(grp.frente, splits[i]));
+            botPts.push(getPointAlongPolyline(grp.fondo, splits[i]));
+        }
+        return { topPts, botPts, N, splits };
+    }
+    return null;
+}
+function injectFranjaInternalDivisorias(macroLines, gid, topPts, botPts, N) {
+    const out = [...macroLines];
+    for (let i = 1; i < N; i++) {
+        const p1 = [...topPts[i]], p2 = [...botPts[i]];
+        let hasDiv = out.some(m => m.tipo === 'divisoria' && m.puntos?.length >= 2 && edgeMatchesLine(m.puntos[0], m.puntos[1], p1, p2, 0.15));
+        if (!hasDiv) {
+            out.push({ id: 'div_int_' + gid + '_' + i, tipo: 'divisoria', puntos: [p1, p2], franjaGrupo: gid, franjaDivIdx: i });
+        }
+        out.forEach((m, j) => {
+            if (m.tipo === 'borde-macro' && m.puntos?.length >= 2 && edgeMatchesLine(m.puntos[0], m.puntos[1], p1, p2, 0.15)) {
+                out[j] = { ...m, tipo: 'divisoria' };
+            }
+        });
+    }
+    return out;
+}
+function projectScreenTOnPolyline(pts, clientX, clientY, proj) {
+    const sx = clientX - DOMCache.viewport.left, sy = clientY - DOMCache.viewport.top;
+    const hit = proj.toPY(sx, sy);
+    if (!hit) return null;
+    const len = getPolylineLength(pts);
+    if (len < 1e-6) return 0;
+    let bestT = 0, bestD = Infinity, acc = 0;
+    for (let i = 0; i < pts.length - 1; i++) {
+        const ax = pts[i][0], ay = pts[i][1], bx = pts[i + 1][0], by = pts[i + 1][1];
+        const dx = bx - ax, dy = by - ay, segLen2 = dx * dx + dy * dy;
+        const segLen = Math.hypot(dx, dy);
+        let segT = segLen2 < 1e-9 ? 0 : ((hit[0] - ax) * dx + (hit[1] - ay) * dy) / segLen2;
+        segT = Math.max(0, Math.min(1, segT));
+        const px = ax + segT * dx, py = ay + segT * dy;
+        const dist = Math.hypot(hit[0] - px, hit[1] - py);
+        if (dist < bestD) { bestD = dist; bestT = (acc + segT * segLen) / len; }
+        acc += segLen;
+    }
+    return bestT;
+}
 function rebuildFranjaGroup(gid) {
     const grp = allDrawnLines.find(l => l.id === gid && l.tipo === 'franja-grupo');
     if (!grp || grp.puntos.length < 4) return;
-    const [TL, TR, BR, BL] = grp.puntos;
     const N = grp.franjaCount || 2;
     const splits = ensureFranjaSplits(grp);
     allDrawnLines = allDrawnLines.filter(l => l.franjaGrupo !== gid);
-    const built = buildFranjaPointsFromCorners(TL, TR, BR, BL, N, splits);
-    if (!built) return;
-    const { topPts, botPts } = built;
+    const rails = getFranjaSplitRailPoints(grp);
+    if (!rails) return;
+    const { topPts, botPts } = rails;
     const draftPolys = [];
     for (let i = 0; i < N; i++) {
         draftPolys.push({
             id: gid + '_' + i, tipo: 'solida', franjaGrupo: gid, franjaIdx: i,
             franjaNumero: String(i + 1).padStart(2, '0'),
-            puntos: [topPts[i], topPts[i+1], botPts[i+1], botPts[i]]
+            puntos: [topPts[i], topPts[i + 1], botPts[i + 1], botPts[i]]
         });
     }
     const { invisibleFills, macroLines } = buildAutoMacroFromLotes(draftPolys);
+    let edges = injectFranjaInternalDivisorias(macroLines, gid, topPts, botPts, N);
     invisibleFills.forEach((f, i) => {
         f.franjaGrupo = gid; f.franjaIdx = i; f.franjaNumero = draftPolys[i].franjaNumero; f.id = gid + '_' + i;
     });
-    macroLines.forEach(m => { m.franjaGrupo = gid; });
-    allDrawnLines.push(...invisibleFills, ...macroLines);
+    edges.forEach(m => { m.franjaGrupo = gid; });
+    allDrawnLines.push(...invisibleFills, ...edges);
     document.body.classList.add('auto-macro-active');
 }
 function migrateFranjaGroupsFromData() {
@@ -1038,6 +1122,12 @@ function applyDraggedVertexCoords(coords) {
     if (linea.tipo === 'franja-grupo') {
         linea.puntos[draggingVertex.idx] = [coords[0], coords[1]];
         rebuildFranjaGroup(linea.id);
+        return;
+    }
+    if (linea.tipo === 'franja-curva-grupo') {
+        if (draggingVertex.target === 'frente') linea.frente[draggingVertex.idx] = [coords[0], coords[1]];
+        if (draggingVertex.target === 'fondo') linea.fondo[draggingVertex.idx] = [coords[0], coords[1]];
+        rebuildFranjaCurvaGroup(linea.id);
         return;
     }
     if (linea.franjaGrupo) {
@@ -1192,8 +1282,14 @@ function screenPointToPanorama(sx, sy) {
 function getFranjaGrupoScreenRects() {
     const proj = getPanoramaScreenProjector();
     if (!proj) return [];
-    return allDrawnLines.filter(l => l.tipo === 'franja-grupo').map(g => {
-        const [TL, TR, BR, BL] = g.puntos;
+    return allDrawnLines.filter(l => l.tipo === 'franja-grupo' || l.tipo === 'franja-curva-grupo').map(g => {
+        let TL, TR, BR, BL;
+        if (g.tipo === 'franja-grupo') {
+            [TL, TR, BR, BL] = g.puntos;
+        } else {
+            TL = g.frente[0]; TR = g.frente[g.frente.length - 1];
+            BR = g.fondo[g.fondo.length - 1]; BL = g.fondo[0]; 
+        }
         const tl = proj.toScreen(TL[0], TL[1]), tr = proj.toScreen(TR[0], TR[1]);
         const br = proj.toScreen(BR[0], BR[1]), bl = proj.toScreen(BL[0], BL[1]);
         if (!tl || !tr || !br || !bl) return null;
@@ -1209,7 +1305,7 @@ function rectsSameHeight(a, b, px) {
     return Math.abs(a.top - b.top) < px && Math.abs(a.bottom - b.bottom) < px;
 }
 function isFranjaBoundLine(line) {
-    return line && (line.tipo === 'franja-grupo' || line.tipo === 'borde-macro' || line.tipo === 'area-invisible' || !!line.franjaGrupo);
+    return line && (line.tipo === 'franja-grupo' || line.tipo === 'franja-curva-grupo' || line.tipo === 'borde-macro' || line.tipo === 'area-invisible' || !!line.franjaGrupo);
 }
 function getCalleDynBasePx() {
     const raw = getComputedStyle(document.documentElement).getPropertyValue('--stroke-dyn') || '2.5px';
@@ -1581,11 +1677,11 @@ function getAllStripSnapTargets() {
 function resolveOrphanToFranjaGid(target) {
     if (!target?.orphan || !target.fills?.length) return target?.gid || null;
     const orphanIds = new Set(target.fills.map(f => f.id));
-    const linked = allDrawnLines.find(l => l.tipo === 'franja-grupo' &&
+    const linked = allDrawnLines.find(l => (l.tipo === 'franja-grupo' || l.tipo === 'franja-curva-grupo') &&
         allDrawnLines.some(c => c.franjaGrupo === l.id && orphanIds.has(c.id)));
     if (linked) return linked.id;
     promoteClusterToFranja([...target.fills]);
-    return allDrawnLines.filter(l => l.tipo === 'franja-grupo').slice(-1)[0]?.id || null;
+    return allDrawnLines.filter(l => l.tipo === 'franja-grupo' || l.tipo === 'franja-curva-grupo').slice(-1)[0]?.id || null;
 }
 function snapFranjaScreenRect(ax, ay, bx, by, opts) {
     const forceExtend = opts?.forceExtend === true;
@@ -1745,6 +1841,7 @@ function ensureStitchedDivisorias() {
 function mergeVerticalFranjaChain(gids) {
     const unique = [...new Set(gids.filter(Boolean))];
     if (unique.length < 2) return false;
+    unique.forEach(id => normalizeFranjaStripToRect(id));
     const strips = unique.map(id => allDrawnLines.find(l => l.id === id && l.tipo === 'franja-grupo')).filter(Boolean);
     if (strips.length < 2) return false;
     const proj = getPanoramaScreenProjector();
@@ -1776,6 +1873,7 @@ function mergeVerticalFranjaChain(gids) {
     keep.franjaCount = allSingle ? metas.length : metas.reduce((sum, m) => sum + m.n, 0);
     keep.franjaSplits = splits.length === keep.franjaCount + 1 ? splits : Array.from({ length: keep.franjaCount + 1 }, (_, i) => i / keep.franjaCount);
     rebuildFranjaGroup(keep.id);
+    ensureStitchedDivisorias();
     return true;
 }
 function tryMergeVerticalHilera(triggerGid, snap) {
@@ -1808,6 +1906,8 @@ function tryMergeVerticalHilera(triggerGid, snap) {
     return mergeVerticalFranjaChain(touching.length >= 2 ? touching : chain.map(r => r.gid));
 }
 function mergeFranjasHorizontal(keepGid, mergeGid, mergeOnLeft) {
+    normalizeFranjaStripToRect(keepGid);
+    normalizeFranjaStripToRect(mergeGid);
     const keep = allDrawnLines.find(l => l.id === keepGid && l.tipo === 'franja-grupo');
     const merge = allDrawnLines.find(l => l.id === mergeGid && l.tipo === 'franja-grupo');
     if (!keep || !merge) return false;
@@ -1825,10 +1925,11 @@ function mergeFranjasHorizontal(keepGid, mergeGid, mergeOnLeft) {
     keep.franjaCount = total;
     allDrawnLines = allDrawnLines.filter(l => l.franjaGrupo !== mergeGid && l.id !== mergeGid);
     rebuildFranjaGroup(keepGid);
+    ensureStitchedDivisorias();
     return true;
 }
 function tryMergeFranjaHorizontal(newGid) {
-    const newG = allDrawnLines.find(l => l.id === newGid && l.tipo === 'franja-grupo');
+    const newG = getFranjaStripById(newGid);
     const proj = getPanoramaScreenProjector();
     if (!newG || !proj) return false;
     const nr = getFranjaGrupoScreenRects().find(r => r.gid === newGid);
@@ -1847,21 +1948,39 @@ function tryMergeFranjaHorizontal(newGid) {
     return false;
 }
 function alignFranjaVerticalNeighbors(gid) {
-    const grp = allDrawnLines.find(l => l.id === gid && l.tipo === 'franja-grupo');
+    const grp = getFranjaStripById(gid);
     const proj = getPanoramaScreenProjector();
     if (!grp || !proj) return;
     const nr = getFranjaGrupoScreenRects().find(r => r.gid === gid);
     if (!nr) return;
+    const rebuildStrip = () => {
+        if (grp.tipo === 'franja-curva-grupo') rebuildFranjaCurvaGroup(gid);
+        else rebuildFranjaGroup(gid);
+    };
     getFranjaGrupoScreenRects().forEach(or => {
         if (or.gid === gid) return;
         const sameWidth = Math.abs(nr.left - or.left) < 24 && Math.abs(nr.right - or.right) < 24;
         if (!sameWidth) return;
         if (Math.abs(nr.top - or.bottom) < 24) {
             const nTL = proj.toPY(or.bl[0], or.bottom), nTR = proj.toPY(or.br[0], or.bottom);
-            if (nTL && nTR) { grp.puntos[0] = nTL; grp.puntos[1] = nTR; rebuildFranjaGroup(gid); }
+            if (nTL && nTR) {
+                if (grp.tipo === 'franja-curva-grupo') {
+                    grp.frente[0] = nTL; grp.frente[grp.frente.length - 1] = nTR;
+                } else {
+                    grp.puntos[0] = nTL; grp.puntos[1] = nTR;
+                }
+                rebuildStrip();
+            }
         } else if (Math.abs(nr.bottom - or.top) < 24) {
             const nBL = proj.toPY(or.tl[0], or.top), nBR = proj.toPY(or.tr[0], or.top);
-            if (nBL && nBR) { grp.puntos[2] = nBR; grp.puntos[3] = nBL; rebuildFranjaGroup(gid); }
+            if (nBL && nBR) {
+                if (grp.tipo === 'franja-curva-grupo') {
+                    grp.fondo[0] = nBL; grp.fondo[grp.fondo.length - 1] = nBR;
+                } else {
+                    grp.puntos[2] = nBR; grp.puntos[3] = nBL;
+                }
+                rebuildStrip();
+            }
         }
     });
 }
@@ -2018,7 +2137,10 @@ function commitFranjaFromModal() {
         const gid = 'franja_curva_' + Date.now();
         allDrawnLines.push({ id: gid, tipo: 'franja-curva-grupo', franjaCount: N, frente: pending.frente, fondo: pending.fondo, franjaSplits: splits });
         rebuildFranjaCurvaGroup(gid);
-        franjaCurvaFase = 1; franjaCurvaFrente = []; // Reset
+        franjaCurvaFase = 1; franjaCurvaFrente = [];
+        ensureStitchedDivisorias();
+        alignFranjaVerticalNeighbors(gid);
+        tryMergeFranjaHorizontal(gid);
         refreshAllHotspots(); saveToLocal(); flashScreenSuccess();
         return;
     }
@@ -2055,18 +2177,27 @@ function extractPolylineSegment(pts, tStart, tEnd) {
 function rebuildFranjaCurvaGroup(gid) {
     const grp = allDrawnLines.find(l => l.id === gid && l.tipo === 'franja-curva-grupo');
     if (!grp) return;
+    const N = grp.franjaCount || 2;
     const splits = ensureFranjaSplits(grp);
     allDrawnLines = allDrawnLines.filter(l => l.franjaGrupo !== gid);
+    const rails = getFranjaSplitRailPoints(grp);
+    if (!rails) return;
+    const { topPts, botPts } = rails;
     const draftPolys = [];
-    for (let i = 0; i < grp.franjaCount; i++) {
-        const topSeg = extractPolylineSegment(grp.frente, splits[i], splits[i+1]);
-        const botSeg = extractPolylineSegment(grp.fondo, splits[i], splits[i+1]).reverse();
-        draftPolys.push({ id: gid + '_' + i, tipo: 'solida', franjaGrupo: gid, franjaIdx: i, franjaNumero: String(i + 1).padStart(2, '0'), puntos: [...topSeg, ...botSeg] });
+    for (let i = 0; i < N; i++) {
+        const topSeg = extractPolylineSegment(grp.frente, splits[i], splits[i + 1]);
+        const botSeg = extractPolylineSegment(grp.fondo, splits[i], splits[i + 1]).reverse();
+        draftPolys.push({
+            id: gid + '_' + i, tipo: 'solida', franjaGrupo: gid, franjaIdx: i,
+            franjaNumero: String(i + 1).padStart(2, '0'),
+            puntos: [...topSeg, ...botSeg]
+        });
     }
     const { invisibleFills, macroLines } = buildAutoMacroFromLotes(draftPolys);
+    let edges = injectFranjaInternalDivisorias(macroLines, gid, topPts, botPts, N);
     invisibleFills.forEach((f, i) => { f.franjaGrupo = gid; f.franjaIdx = i; f.franjaNumero = draftPolys[i].franjaNumero; f.id = gid + '_' + i; });
-    macroLines.forEach(m => { m.franjaGrupo = gid; });
-    allDrawnLines.push(...invisibleFills, ...macroLines);
+    edges.forEach(m => { m.franjaGrupo = gid; });
+    allDrawnLines.push(...invisibleFills, ...edges);
     document.body.classList.add('auto-macro-active');
 }
 
@@ -2137,13 +2268,27 @@ function getHotspotsConfig() {
     }
     if(isSvgRenderAllowed() && isDevModeDrawActive) {
         allDrawnLines.forEach((linea) => {
-            if (linea.tipo === 'franja-grupo') {
-                linea.puntos.forEach((coord, pIdx) => {
-                    hotspots.push({ "id": "vert_franja_corner_" + linea.id + "_" + pIdx, "pitch": coord[0], "yaw": coord[1], "createTooltipFunc": renderHiddenVertex, "createTooltipArgs": { lineId: linea.id, type: linea.tipo, isGuide: true, isFranjaCorner: true, idx: pIdx, hsId: "vert_franja_corner_" + linea.id + "_" + pIdx } });
-                });
+            if (linea.tipo === 'franja-grupo' || linea.tipo === 'franja-curva-grupo') {
+                if (linea.tipo === 'franja-grupo') {
+                    linea.puntos.forEach((coord, pIdx) => {
+                        hotspots.push({ "id": "vert_franja_corner_" + linea.id + "_" + pIdx, "pitch": coord[0], "yaw": coord[1], "createTooltipFunc": renderHiddenVertex, "createTooltipArgs": { lineId: linea.id, type: linea.tipo, isGuide: true, isFranjaCorner: true, idx: pIdx, hsId: "vert_franja_corner_" + linea.id + "_" + pIdx } });
+                    });
+                } else {
+                    linea.frente.forEach((coord, pIdx) => { hotspots.push({ "id": "vert_fcurva_frente_" + linea.id + "_" + pIdx, "pitch": coord[0], "yaw": coord[1], "createTooltipFunc": renderHiddenVertex, "createTooltipArgs": { lineId: linea.id, type: linea.tipo, isGuide: true, isFranjaCorner: true, idx: pIdx, target: 'frente', hsId: "vert_fcurva_frente_" + linea.id + "_" + pIdx } }); });
+                    linea.fondo.forEach((coord, pIdx) => { hotspots.push({ "id": "vert_fcurva_fondo_" + linea.id + "_" + pIdx, "pitch": coord[0], "yaw": coord[1], "createTooltipFunc": renderHiddenVertex, "createTooltipArgs": { lineId: linea.id, type: linea.tipo, isGuide: true, isFranjaCorner: true, idx: pIdx, target: 'fondo', hsId: "vert_fcurva_fondo_" + linea.id + "_" + pIdx } }); });
+                }
                 const N = linea.franjaCount || 2;
                 const splits = ensureFranjaSplits(linea);
-                const built = buildFranjaPointsFromCorners(linea.puntos[0], linea.puntos[1], linea.puntos[2], linea.puntos[3], N, splits);
+                let built = null;
+                if (linea.tipo === 'franja-grupo') {
+                    built = buildFranjaPointsFromCorners(linea.puntos[0], linea.puntos[1], linea.puntos[2], linea.puntos[3], N, splits);
+                } else {
+                    built = { topPts: [], botPts: [] };
+                    for (let i = 0; i <= N; i++) {
+                        built.topPts.push(getPointAlongPolyline(linea.frente, splits[i]));
+                        built.botPts.push(getPointAlongPolyline(linea.fondo, splits[i]));
+                    }
+                }
                 if (built) {
                     for (let di = 1; di < N; di++) {
                         const cP = (built.topPts[di][0] + built.botPts[di][0]) / 2;
@@ -3158,7 +3303,7 @@ function renderHiddenVertex(hotSpotDiv, args) {
             e.stopPropagation(); e.preventDefault();
             const m0 = getMockEvent(e);
             hotSpotDiv.classList.add('is-dragging');
-            draggingVertex = { lineId: args.lineId, idx: args.idx, el: hotSpotDiv, hsId: args.hsId, startX: m0.clientX, startY: m0.clientY };
+            draggingVertex = { lineId: args.lineId, idx: args.idx, el: hotSpotDiv, hsId: args.hsId, startX: m0.clientX, startY: m0.clientY, target: args.target };
         }; 
         hotSpotDiv.addEventListener('mousedown', startDragGuide); hotSpotDiv.addEventListener('touchstart', startDragGuide, {passive: false}); 
     } 
