@@ -2207,14 +2207,45 @@ function runPannellumIntroBootstrap() {
             if (pnlmUi && svg && svg.parentNode !== pnlmUi && isWebGLSupported) { pnlmUi.insertBefore(svg, pnlmUi.firstChild); }
             let fsInterval = setInterval(() => { let fsBtn = document.querySelector('.pnlm-fullscreen-toggle-button'); if (fsBtn) { clearInterval(fsInterval); let newBtn = fsBtn.cloneNode(true); fsBtn.parentNode.replaceChild(newBtn, fsBtn); newBtn.addEventListener('click', () => { let docEl = document.documentElement; if (!document.fullscreenElement) { if (docEl.requestFullscreen) docEl.requestFullscreen(); else if (docEl.webkitRequestFullscreen) docEl.webkitRequestFullscreen(); newBtn.classList.add('pnlm-fullscreen-toggle-button-active'); } else { if (document.exitFullscreen) document.exitFullscreen(); else if (document.webkitExitFullscreen) document.webkitExitFullscreen(); newBtn.classList.remove('pnlm-fullscreen-toggle-button-active'); } if (isTouchDevice() && visor360 && viewerGpuReady) { setTimeout(() => { const r = visor360.getRenderer(); if (r && r.resize) r.resize(); }, 300); } }); } }, 500);
             if (pnlmContainer && uiEngine) { pnlmContainer.appendChild(uiEngine); uiEngine.style.zIndex = '999999'; }
-            if (!visor360) return; visor360.setHfov(DEFAULT_HFOV, 2500); visor360.setPitch(-40, 2500);
+            if (!visor360) return; 
+
+            visor360.setHfov(DEFAULT_HFOV, 2500); 
+            visor360.setPitch(-40, 2500);
+
             const urlParams = new URLSearchParams(window.location.search); const targetLoteId = urlParams.get('lote');
+            
             setTimeout(() => {
-                if (targetLoteId) { const searchStr = targetLoteId.toLowerCase().replace(/\s/g, ''); const targetPin = BaseDatosLotes.find( (l) => (l.titulo || '').toLowerCase().replace(/\s/g, '').includes(searchStr) || (l.numero || '') === targetLoteId, ); if (targetPin) visor360.lookAt(targetPin.pitch, targetPin.yaw, 70, 3000); else visor360.lookAt(5, 15, 100, 3000); } else { visor360.lookAt(5, 15, 100, 3000); }
-                setTimeout(() => {
-                    if (!targetLoteId) visor360.lookAt(-89, 65, 115, 3000);
-                    setTimeout(() => { revealLoteoOverlay(); }, targetLoteId ? 0 : 3000);
-                }, 3000);
+                if (targetLoteId) { 
+                    const searchStr = targetLoteId.toLowerCase().replace(/\s/g, ''); const targetPin = BaseDatosLotes.find( (l) => (l.titulo || '').toLowerCase().replace(/\s/g, '').includes(searchStr) || (l.numero || '') === targetLoteId, ); if (targetPin) visor360.lookAt(targetPin.pitch, targetPin.yaw, 70, 3000); else visor360.lookAt(5, 15, 100, 3000); 
+                    setTimeout(() => { revealLoteoOverlay(); }, 3000);
+                } else {
+                    if (FRESIA_CFG.vista === 'suelo') {
+                        // --- CINEMÁTICA VISTA SUELO (3 Puntos -> TinyHouse) ---
+                        // Punto 1: Paneamos hacia un costado del Norte
+                        visor360.lookAt(15, NorteOffset - 70, 110, 2500);
+                        setTimeout(() => {
+                            // Punto 2: Barrido largo cruzando el horizonte
+                            visor360.lookAt(0, NorteOffset + 50, 95, 3000);
+                            setTimeout(() => {
+                                // Punto 3: Buscar "TinyHouse" y enfocar
+                                const tinyPin = BaseDatosLotes.find(p => p.titulo && p.titulo.toLowerCase().includes('tinyhouse')) || PuntosHorizonte.find(p => p.titulo && p.titulo.toLowerCase().includes('tinyhouse'));
+                                if (tinyPin) {
+                                    visor360.lookAt(tinyPin.pitch, tinyPin.yaw, 80, 3500);
+                                } else {
+                                    visor360.lookAt(5, NorteOffset, 85, 3500); // Fallback al Norte si no existe
+                                }
+                                setTimeout(() => { revealLoteoOverlay(); }, 3500);
+                            }, 3000);
+                        }, 2500);
+                    } else {
+                        // --- CINEMÁTICA VISTA AÉREA NORMAL ---
+                        visor360.lookAt(5, 15, 100, 3000); 
+                        setTimeout(() => {
+                            visor360.lookAt(-89, 65, 115, 3000);
+                            setTimeout(() => { revealLoteoOverlay(); }, 3000);
+                        }, 3000);
+                    }
+                }
             }, 1500);
         }, 1000);
     };
