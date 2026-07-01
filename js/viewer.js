@@ -292,7 +292,7 @@ function loadFromLocal() { const savedData = localStorage.getItem(FRESIA_CFG.aut
 async function fetchValorUFOnline() { try { const response = await fetch('https://mindicador.cl/api/uf', { cache: 'no-store' }); if (response.ok) { const data = await response.json(); if(data && data.serie && data.serie.length > 0) { UF_Online = data.serie[0].valor; return; } } } catch (error) {} }
 async function fetchMasterData() { try { const response = await fetch(FRESIA_CFG.datosJson + '?v=' + new Date().getTime()); if(response.ok) { const data = await response.json(); ConfigProyecto = data.configProyecto || ConfigProyecto; OrigenDrone = data.origen || null; NorteOffset = data.norte || 0; BaseDatosLotes = data.lotes || []; PuntosHorizonte = data.horizontes || []; allDrawnLines = data.trazos || []; } else { loadFromLocal(); } } catch(e) { loadFromLocal(); } applyProjectConfig(); await syncRutasDesdeOrigen(); }
 
-let visor360, currentPinSizeIndex = 1, isIntroAnimating = true, isDevModeDrawActive = false, isDevModePinsActive = false, isArquitecto2Active = false, arq2Tool = 'lote-libre', arq2LinePoints = [], arq2TempLineId = 'arq2_temp_' + Date.now(), arq2CosturaSnap = null, arq2CosturaStyle = 'punteada', arq2SelectedLineId = null, arq2FilaPhase = 0, arq2FilaFrente = [], arq2FilaFondo = [], arq2PendingFila = null, arq2InvasionActive = false, arq2SmoothCurves = true, arq2FilaDirectionBad = false, arq2DemoActive = false, arq2DemoTimers = [], arq2DemoLoopInterval = null, arq2DemoPY = null, currentLineType = 'solida', currentLinePoints = [], currentPinTypeMap = 'disponible', currentTempLineId = 'temp_' + Date.now(), draggingVertex = null, draggingFranjaDiv = null, draggingCalleMove = null, pickedPin = null, snapCursor = null, ghostPin = null, snappedCoords = null, activePinArgs = null, isCreatingNewPin = false, isSnapToClose = false, franjaCornerA = null, franjaPreviewQuad = null, franjaPreviewDivs = [], franjaCurvaPreviewStrip = null, franjaDraftCount = 10, franjaDraftBaseM2 = 5000, franjaPendingCreate = null, guardarNubeEnCurso = false, draftCalleAncho = 8, draftCalleAlpha = 0, draftCalleLabelScale = 1, draftCalleShowLabel = true, draftCalleSnapFranja = false, calleSnapIsFranjaEdge = false, lastCalleTap = null, isLineaPinesActive = false, lineaPinesPoints = [], lineaPinesTempId = 'linea_pins_' + Date.now(), franjaCurvaFrente = [], franjaCurvaFase = 0;
+let visor360, currentPinSizeIndex = 1, isIntroAnimating = true, isDevModeDrawActive = false, isDevModePinsActive = false, isArquitecto2Active = false, arq2Tool = 'lote-libre', arq2LinePoints = [], arq2TempLineId = 'arq2_temp_' + Date.now(), arq2CosturaSnap = null, arq2CosturaStyle = 'punteada', arq2SelectedLineId = null, arq2FilaVariableContorno = null, arq2PendingFila = null, arq2InvasionActive = false, arq2SmoothCurves = true, arq2DemoActive = false, arq2DemoTimers = [], arq2DemoLoopInterval = null, arq2DemoPY = null, currentLineType = 'solida', currentLinePoints = [], currentPinTypeMap = 'disponible', currentTempLineId = 'temp_' + Date.now(), draggingVertex = null, draggingFranjaDiv = null, draggingCalleMove = null, pickedPin = null, snapCursor = null, ghostPin = null, snappedCoords = null, activePinArgs = null, isCreatingNewPin = false, isSnapToClose = false, franjaCornerA = null, franjaPreviewQuad = null, franjaPreviewDivs = [], franjaCurvaPreviewStrip = null, franjaDraftCount = 10, franjaDraftBaseM2 = 5000, franjaPendingCreate = null, guardarNubeEnCurso = false, draftCalleAncho = 8, draftCalleAlpha = 0, draftCalleLabelScale = 1, draftCalleShowLabel = true, draftCalleSnapFranja = false, calleSnapIsFranjaEdge = false, lastCalleTap = null, isLineaPinesActive = false, lineaPinesPoints = [], lineaPinesTempId = 'linea_pins_' + Date.now(), franjaCurvaFrente = [], franjaCurvaFase = 0;
 function revealLoteoOverlay() {
     isIntroAnimating = false;
     document.body.classList.add('loteo-overlay-ready');
@@ -789,6 +789,10 @@ function applyEraserDelete(lineId) {
     if (lineId === currentTempLineId) { currentLinePoints = []; return true; }
     const line = allDrawnLines.find(l => l.id === lineId);
     if (!line) return false;
+    if (line.tipo === 'fila-variable-lote') {
+        allDrawnLines = allDrawnLines.filter(l => l.id !== line.id && l.arq2Grupo !== line.id);
+        return true;
+    }
     const gid = line.tipo === 'franja-grupo' ? line.id : (line.franjaGrupo || null);
     if (gid) {
         allDrawnLines = allDrawnLines.filter(l => {
@@ -1682,6 +1686,7 @@ function updateDrawModeSnap(mock, coords) {
     snappedCoords = null;
     isSnapToClose = false;
     calleSnapIsFranjaEdge = false;
+    let devEdgeSnap = null;
     if (!coords || !snapCursor) return;
     if (currentLineType === 'calle') {
         if (draftCalleSnapFranja && !isNearFranjaCornerScreen(mock.clientX, mock.clientY, 32)) {
@@ -1702,13 +1707,24 @@ function updateDrawModeSnap(mock, coords) {
             }
         }
     } else {
+        if (isDevModeDrawActive && currentLineType !== 'cortar' && currentLineType !== 'eraser') {
+            devEdgeSnap = arq2_findNearestEdgeOrVertex(mock.clientX, mock.clientY, currentTempLineId, 15);
+            if (devEdgeSnap) {
+                foundSnap = true;
+                snappedCoords = [devEdgeSnap.pitch, devEdgeSnap.yaw];
+            }
+        }
         if (currentLinePoints.length >= 3 && currentLineType !== 'cortar' && currentLineType !== 'eraser' && currentLineType !== 'divisoria' && currentLineType !== 'franja') {
             const dP0 = Math.hypot(coords[0] - currentLinePoints[0][0], coords[1] - currentLinePoints[0][1]);
             if (dP0 < SNAP_DISTANCE) { foundSnap = true; snappedCoords = [...currentLinePoints[0]]; isSnapToClose = true; }
         }
         if (!foundSnap) {
             const allPts = [...currentLinePoints];
-            allDrawnLines.forEach(l => { if (!isFranjaBoundLine(l)) allPts.push(...l.puntos); });
+            allDrawnLines.forEach(l => {
+                if (isFranjaBoundLine(l)) return;
+                const snapPts = arq2_getSnapPolylinePoints(l);
+                allPts.push(...(snapPts.length ? snapPts : (l.puntos || [])));
+            });
             for (const pt of allPts) {
                 const dist = Math.hypot(pt[0] - coords[0], pt[1] - coords[1]);
                 if (dist < SNAP_DISTANCE) { foundSnap = true; snappedCoords = [...pt]; break; }
@@ -1716,14 +1732,16 @@ function updateDrawModeSnap(mock, coords) {
         }
     }
     if (foundSnap) {
-        snapCursor.style.left = mock.clientX + 'px';
-        snapCursor.style.top = mock.clientY + 'px';
+        const edgeSnapScreen = (isDevModeDrawActive && devEdgeSnap) ? devEdgeSnap : null;
+        snapCursor.style.left = (edgeSnapScreen?.screenX ?? mock.clientX) + 'px';
+        snapCursor.style.top = (edgeSnapScreen?.screenY ?? mock.clientY) + 'px';
         snapCursor.classList.add('active');
+        snapCursor.classList.toggle('is-costura', !!edgeSnapScreen);
         snapCursor.classList.toggle('is-closing', isSnapToClose && currentLineType !== 'calle');
         snapCursor.classList.toggle('is-calle-finish', isSnapToClose && currentLineType === 'calle');
         snapCursor.classList.toggle('is-calle-edge', calleSnapIsFranjaEdge);
     } else {
-        snapCursor.classList.remove('active', 'is-closing', 'is-calle-edge', 'is-calle-finish');
+        snapCursor.classList.remove('active', 'is-closing', 'is-calle-edge', 'is-calle-finish', 'is-costura');
     }
 }
 function handleCalleDrawClick(mock) {
@@ -2266,15 +2284,36 @@ function openFranjaLotesModal(defaultN, onConfirm) {
     renderFranjaModalRows(defaultN);
     modal.dataset.onConfirm = '1';
     modal._franjaConfirm = onConfirm;
+    const titleEl = modal.querySelector('h3');
+    const hintEl = modal.querySelector('.franja-modal-hint');
+    const confirmBtn = document.getElementById('franja-modal-confirm');
+    if (arq2PendingFila?.contorno) {
+        if (titleEl) titleEl.textContent = '〰️ Fila Variable — lotes y m²';
+        if (hintEl) hintEl.textContent = 'Indica cuántos lotes quieres dentro del contorno y el m² de cada uno. Las divisiones internas serán proporcionales al área.';
+        if (confirmBtn) confirmBtn.textContent = 'Generar hilera';
+    } else {
+        if (titleEl) titleEl.textContent = '🏘️ Franja de Lotes';
+        if (hintEl) hintEl.textContent = 'Indica cuántos lotes y el tamaño de cada uno en m². El ancho en el mapa será proporcional (ej. 7000 m² = 40% más ancho que 5000 m²).';
+        if (confirmBtn) confirmBtn.textContent = 'Crear franja';
+    }
     modal.classList.add('open');
 }
 function closeFranjaLotesModal() {
     const modal = document.getElementById('franja-lotes-modal');
     if (modal) { modal.classList.remove('open'); modal._franjaConfirm = null; }
+    if (arq2PendingFila?.contorno) { arq2PendingFila = null; arq2FilaVariableContorno = null; }
     franjaPendingCreate = null;
 }
 function commitFranjaFromModal() {
     const modal = document.getElementById('franja-lotes-modal');
+    if (arq2PendingFila?.contorno) {
+        const N = Math.max(1, Math.min(40, parseInt(document.getElementById('franja-modal-count')?.value, 10) || 4));
+        const weights = getFranjaModalWeights();
+        if (weights.length !== N) { alert('⚠️ Actualiza la lista para coincidir.'); return; }
+        closeFranjaLotesModal();
+        arq2_commitFilaVariable(weights);
+        return;
+    }
     const pending = franjaPendingCreate;
     const cb = modal?._franjaConfirm;
     if (!pending || !cb) { closeFranjaLotesModal(); return; }
@@ -2330,9 +2369,9 @@ const ARQ2_STEPS = [
     { tool: 'relleno-auto', id: 'corners', text: 'Marca esquinas reales con pocos clics; al cerrar se numera y marca disponible solo.' },
     { tool: 'relleno-auto', id: 'curve', text: 'Curvas naturales: clics seguidos. Bordes rectos: un clic por esquina, sin puntos intermedios.' },
     { tool: 'relleno-auto', id: 'close', text: 'Enter o clic en el origen — numeración correlativa automática.' },
-    { tool: 'fila-variable', id: 'frente', text: 'PASO 1/3 — Traza el FRENTE de la hilera (junto a la calle) de IZQUIERDA A DERECHA con varios clics. Presiona Enter al terminar.' },
-    { tool: 'fila-variable', id: 'fondo', text: 'PASO 2/3 — Traza el FONDO en LA MISMA DIRECCIÓN (izq. → der.). Verás guías grises frente↔fondo: si se cruzan, vas al revés — Escape y reintenta.' },
-    { tool: 'fila-variable', id: 'modal', text: 'PASO 3/3 — Ingresa los m² de cada lote. El ancho se ajusta por arc-length (√m²) sin desplazar los demás.' }
+    { tool: 'fila-variable', id: 'contorno', text: 'Dibuja el contorno COMPLETO de la hilera (todo el terreno junto, como un solo lote grande). Cierra con Enter.' },
+    { tool: 'fila-variable', id: 'modal', text: 'Indica cuántos lotes y sus m² en la ventana emergente.' },
+    { tool: 'fila-variable', id: 'done', text: 'Listo — las divisiones internas se dibujan solas, proporcionales.' }
 ];
 function arq2_applyOrganicPathAttrs(pathEl, role) {
     if (!pathEl) return;
@@ -2397,7 +2436,6 @@ function arq2_projectPolylineD(pts, isClosed, getCamFn, cx, cySc, f) {
     return hasVisible ? d : '';
 }
 function arq2_getActiveDrawPoints() {
-    if (arq2Tool === 'fila-variable') return arq2FilaPhase === 0 ? arq2FilaFrente : arq2FilaFondo;
     return arq2LinePoints;
 }
 function arq2_checkInvasion(p1, p2) {
@@ -2452,18 +2490,19 @@ function arq2_clearVisualFeedback() {
     const tip = document.getElementById('arq2-invasion-tooltip');
     if (tip) tip.style.display = 'none';
     arq2InvasionActive = false;
-    arq2FilaDirectionBad = false;
     const guides = document.getElementById('arq2-fila-guides');
     if (guides) guides.innerHTML = '';
-    const dirWarn = document.getElementById('arq2-fila-direction-warn');
-    if (dirWarn) dirWarn.style.display = 'none';
 }
 function arq2_resolveActiveStepId() {
     const pts = arq2_getActiveDrawPoints();
     if (arq2Tool === 'fila-variable') {
-        if (document.getElementById('arq2-fila-modal')?.classList.contains('open') || arq2FilaPhase >= 2) return 'modal';
-        if (arq2FilaPhase === 1) return pts.length >= 2 ? 'fondo' : 'fondo';
-        return pts.length >= 1 ? 'frente' : 'frente';
+        if (document.getElementById('franja-lotes-modal')?.classList.contains('open') || arq2PendingFila?.contorno) return 'modal';
+        if (pts.length === 0) return 'contorno';
+        if (pts.length >= 3) {
+            const last = pts[pts.length - 1];
+            if (Math.hypot(last[0] - pts[0][0], last[1] - pts[0][1]) < SNAP_DISTANCE * 1.2) return 'contorno';
+        }
+        return 'contorno';
     }
     const toolKey = arq2Tool === 'relleno-auto' ? 'relleno-auto' : (arq2Tool === 'costura' ? 'costura' : 'lote-libre');
     if (pts.length === 0) return 'corners';
@@ -2477,7 +2516,7 @@ function arq2_updatePanelStep() {
     const list = document.getElementById('arq2-steps-list');
     const sem = document.getElementById('arq2-semaphore');
     const smoothRow = document.getElementById('arq2-smooth-row');
-    const dirWarn = document.getElementById('arq2-fila-direction-warn');
+    const filaDesc = document.getElementById('arq2-fila-desc');
     if (!list) return;
     const toolKey = arq2Tool === 'relleno-auto' ? 'relleno-auto' : (arq2Tool === 'costura' ? 'costura' : (arq2Tool === 'fila-variable' ? 'fila-variable' : 'lote-libre'));
     const activeId = arq2_resolveActiveStepId();
@@ -2506,21 +2545,16 @@ function arq2_updatePanelStep() {
         }
     }
     if (demoReplay) demoReplay.style.display = toolKey === 'fila-variable' ? 'block' : 'none';
+    if (filaDesc) filaDesc.style.display = toolKey === 'fila-variable' ? 'block' : 'none';
     document.getElementById('arq2-costura-punteada')?.classList.toggle('active', arq2CosturaStyle === 'punteada');
     document.getElementById('arq2-costura-solida')?.classList.toggle('active', arq2CosturaStyle === 'solida');
-    if (dirWarn) {
-        dirWarn.style.display = (toolKey === 'fila-variable' && arq2FilaPhase === 1 && arq2FilaDirectionBad) ? 'block' : 'none';
-    }
     if (sem) {
         sem.classList.remove('arq2-sem-green', 'arq2-sem-yellow', 'arq2-sem-red');
-        if (arq2FilaDirectionBad && arq2Tool === 'fila-variable' && arq2FilaPhase === 1) {
-            sem.textContent = '🔴 Dirección incorrecta — traza el fondo igual que el frente';
-            sem.classList.add('arq2-sem-red');
-        } else if (arq2InvasionActive) {
+        if (arq2InvasionActive) {
             sem.textContent = '🔴 Cruzando calle o límite, corrige el punto';
             sem.classList.add('arq2-sem-red');
-        } else if (arq2CosturaSnap && (arq2Tool === 'costura' || arq2Tool === 'lote-libre')) {
-            sem.textContent = '🟡 Cerca de costura, revisa antes de cerrar';
+        } else if (arq2CosturaSnap && isArquitecto2Active) {
+            sem.textContent = '🟡 Imán activo — puedes encadenar a forma existente';
             sem.classList.add('arq2-sem-yellow');
         } else {
             sem.textContent = '🟢 Trazo limpio';
@@ -2533,21 +2567,18 @@ function arq2_updateLiveCounter(mock) {
     const tip = document.getElementById('arq2-invasion-tooltip');
     if (!el || !mock) return;
     const pts = arq2_getActiveDrawPoints();
-    if (pts.length === 0 && arq2Tool !== 'fila-variable') { el.style.display = 'none'; return; }
+    if (pts.length === 0) { el.style.display = 'none'; return; }
     el.style.display = 'block';
     el.style.left = mock.clientX + 'px';
     el.style.top = mock.clientY + 'px';
-    if (arq2Tool === 'fila-variable' && document.getElementById('arq2-fila-modal')?.classList.contains('open')) {
-        const weights = arq2_getFilaModalWeights();
+    if (arq2Tool === 'fila-variable' && document.getElementById('franja-lotes-modal')?.classList.contains('open')) {
+        const weights = getFranjaModalWeights();
         const total = weights.reduce((a, b) => a + b, 0);
-        const activeIdx = Math.min(weights.length - 1, Math.max(0, document.querySelector('.arq2-fila-m2:focus') ? Array.from(document.querySelectorAll('.arq2-fila-m2')).indexOf(document.activeElement) : 0));
+        const activeIdx = Math.min(weights.length - 1, Math.max(0, document.querySelector('.franja-weight-input:focus') ? Array.from(document.querySelectorAll('.franja-weight-input')).indexOf(document.activeElement) : 0));
         const current = weights[activeIdx] || 0;
-        const restante = Math.max(0, total - current);
-        el.textContent = 'Lote actual: ' + current + ' m² | Restante hilera: ' + restante + ' m²';
-    } else if (arq2Tool === 'fila-variable') {
-        el.textContent = 'Puntos eje: ' + pts.length;
+        el.textContent = 'Lote actual: ' + current + ' m² | Total hilera: ' + total + ' m²';
     } else {
-        el.textContent = 'Vértices: ' + arq2LinePoints.length;
+        el.textContent = 'Vértices: ' + pts.length + (arq2Tool === 'fila-variable' ? ' (mín. 4)' : '');
     }
     if (tip) {
         if (arq2InvasionActive) {
@@ -2603,7 +2634,7 @@ function arq2_refreshFeedbackVisuals(mock) {
         } else band.setAttribute('d', '');
     } else if (band) { band.setAttribute('d', ''); band.classList.remove('arq2-invasion-warning'); arq2InvasionActive = false; }
     const magnet = document.getElementById('arq2-snap-magnet');
-    if (magnet && arq2CosturaSnap && (arq2Tool === 'costura' || arq2Tool === 'lote-libre')) {
+    if (magnet && arq2CosturaSnap) {
         const sc = ctx.getCam(arq2CosturaSnap.pitch, arq2CosturaSnap.yaw);
         if (sc.z > 0.0001) {
             magnet.style.display = '';
@@ -2613,8 +2644,6 @@ function arq2_refreshFeedbackVisuals(mock) {
         } else magnet.style.display = 'none';
     } else if (magnet) { magnet.style.display = 'none'; magnet.classList.remove('arq2-snap-pulse'); }
     arq2_updateLiveCounter(mock);
-    arq2_updateFilaDirectionState();
-    arq2_refreshFilaGuideLines(ctx);
     arq2_updatePanelStep();
 }
 function arq2_catmullRomSmooth(points, segmentsPerCurve = 8) {
@@ -2693,72 +2722,101 @@ function arq2_validatePolylineDirection(frontPoints, backPoints) {
     if (reversed) back.reverse();
     return { back, reversed, conflict: angleBetween > 90 };
 }
-function arq2_guidesCross(frente, fondo) {
-    const m = Math.min(frente.length, fondo.length);
-    if (m < 2) return false;
-    for (let i = 0; i < m - 1; i++) {
-        for (let j = i + 1; j < m; j++) {
-            if (intersectSegments(frente[i], fondo[i], frente[j], fondo[j])) return true;
-        }
+function arq2_chainFromContour(contorno, startIdx, endIdx) {
+    const n = contorno.length;
+    const chain = [];
+    let i = startIdx;
+    while (true) {
+        chain.push([...contorno[i]]);
+        if (i === endIdx) break;
+        i = (i + 1) % n;
     }
-    return false;
+    return chain;
 }
-function arq2_updateFilaDirectionState() {
-    if (arq2Tool !== 'fila-variable' || arq2FilaPhase !== 1 || arq2FilaFrente.length < 2 || arq2FilaFondo.length < 2) {
-        arq2FilaDirectionBad = false;
-        return;
+function arq2_expandColinearChain(contorno, edgeStartIdx) {
+    const n = contorno.length;
+    let s = edgeStartIdx;
+    let e = (edgeStartIdx + 1) % n;
+    let next = (e + 1) % n;
+    while (next !== s && n > 3 && arq2_detectCornerAngle(contorno[e], contorno[next], contorno[(next + 1) % n]) > 150) {
+        e = next;
+        next = (e + 1) % n;
     }
-    const dir = arq2_validatePolylineDirection(arq2FilaFrente, arq2FilaFondo);
-    arq2FilaDirectionBad = dir.conflict || arq2_guidesCross(arq2FilaFrente, arq2FilaFondo);
+    let prev = (s - 1 + n) % n;
+    while (prev !== e && n > 3 && arq2_detectCornerAngle(contorno[prev], contorno[s], contorno[(s + 1) % n]) > 150) {
+        s = prev;
+        prev = (s - 1 + n) % n;
+    }
+    return arq2_chainFromContour(contorno, s, e);
 }
-function arq2_computeFilaWeightsCum(weights) {
-    const roots = weights.map(w => Math.sqrt(Math.max(1, parseFloat(w) || 1)));
-    const total = roots.reduce((a, b) => a + b, 0) || 1;
+function arq2_detectEjeYFondo(contornoPoints) {
+    const n = contornoPoints.length;
+    if (n < 4) return null;
+    let bestI = 0, bestLen = 0;
+    for (let i = 0; i < n; i++) {
+        const len = Math.hypot(contornoPoints[(i + 1) % n][0] - contornoPoints[i][0], contornoPoints[(i + 1) % n][1] - contornoPoints[i][1]);
+        if (len > bestLen) { bestLen = len; bestI = i; }
+    }
+    const ejeFrente = arq2_expandColinearChain(contornoPoints, bestI);
+    const fMid = getPointAlongPolyline(ejeFrente, 0.5);
+    let oppI = (bestI + Math.floor(n / 2)) % n, oppScore = -1;
+    for (let j = 0; j < n; j++) {
+        if (j === bestI || j === (bestI + 1) % n) continue;
+        const p1 = contornoPoints[j], p2 = contornoPoints[(j + 1) % n];
+        const mid = [(p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2];
+        const d = Math.hypot(mid[0] - fMid[0], mid[1] - fMid[1]);
+        if (d > oppScore) { oppScore = d; oppI = j; }
+    }
+    let ejeFondo = arq2_expandColinearChain(contornoPoints, oppI);
+    ejeFondo = arq2_validatePolylineDirection(ejeFrente, ejeFondo).back;
+    return { ejeFrente, ejeFondo };
+}
+function arq2_pointAtArcLength(ejePoints, targetLength) {
+    const total = getPolylineLength(ejePoints);
+    if (total < 1e-8) return [...ejePoints[0]];
+    return getPointAlongPolyline(ejePoints, Math.min(1, Math.max(0, targetLength / total)));
+}
+function arq2_computeFilaTCuts(weights) {
+    const total = weights.reduce((a, b) => a + (parseFloat(b) || 0), 0) || 1;
     const cum = [0];
     let acc = 0;
-    for (let i = 0; i < roots.length; i++) { acc += roots[i] / total; cum.push(acc); }
+    for (let i = 0; i < weights.length; i++) { acc += (parseFloat(weights[i]) || 0) / total; cum.push(acc); }
     return cum;
 }
-function arq2_buildFilaDivisions(frente, fondo, cum) {
+function arq2_buildFilaInternalDivisions(ejeFrente, ejeFondo, weights) {
+    const cum = arq2_computeFilaTCuts(weights);
     const divs = [];
     for (let i = 1; i < cum.length - 1; i++) {
-        const tp = getPointAlongPolyline(frente, cum[i]), bp = getPointAlongPolyline(fondo, cum[i]);
+        const tp = getPointAlongPolyline(ejeFrente, cum[i]);
+        const bp = getPointAlongPolyline(ejeFondo, cum[i]);
         if (tp && bp) divs.push([[...tp], [...bp]]);
     }
     return divs;
 }
-function arq2_divisionsCross(divs) {
-    for (let i = 0; i < divs.length; i++) {
-        for (let j = i + 1; j < divs.length; j++) {
-            const ix = intersectSegments(divs[i][0], divs[i][1], divs[j][0], divs[j][1]);
-            if (!ix) continue;
-            const near = (p, a, b) => Math.hypot(p[0] - a[0], p[1] - a[1]) < 0.03 || Math.hypot(p[0] - b[0], p[1] - b[1]) < 0.03;
-            if (near(ix, divs[i][0], divs[i][1]) && near(ix, divs[j][0], divs[j][1])) continue;
-            return true;
-        }
+function arq2_computeFilaLotCentroids(ejeFrente, ejeFondo, weights) {
+    const cum = arq2_computeFilaTCuts(weights);
+    const lots = [];
+    for (let i = 0; i < weights.length; i++) {
+        const tMid = (cum[i] + cum[i + 1]) / 2;
+        const pf = getPointAlongPolyline(ejeFrente, tMid);
+        const pb = getPointAlongPolyline(ejeFondo, tMid);
+        lots.push({
+            numero: String(i + 1).padStart(2, '0'),
+            centroid: [(pf[0] + pb[0]) / 2, (pf[1] + pb[1]) / 2],
+            m2: parseFloat(weights[i]) || 0
+        });
     }
-    return false;
+    return lots;
 }
-function arq2_refreshFilaGuideLines(ctx) {
-    const guidesG = document.getElementById('arq2-fila-guides');
-    if (!guidesG || !ctx) return;
-    guidesG.innerHTML = '';
-    if (arq2Tool !== 'fila-variable' || arq2FilaPhase !== 1 || arq2FilaFrente.length < 1 || arq2FilaFondo.length < 1) return;
-    const ns = 'http://www.w3.org/2000/svg';
-    const { getCam, cx, cy_screen, f } = ctx;
-    const m = Math.min(arq2FilaFrente.length, arq2FilaFondo.length);
-    for (let i = 0; i < m; i++) {
-        const c1 = getCam(arq2FilaFrente[i][0], arq2FilaFrente[i][1]), c2 = getCam(arq2FilaFondo[i][0], arq2FilaFondo[i][1]);
-        if (c1.z <= 0.0001 || c2.z <= 0.0001) continue;
-        const x1 = cx + (c1.x / c1.z) * f, y1 = cy_screen - (c1.y / c1.z) * f;
-        const x2 = cx + (c2.x / c2.z) * f, y2 = cy_screen - (c2.y / c2.z) * f;
-        const line = document.createElementNS(ns, 'line');
-        line.setAttribute('class', 'arq2-fila-guide-line');
-        line.setAttribute('x1', x1); line.setAttribute('y1', y1);
-        line.setAttribute('x2', x2); line.setAttribute('y2', y2);
-        if (arq2FilaDirectionBad) line.classList.add('arq2-fila-guide-bad');
-        guidesG.appendChild(line);
-    }
+function arq2_finishFilaContour() {
+    if (arq2LinePoints.length < 4) { alert('⚠ Dibuja al menos 4 puntos para el contorno completo de la hilera.'); return; }
+    arq2FilaVariableContorno = arq2_adaptiveSmooth([...arq2LinePoints], 8);
+    arq2PendingFila = { contorno: [...arq2FilaVariableContorno] };
+    arq2LinePoints = [];
+    arq2TempLineId = 'arq2_temp_' + Date.now();
+    arq2_stopDemoAnimation();
+    openFranjaLotesModal(4, null);
+    arq2_updatePanelStep();
 }
 function arq2_resamplePolylineEqualArc(pts, sampleCount = 64) {
     if (!pts || pts.length < 2) return pts ? pts.map(p => [...p]) : [];
@@ -2775,6 +2833,32 @@ function arq2_distributeVariableWidthsAlongSpline(splinePoints, weightsArray) {
     for (let i = 0; i < weights.length; i++) { acc += weights[i] / total; cum.push(acc); }
     return cum.map(t => getPointAlongPolyline(splinePoints, Math.min(1, Math.max(0, t))));
 }
+function arq2_getSnapPolylinePoints(line) {
+    if (!line) return [];
+    if (line.tipo === 'franja-curva-grupo') {
+        const pts = [];
+        if (line.frente?.length) pts.push(...line.frente);
+        if (line.fondo?.length) pts.push(...line.fondo);
+        return pts;
+    }
+    return line.puntos || [];
+}
+function arq2_isUniversalSnapTarget(line) {
+    if (!line || line.tipo === 'divisoria' || line.tipo === 'cortar' || line.tipo === 'linea-pines-guia') return false;
+    if (line.tipo === 'franja-preview' || line.tipo === 'franja-preview-div') return false;
+    return arq2_getSnapPolylinePoints(line).length >= 2;
+}
+function arq2_isLineClosedForSnap(line) {
+    if (line.tipo === 'calle' || line.tipo === 'cortar') return false;
+    const pts = arq2_getSewPolygonPoints(line);
+    return pts.length >= 3;
+}
+function arq2_getSewPolygonPoints(line) {
+    if (line.tipo === 'franja-curva-grupo' && line.frente?.length >= 2 && line.fondo?.length >= 2) {
+        return [...line.frente, ...[...line.fondo].reverse()];
+    }
+    return line.puntos || [];
+}
 function arq2_findNearestEdgeOrVertex(screenX, screenY, excludeLineId, radiusPx = 15) {
     const proj = getPanoramaScreenProjector();
     if (!proj) return null;
@@ -2787,13 +2871,13 @@ function arq2_findNearestEdgeOrVertex(screenX, screenY, excludeLineId, radiusPx 
         if (d < bestD) { bestD = d; best = { pitch, yaw, screenX: DOMCache.viewport.left + sc[0], screenY: DOMCache.viewport.top + sc[1], ...meta }; }
     };
     allDrawnLines.forEach(line => {
-        if (line.id === excludeLineId || !line.puntos || line.puntos.length < 2) return;
-        if (line.tipo === 'divisoria' || line.tipo === 'cortar' || line.tipo === 'linea-pines-guia') return;
-        line.puntos.forEach((pt, vi) => tryPt(pt[0], pt[1], { lineId: line.id, kind: 'vertex', vertexIdx: vi }));
-        const closed = line.tipo === 'lote-organico' || line.tipo === 'fila-variable-lote' || line.tipo === 'solida' || line.tipo === 'masterplan_fill' || line.tipo === 'area-invisible';
-        const segCount = closed ? line.puntos.length : line.puntos.length - 1;
+        if (line.id === excludeLineId || !arq2_isUniversalSnapTarget(line)) return;
+        const pts = arq2_getSnapPolylinePoints(line);
+        pts.forEach((pt, vi) => tryPt(pt[0], pt[1], { lineId: line.id, kind: 'vertex', vertexIdx: vi }));
+        const closed = arq2_isLineClosedForSnap(line);
+        const segCount = closed ? pts.length : pts.length - 1;
         for (let i = 0; i < segCount; i++) {
-            const p1 = line.puntos[i], p2 = line.puntos[(i + 1) % line.puntos.length];
+            const p1 = pts[i], p2 = pts[(i + 1) % pts.length];
             const s1 = proj.toScreen(p1[0], p1[1]), s2 = proj.toScreen(p2[0], p2[1]);
             if (!s1 || !s2) continue;
             const dx = s2[0] - s1[0], dy = s2[1] - s1[1], len2 = dx * dx + dy * dy;
@@ -2817,26 +2901,30 @@ function arq2_segMatchTol(p1, p2, q1, q2, tol = 0.05) {
 }
 function arq2_registerSharedEdges(newLineId) {
     const nue = allDrawnLines.find(l => l.id === newLineId);
-    if (!nue || !nue.puntos || nue.puntos.length < 3) return;
+    const nuePts = arq2_getSewPolygonPoints(nue);
+    if (!nue || !nuePts || nuePts.length < 3) return;
     nue.sharedSegs = nue.sharedSegs || [];
     nue.sharedSegStyles = nue.sharedSegStyles || {};
     nue.sharedSegMeta = nue.sharedSegMeta || {};
     const styleDefault = nue.costuraStyle || arq2CosturaStyle || 'punteada';
+    const nSeg = nuePts.length;
     allDrawnLines.forEach(other => {
-        if (other.id === newLineId || !other.puntos || other.puntos.length < 3) return;
-        if (other.tipo === 'divisoria' || other.tipo === 'cortar') return;
+        if (other.id === newLineId) return;
+        const oPts = arq2_getSewPolygonPoints(other);
+        if (!oPts || oPts.length < 2) return;
+        if (other.tipo === 'divisoria' || other.tipo === 'cortar' || other.tipo === 'linea-pines-guia') return;
         other.sharedSegs = other.sharedSegs || [];
         other.sharedSegStyles = other.sharedSegStyles || {};
         other.sharedSegMeta = other.sharedSegMeta || {};
-        const nSeg = nue.puntos.length;
+        const oClosed = other.tipo !== 'calle';
+        const oSegCount = oClosed ? oPts.length : oPts.length - 1;
         for (let i = 0; i < nSeg; i++) {
-            const a1 = nue.puntos[i], a2 = nue.puntos[(i + 1) % nSeg];
-            const oSeg = other.tipo === 'calle' ? other.puntos.length - 1 : other.puntos.length;
-            for (let j = 0; j < oSeg; j++) {
-                const b1 = other.puntos[j], b2 = other.puntos[(j + 1) % other.puntos.length];
+            const a1 = nuePts[i], a2 = nuePts[(i + 1) % nSeg];
+            for (let j = 0; j < oSegCount; j++) {
+                const b1 = oPts[j], b2 = oPts[(j + 1) % oPts.length];
                 if (arq2_segMatchTol(a1, a2, b1, b2, 0.05)) {
                     if (!nue.sharedSegs.includes(i)) nue.sharedSegs.push(i);
-                    const oIdx = j % other.puntos.length;
+                    const oIdx = j % oPts.length;
                     if (!other.sharedSegs.includes(oIdx)) other.sharedSegs.push(oIdx);
                     nue.sharedSegStyles[i] = styleDefault;
                     other.sharedSegStyles[oIdx] = styleDefault;
@@ -2852,8 +2940,8 @@ function arq2_snapVerticesToExisting(points) {
     return points.map(pt => {
         let best = null, bestD = 0.05;
         allDrawnLines.forEach(line => {
-            if (!line.puntos || line.tipo === 'divisoria' || line.tipo === 'cortar' || line.tipo === 'linea-pines-guia') return;
-            line.puntos.forEach(v => {
+            if (!arq2_isUniversalSnapTarget(line)) return;
+            arq2_getSnapPolylinePoints(line).forEach(v => {
                 const d = Math.hypot(pt[0] - v[0], pt[1] - v[1]);
                 if (d < bestD) { bestD = d; best = v; }
             });
@@ -2863,16 +2951,20 @@ function arq2_snapVerticesToExisting(points) {
 }
 function arq2_weldVerticesToNeighbors(lineId) {
     const nue = allDrawnLines.find(l => l.id === lineId);
-    if (!nue?.puntos || nue.puntos.length < 3) return;
-    const n = nue.puntos.length;
+    const nuePts = nue?.puntos;
+    if (!nuePts || nuePts.length < 3) return;
+    const n = nuePts.length;
     allDrawnLines.forEach(other => {
-        if (other.id === lineId || !other.puntos || other.puntos.length < 3) return;
+        if (other.id === lineId) return;
+        const oPts = arq2_getSewPolygonPoints(other);
+        if (!oPts || oPts.length < 2) return;
         if (other.tipo === 'divisoria' || other.tipo === 'cortar') return;
-        const oSeg = other.tipo === 'calle' ? other.puntos.length - 1 : other.puntos.length;
+        const oClosed = other.tipo !== 'calle';
+        const oSegCount = oClosed ? oPts.length : oPts.length - 1;
         for (let i = 0; i < n; i++) {
-            const a1 = nue.puntos[i], a2 = nue.puntos[(i + 1) % n];
-            for (let j = 0; j < oSeg; j++) {
-                const b1 = other.puntos[j], b2 = other.puntos[(j + 1) % other.puntos.length];
+            const a1 = nuePts[i], a2 = nuePts[(i + 1) % n];
+            for (let j = 0; j < oSegCount; j++) {
+                const b1 = oPts[j], b2 = oPts[(j + 1) % oPts.length];
                 if (!arq2_segMatchTol(a1, a2, b1, b2, 0.05)) continue;
                 const d11 = Math.hypot(a1[0] - b1[0], a1[1] - b1[1]), d22 = Math.hypot(a2[0] - b2[0], a2[1] - b2[1]);
                 if (d11 < 0.05 && d22 < 0.05) {
@@ -2949,25 +3041,21 @@ function arq2_ensureDemoLayer() {
     svg.appendChild(layer);
 }
 function arq2_getDemoPYPoints() {
-    if (!visor360) return { front: [], back: [], divs: [], lotCenters: [] };
+    if (!visor360) return { contour: [], divs: [], lotCenters: [] };
     const pitch = visor360.getPitch(), yaw = visor360.getYaw();
     const dp = 3, spread = 3.5, depth = 7;
-    const front = [
+    const contour = [
         [pitch - dp, yaw - spread * 1.5],
-        [pitch - dp, yaw - spread * 0.5],
-        [pitch - dp, yaw + spread * 0.5],
         [pitch - dp, yaw + spread * 1.5],
+        [pitch - dp - depth, yaw + spread * 1.2],
+        [pitch - dp - depth, yaw - spread * 1.2],
     ];
-    const back = front.map(([p, y]) => [p - depth, y]);
-    const divs = [0.25, 0.5, 0.75, 1].map(t => [
-        getPointAlongPolyline(front, t),
-        getPointAlongPolyline(back, t)
-    ]);
-    const lotCenters = [0.125, 0.375, 0.625, 0.875].map(t => {
-        const tf = getPointAlongPolyline(front, t), tb = getPointAlongPolyline(back, t);
-        return [(tf[0] + tb[0]) / 2, (tf[1] + tb[1]) / 2];
-    });
-    return { front, back, divs, lotCenters };
+    const weights = [5000, 5000, 5000, 5000];
+    const axes = arq2_detectEjeYFondo(contour);
+    if (!axes) return { contour, divs: [], lotCenters: [] };
+    const divs = arq2_buildFilaInternalDivisions(axes.ejeFrente, axes.ejeFondo, weights);
+    const lotCenters = arq2_computeFilaLotCentroids(axes.ejeFrente, axes.ejeFondo, weights).map(l => l.centroid);
+    return { contour, divs, lotCenters };
 }
 function arq2_pyToScreen(py, getCam, cx, cySc, f) {
     const c = getCam(py[0], py[1]);
@@ -3094,34 +3182,32 @@ function arq2_runDemoCycle() {
     const root = document.createElementNS(ns, 'g');
     root.classList.add('arq2-demo-root');
     layer.appendChild(root);
-    const { front, back, divs, lotCenters } = arq2DemoPY;
-    const frontLines = [], backLines = [], divLines = [], lotNums = [];
-    for (let i = 0; i < front.length - 1; i++) frontLines.push(arq2_demoMakeLine(root, ns, front[i], front[i + 1], 'arq2-demo-draw-line'));
-    for (let i = 0; i < back.length - 1; i++) backLines.push(arq2_demoMakeLine(root, ns, back[i], back[i + 1], 'arq2-demo-draw-line'));
+    const { contour, divs, lotCenters } = arq2DemoPY;
+    const contourLines = [], divLines = [], lotNums = [];
+    for (let i = 0; i < contour.length; i++) {
+        contourLines.push(arq2_demoMakeLine(root, ns, contour[i], contour[(i + 1) % contour.length], 'arq2-demo-draw-line'));
+    }
     divs.forEach(d => divLines.push(arq2_demoMakeLine(root, ns, d[0], d[1], 'arq2-demo-draw-line arq2-demo-div-line')));
-    const pt0 = arq2_demoMakeCircle(root, ns, front[0], 7, 'arq2-demo-point');
-    const lblFrente = arq2_demoMakeMidLabel(root, ns, front[0], front[front.length - 1], 'FRENTE ✓', 'arq2-demo-tag');
-    const lblFondo = arq2_demoMakeMidLabel(root, ns, back[0], back[back.length - 1], 'FONDO ✓ (misma dirección)', 'arq2-demo-tag');
-    const lblScale = arq2_demoMakeText(root, ns, lotCenters[1], '📐 m² proporcional por lote', 'arq2-demo-tag arq2-demo-center-tag');
+    const pt0 = arq2_demoMakeCircle(root, ns, contour[0], 7, 'arq2-demo-point');
+    const lblContour = arq2_demoMakeMidLabel(root, ns, contour[0], contour[1], 'CONTORNO ✓ (Enter)', 'arq2-demo-tag');
+    const lblScale = arq2_demoMakeText(root, ns, lotCenters[1] || contour[0], '📐 Divisiones proporcionales al m²', 'arq2-demo-tag arq2-demo-center-tag');
     lotCenters.forEach((c, i) => {
         lotNums.push(arq2_demoMakeCircle(root, ns, c, 10, 'arq2-demo-lot-circle'));
-        lotNums.push(arq2_demoMakeText(root, ns, c, String(i + 1), 'arq2-demo-lot-num'));
+        lotNums.push(arq2_demoMakeText(root, ns, c, String(i + 1).padStart(2, '0'), 'arq2-demo-lot-num'));
     });
     arq2_updateDemoLayer();
     arq2_demoSchedule(() => arq2_demoReveal(pt0), 0);
     arq2_demoSchedule(() => pt0.classList.add('arq2-demo-pulse'), 0);
-    frontLines.forEach((ln, i) => arq2_demoDrawLine(ln, 300 + i * 400, 400));
-    arq2_demoSchedule(() => arq2_demoReveal(lblFrente), 1300);
-    backLines.forEach((ln, i) => arq2_demoDrawLine(ln, 1600 + i * 400, 400));
-    arq2_demoSchedule(() => arq2_demoReveal(lblFondo), 2900);
-    divLines.forEach((ln, i) => arq2_demoDrawLine(ln, 3200 + i * 80, 350));
-    lotNums.forEach((el, i) => arq2_demoSchedule(() => { arq2_demoReveal(el); el.classList.add('arq2-demo-pop'); }, 3800 + i * 120));
-    arq2_demoSchedule(() => arq2_demoReveal(lblScale), 4300);
-    arq2_demoSchedule(() => root.classList.add('arq2-demo-fadeout'), 5000);
+    contourLines.forEach((ln, i) => arq2_demoDrawLine(ln, 300 + i * 350, 380));
+    arq2_demoSchedule(() => arq2_demoReveal(lblContour), 1200);
+    divLines.forEach((ln, i) => arq2_demoDrawLine(ln, 2200 + i * 120, 320));
+    lotNums.forEach((el, i) => arq2_demoSchedule(() => { arq2_demoReveal(el); el.classList.add('arq2-demo-pop'); }, 3000 + i * 120));
+    arq2_demoSchedule(() => arq2_demoReveal(lblScale), 3600);
+    arq2_demoSchedule(() => root.classList.add('arq2-demo-fadeout'), 4800);
 }
 function arq2_startDemoAnimation(forceReplay) {
     if (!isArquitecto2Active || arq2Tool !== 'fila-variable') return;
-    if (arq2FilaFrente.length > 0 || arq2FilaFondo.length > 0) return;
+    if (arq2LinePoints.length > 0) return;
     if (arq2DemoActive && !forceReplay) return;
     arq2_stopDemoAnimation();
     arq2DemoActive = true;
@@ -3133,7 +3219,7 @@ function arq2_startDemoAnimation(forceReplay) {
     }, 6000);
 }
 function arq2_shouldRunFilaDemo() {
-    return isArquitecto2Active && arq2Tool === 'fila-variable' && arq2FilaFrente.length === 0 && arq2FilaFondo.length === 0 && !document.getElementById('arq2-fila-modal')?.classList.contains('open');
+    return isArquitecto2Active && arq2Tool === 'fila-variable' && arq2LinePoints.length === 0 && !document.getElementById('franja-lotes-modal')?.classList.contains('open');
 }
 function arq2_getNextLoteNumero() {
     let max = 0;
@@ -3165,9 +3251,7 @@ function arq2_clearDraft() {
     arq2TempLineId = 'arq2_temp_' + Date.now();
     arq2CosturaSnap = null;
     arq2SelectedLineId = null;
-    arq2FilaPhase = 0;
-    arq2FilaFrente = [];
-    arq2FilaFondo = [];
+    arq2FilaVariableContorno = null;
     arq2PendingFila = null;
     arq2_clearVisualFeedback();
     arq2_stopDemoAnimation();
@@ -3189,7 +3273,7 @@ function arq2_toggleArquitecto2(force) {
     if (!isArquitecto2Active) {
         arq2_clearDraft();
         arq2_stopDemoAnimation();
-        closeArq2FilaModal();
+        closeFranjaLotesModal();
         refreshAllHotspots(true);
     } else {
         arq2_ensureFeedbackLayer();
@@ -3241,7 +3325,12 @@ function arq2_finishLoteOrganico(rawPoints, useCostura) {
     arq2_setStatusText('Lote ' + entry.arq2Numero + ' guardado ✓');
 }
 function arq2_tryClosePolygon(isDblClick) {
-    if (arq2Tool === 'fila-variable') return false;
+    if (arq2Tool === 'fila-variable') {
+        if (arq2LinePoints.length < 4) return false;
+        const d0 = Math.hypot(arq2LinePoints[0][0] - arq2LinePoints[arq2LinePoints.length - 1][0], arq2LinePoints[0][1] - arq2LinePoints[arq2LinePoints.length - 1][1]);
+        if (isDblClick || d0 < SNAP_DISTANCE) { arq2_finishFilaContour(); return true; }
+        return false;
+    }
     if (arq2LinePoints.length < 3) return false;
     let d0 = Math.hypot(arq2LinePoints[0][0] - arq2LinePoints[arq2LinePoints.length - 1][0], arq2LinePoints[0][1] - arq2LinePoints[arq2LinePoints.length - 1][1]);
     if (isDblClick || d0 < SNAP_DISTANCE) {
@@ -3250,114 +3339,65 @@ function arq2_tryClosePolygon(isDblClick) {
     }
     return false;
 }
-function arq2_openFilaModal() {
-    document.getElementById('arq2-fila-modal')?.classList.add('open');
-    arq2_renderFilaModalRows(parseInt(document.getElementById('arq2-fila-count')?.value || '4', 10) || 4);
-}
-function closeArq2FilaModal() {
-    document.getElementById('arq2-fila-modal')?.classList.remove('open');
-}
-function arq2_renderFilaModalRows(count) {
-    const rows = document.getElementById('arq2-fila-rows');
-    const bar = document.getElementById('arq2-fila-scale-preview');
-    const cntEl = document.getElementById('arq2-fila-count');
-    if (!rows || !bar) return;
-    count = Math.max(1, Math.min(40, count));
-    if (cntEl) cntEl.value = count;
-    rows.innerHTML = '';
-    bar.innerHTML = '';
-    for (let i = 0; i < count; i++) {
-        const row = document.createElement('div');
-        row.className = 'franja-modal-row';
-        row.innerHTML = `<label>Lote ${String(i + 1).padStart(2, '0')} m²</label><input type="number" class="arq2-fila-m2" min="100" step="100" value="5000">`;
-        rows.appendChild(row);
-        const seg = document.createElement('div');
-        seg.className = 'franja-scale-seg';
-        bar.appendChild(seg);
-    }
-    arq2_updateFilaScalePreview();
-}
-function arq2_getFilaModalWeights() {
-    return Array.from(document.querySelectorAll('.arq2-fila-m2')).map(inp => parseFloat(inp.value) || 5000);
-}
-function arq2_updateFilaScalePreview() {
-    const bar = document.getElementById('arq2-fila-scale-preview');
-    if (!bar) return;
-    const weights = arq2_getFilaModalWeights();
-    const roots = weights.map(w => Math.sqrt(Math.max(1, w)));
-    const total = roots.reduce((a, b) => a + b, 0) || 1;
-    bar.querySelectorAll('.franja-scale-seg').forEach((seg, i) => {
-        seg.style.flex = (roots[i] / total).toFixed(4);
-        seg.textContent = String(i + 1).padStart(2, '0');
-    });
-}
-function arq2_commitFilaVariable() {
-    if (!arq2PendingFila) return;
-    let { frente, fondo } = arq2PendingFila;
-    const weights = arq2_getFilaModalWeights();
-    const N = weights.length;
-    if (N < 1) return;
-    const dir = arq2_validatePolylineDirection(frente, fondo);
-    fondo = dir.back;
-    if (arq2_guidesCross(frente, fondo)) {
-        alert('⚠ Las divisiones se cruzan. Revisa que frente y fondo avancen en el mismo sentido (ej. ambos de izquierda a derecha).');
-        return;
-    }
-    const cum = arq2_computeFilaWeightsCum(weights);
-    const divs = arq2_buildFilaDivisions(frente, fondo, cum);
-    if (arq2_divisionsCross(divs)) {
-        alert('⚠ Las divisiones se cruzan. Revisa que frente y fondo avancen en el mismo sentido (ej. ambos de izquierda a derecha).');
-        return;
-    }
+function arq2_commitFilaVariable(weights) {
+    if (!arq2PendingFila?.contorno || !weights?.length) return;
+    const contorno = arq2PendingFila.contorno;
+    const axes = arq2_detectEjeYFondo(contorno);
+    if (!axes) { alert('⚠ No se pudo detectar frente y fondo del contorno. Usa al menos 4 vértices bien definidos.'); return; }
+    const { ejeFrente, ejeFondo } = axes;
+    const divs = arq2_buildFilaInternalDivisions(ejeFrente, ejeFondo, weights);
+    const lotCentroids = arq2_computeFilaLotCentroids(ejeFrente, ejeFondo, weights);
     const gid = 'arq2_fila_' + Date.now();
-    for (let i = 0; i < N; i++) {
-        const topSeg = extractPolylineSegment(frente, cum[i], cum[i + 1]);
-        const botSeg = extractPolylineSegment(fondo, cum[i], cum[i + 1]).reverse();
-        if (topSeg.length < 2 || botSeg.length < 2) continue;
-        const lotId = gid + '_l' + i;
-        const entry = { id: lotId, tipo: 'fila-variable-lote', puntos: [...topSeg, ...botSeg], arq2Grupo: gid, sharedSegs: [] };
-        entry.arq2Numero = String(i + 1).padStart(2, '0');
-        entry.franjaNumero = entry.arq2Numero;
-        entry.loteStatus = 'disponible';
-        allDrawnLines.push(entry);
-    }
+    allDrawnLines.push({
+        id: gid,
+        tipo: 'fila-variable-lote',
+        puntos: contorno.map(p => [...p]),
+        arq2Grupo: gid,
+        arq2FilaLotes: lotCentroids,
+        ejeFrente: ejeFrente.map(p => [...p]),
+        ejeFondo: ejeFondo.map(p => [...p]),
+        sharedSegs: [],
+        sharedSegStyles: {},
+        loteStatus: 'disponible'
+    });
     divs.forEach((pts, idx) => {
         allDrawnLines.push({ id: gid + '_div_' + (idx + 1), tipo: 'divisoria', puntos: pts, arq2Grupo: gid, franjaGrupo: gid });
     });
-    allDrawnLines.push({ id: gid + '_perim', tipo: 'borde-macro', puntos: [...frente, ...[...fondo].reverse()], franjaGrupo: gid });
-    closeArq2FilaModal();
+    arq2_registerSharedEdges(gid);
+    arq2PendingFila = null;
+    arq2FilaVariableContorno = null;
     arq2_clearDraft();
     refreshAllHotspots(true);
     saveToLocal();
     flashScreenSuccess();
-    arq2_setStatusText('Hilera variable: ' + N + ' lotes generados ✓');
+    arq2_setStatusText('Hilera variable: ' + weights.length + ' lotes — un contorno + ' + divs.length + ' divisiones ✓');
 }
 function arq2_onPanoramaMove(mock) {
     if (!isArquitecto2Active || !visor360) return;
     window.lastMouseX = mock.clientX;
     window.lastMouseY = mock.clientY;
-    if (arq2Tool === 'costura' || arq2Tool === 'lote-libre' || arq2Tool === 'relleno-auto') {
-        if (arq2Tool === 'costura') {
-            arq2CosturaSnap = arq2_findNearestEdgeOrVertex(mock.clientX, mock.clientY, arq2TempLineId, 15);
-            if (arq2CosturaSnap && snapCursor) {
-                snapCursor.style.left = arq2CosturaSnap.screenX + 'px';
-                snapCursor.style.top = arq2CosturaSnap.screenY + 'px';
-                snapCursor.classList.add('active', 'is-costura');
-                snapCursor.classList.remove('is-closing', 'is-calle-finish', 'is-calle-edge');
-            } else if (snapCursor) snapCursor.classList.remove('active', 'is-costura');
-        } else if (snapCursor) snapCursor.classList.remove('active', 'is-costura');
-    } else if (snapCursor) snapCursor.classList.remove('active', 'is-costura');
+    arq2CosturaSnap = arq2_findNearestEdgeOrVertex(mock.clientX, mock.clientY, arq2TempLineId, 15);
+    if (snapCursor) {
+        if (arq2CosturaSnap) {
+            snapCursor.style.left = arq2CosturaSnap.screenX + 'px';
+            snapCursor.style.top = arq2CosturaSnap.screenY + 'px';
+            snapCursor.classList.add('active', 'is-costura');
+            snapCursor.classList.remove('is-closing', 'is-calle-finish', 'is-calle-edge');
+        } else {
+            snapCursor.classList.remove('active', 'is-costura', 'is-closing', 'is-calle-finish', 'is-calle-edge');
+        }
+    }
     arq2_refreshFeedbackVisuals(mock);
     syncSVGElements();
     updateSVGPaths();
 }
 function arq2_onPanoramaClick(mock, isDblClick) {
     if (!isArquitecto2Active || !visor360) return;
-    if (document.getElementById('arq2-fila-modal')?.classList.contains('open')) return;
+    if (document.getElementById('franja-lotes-modal')?.classList.contains('open')) return;
     const coords = visor360.mouseEventToCoords(mock);
     if (!coords || isNaN(coords[0])) return;
-    if (isDblClick && arq2Tool !== 'fila-variable') { if (arq2_tryClosePolygon(true)) return; }
-    if (arq2Tool === 'costura' && arq2LinePoints.length === 0 && !isDblClick && !arq2CosturaSnap) {
+    if (isDblClick) { if (arq2_tryClosePolygon(true)) return; }
+    if (arq2Tool === 'costura' && arq2LinePoints.length === 0 && !arq2CosturaSnap) {
         const selId = findClosestLineAtScreen(mock.clientX, mock.clientY, 28);
         const sel = selId && allDrawnLines.find(l => l.id === selId);
         if (sel && (sel.tipo === 'lote-organico' || sel.tipo === 'fila-variable-lote') && sel.sharedSegs?.length) {
@@ -3366,25 +3406,20 @@ function arq2_onPanoramaClick(mock, isDblClick) {
         }
     }
     let p = parseFloat(coords[0].toFixed(3)), y = parseFloat(coords[1].toFixed(3));
-    if (arq2Tool === 'costura' && arq2CosturaSnap) {
+    if (arq2CosturaSnap) {
         p = parseFloat(arq2CosturaSnap.pitch.toFixed(3));
         y = parseFloat(arq2CosturaSnap.yaw.toFixed(3));
     }
-    if (arq2Tool === 'fila-variable') {
-        arq2_stopDemoAnimation();
-        if (arq2FilaPhase === 0) arq2FilaFrente.push([p, y]);
-        else if (arq2FilaPhase === 1) arq2FilaFondo.push([p, y]);
-        arq2_refreshFeedbackVisuals(mock);
-        refreshAllHotspots(true);
-        syncSVGElements();
-        updateSVGPaths();
-        return;
-    }
+    if (arq2Tool === 'fila-variable' && arq2LinePoints.length === 0) arq2_stopDemoAnimation();
     arq2SelectedLineId = null;
     document.querySelectorAll('.arq2-costura-selected').forEach(g => g.classList.remove('arq2-costura-selected'));
-    if (arq2LinePoints.length >= 3) {
+    if (arq2LinePoints.length >= 3 && arq2Tool !== 'fila-variable') {
         const d0 = Math.hypot(p - arq2LinePoints[0][0], y - arq2LinePoints[0][1]);
         if (d0 < SNAP_DISTANCE) { arq2_finishLoteOrganico([...arq2LinePoints], arq2Tool === 'costura'); return; }
+    }
+    if (arq2Tool === 'fila-variable' && arq2LinePoints.length >= 4) {
+        const d0 = Math.hypot(p - arq2LinePoints[0][0], y - arq2LinePoints[0][1]);
+        if (d0 < SNAP_DISTANCE) { arq2_finishFilaContour(); return; }
     }
     arq2LinePoints.push([p, y]);
     arq2_refreshFeedbackVisuals(mock);
@@ -3394,31 +3429,9 @@ function arq2_onPanoramaClick(mock, isDblClick) {
 }
 function arq2_onEnterKey() {
     if (!isArquitecto2Active) return false;
-    if (arq2Tool === 'fila-variable') {
-        if (arq2FilaPhase === 0 && arq2FilaFrente.length >= 2) {
-            arq2FilaPhase = 1;
-            arq2_updatePanelStep();
-            refreshAllHotspots(true);
-            return true;
-        }
-        if (arq2FilaPhase === 1 && arq2FilaFondo.length >= 2) {
-            const dir = arq2_validatePolylineDirection(arq2FilaFrente, arq2FilaFondo);
-            const fondoAligned = dir.back;
-            if (arq2_guidesCross(arq2FilaFrente, fondoAligned)) {
-                alert('⚠ Las divisiones se cruzan. Revisa que frente y fondo avancen en el mismo sentido (ej. ambos de izquierda a derecha).');
-                return true;
-            }
-            const previewCum = arq2_computeFilaWeightsCum(Array.from({ length: 4 }, () => 5000));
-            if (arq2_divisionsCross(arq2_buildFilaDivisions(arq2FilaFrente, fondoAligned, previewCum))) {
-                alert('⚠ Las divisiones se cruzan. Revisa que frente y fondo avancen en el mismo sentido (ej. ambos de izquierda a derecha).');
-                return true;
-            }
-            arq2PendingFila = { frente: [...arq2FilaFrente], fondo: fondoAligned };
-            arq2FilaPhase = 2;
-            arq2_openFilaModal();
-            arq2_updatePanelStep();
-            return true;
-        }
+    if (arq2Tool === 'fila-variable' && arq2LinePoints.length >= 4) {
+        arq2_finishFilaContour();
+        return true;
     }
     if (arq2Tool !== 'fila-variable' && arq2LinePoints.length >= 3) {
         arq2_finishLoteOrganico([...arq2LinePoints], arq2Tool === 'costura');
@@ -3429,21 +3442,12 @@ function arq2_onEnterKey() {
 function arq2_setup() {
     document.getElementById('arq2-panel-close')?.addEventListener('click', () => arq2_toggleArquitecto2(false));
     document.querySelectorAll('.arq2-tool-btn').forEach(btn => btn.addEventListener('click', () => arq2_setTool(btn.dataset.arq2Tool)));
-    ['arq2-panel', 'arq2-fila-modal'].forEach(id => {
+    ['arq2-panel', 'franja-lotes-modal'].forEach(id => {
         const el = document.getElementById(id);
         if (!el) return;
         el.addEventListener('mousedown', e => e.stopPropagation());
         el.addEventListener('touchstart', e => e.stopPropagation(), { passive: true });
     });
-    document.getElementById('arq2-fila-apply-count')?.addEventListener('click', () => arq2_renderFilaModalRows(parseInt(document.getElementById('arq2-fila-count')?.value || '4', 10)));
-    document.getElementById('arq2-fila-equal')?.addEventListener('click', () => {
-        const v = document.querySelector('.arq2-fila-m2')?.value || '5000';
-        document.querySelectorAll('.arq2-fila-m2').forEach(inp => { inp.value = v; });
-        arq2_updateFilaScalePreview();
-    });
-    document.getElementById('arq2-fila-rows')?.addEventListener('input', () => { arq2_updateFilaScalePreview(); arq2_updatePanelStep(); });
-    document.getElementById('arq2-fila-cancel')?.addEventListener('click', () => { closeArq2FilaModal(); arq2_clearDraft(); arq2_setTool('fila-variable'); });
-    document.getElementById('arq2-fila-confirm')?.addEventListener('click', arq2_commitFilaVariable);
     document.getElementById('arq2-smooth-toggle')?.addEventListener('change', (e) => {
         arq2SmoothCurves = !!e.target.checked;
         arq2_updatePanelStep();
@@ -3648,7 +3652,12 @@ function getHotspotsConfig() {
                 cP /= linea.puntos.length; cY /= linea.puntos.length;
                 hotspots.push({ "id": "franja_lbl_" + linea.id, "pitch": cP, "yaw": cY, "createTooltipFunc": renderFranjaLotLabel, "createTooltipArgs": { numero: linea.franjaNumero } });
             }
-            if ((linea.tipo === 'lote-organico' || linea.tipo === 'fila-variable-lote') && linea.franjaNumero && linea.puntos.length >= 3) {
+            if (linea.tipo === 'fila-variable-lote' && linea.arq2FilaLotes?.length) {
+                linea.arq2FilaLotes.forEach((lot, li) => {
+                    if (!lot?.centroid) return;
+                    hotspots.push({ "id": "arq2_fila_lbl_" + linea.id + "_" + li, "pitch": lot.centroid[0], "yaw": lot.centroid[1], "createTooltipFunc": renderFranjaLotLabel, "createTooltipArgs": { numero: lot.numero } });
+                });
+            } else if (linea.tipo === 'lote-organico' && linea.franjaNumero && linea.puntos.length >= 3) {
                 let cP = 0, cY = 0; linea.puntos.forEach(pt => { cP += pt[0]; cY += pt[1]; });
                 cP /= linea.puntos.length; cY /= linea.puntos.length;
                 hotspots.push({ "id": "arq2_lbl_" + linea.id, "pitch": cP, "yaw": cY, "createTooltipFunc": renderFranjaLotLabel, "createTooltipArgs": { numero: linea.franjaNumero } });
@@ -3656,9 +3665,7 @@ function getHotspotsConfig() {
         });
         currentLinePoints.forEach((coord, idx) => { hotspots.push({ "id": "temp_base_" + currentTempLineId + "_" + idx, "pitch": coord[0], "yaw": coord[1], "createTooltipFunc": renderHiddenVertex, "createTooltipArgs": { lineId: currentTempLineId, type: currentLineType, isGuide: isDevModeDrawActive, idx: idx, hsId: "temp_base_" + currentTempLineId + "_" + idx } }); });
         if (isArquitecto2Active) {
-            arq2LinePoints.forEach((coord, idx) => hotspots.push({ "id": "arq2_temp_" + idx, "pitch": coord[0], "yaw": coord[1], "createTooltipFunc": renderHiddenVertex, "createTooltipArgs": { lineId: arq2TempLineId, type: 'lote-libre', isGuide: true, idx, hsId: "arq2_temp_" + idx } }));
-            arq2FilaFrente.forEach((coord, idx) => hotspots.push({ "id": "arq2_ff_" + idx, "pitch": coord[0], "yaw": coord[1], "createTooltipFunc": renderHiddenVertex, "createTooltipArgs": { lineId: 'arq2_fila_frente', type: 'franja-preview', isGuide: true, idx, hsId: "arq2_ff_" + idx } }));
-            arq2FilaFondo.forEach((coord, idx) => hotspots.push({ "id": "arq2_fb_" + idx, "pitch": coord[0], "yaw": coord[1], "createTooltipFunc": renderHiddenVertex, "createTooltipArgs": { lineId: 'arq2_fila_fondo', type: 'franja-preview', isGuide: true, idx, hsId: "arq2_fb_" + idx } }));
+            arq2LinePoints.forEach((coord, idx) => hotspots.push({ "id": "arq2_temp_" + idx, "pitch": coord[0], "yaw": coord[1], "createTooltipFunc": renderHiddenVertex, "createTooltipArgs": { lineId: arq2TempLineId, type: arq2Tool === 'fila-variable' ? 'lote-organico-preview' : 'lote-libre', isGuide: true, idx, hsId: "arq2_temp_" + idx } }));
         }
         if (currentLineType === 'franja_curva' && franjaCurvaFrente.length > 0) {
             franjaCurvaFrente.forEach((coord, idx) => {
@@ -3679,8 +3686,8 @@ function syncSVGElements() {
     if(!lBordes) { svg.innerHTML = '<g id="layer-calles-bordes"></g><g id="layer-calles-asfalto"></g><g id="layer-lotes"></g><g id="layer-aristas"></g>'; lBordes = document.getElementById('layer-calles-bordes'); lAsfalto = document.getElementById('layer-calles-asfalto'); lLotes = document.getElementById('layer-lotes'); lAristas = document.getElementById('layer-aristas'); }
     const currentLineIds = allDrawnLines.map(l => l.id);
     if (currentLinePoints.length > 0) currentLineIds.push(currentTempLineId);
-    if (isArquitecto2Active && (arq2LinePoints.length > 0 || arq2FilaFrente.length > 0 || arq2FilaFondo.length > 0)) {
-        currentLineIds.push(arq2TempLineId, 'arq2_fila_frente', 'arq2_fila_fondo');
+    if (isArquitecto2Active && arq2LinePoints.length > 0) {
+        currentLineIds.push(arq2TempLineId);
     }
     if (isLineaPinesActive && lineaPinesPoints.length > 0) currentLineIds.push(lineaPinesTempId);
     if (franjaPreviewQuad) currentLineIds.push('franja_preview_quad'); if (franjaCurvaFrente.length > 0) currentLineIds.push('franja_curva_preview_frente'); if (franjaCurvaPreviewStrip) currentLineIds.push('franja_curva_preview_strip'); franjaPreviewDivs.forEach(d => currentLineIds.push(d.id));
@@ -3688,8 +3695,6 @@ function syncSVGElements() {
     DOMCache.paths = {}; const allLinesData = [...allDrawnLines];
     if (currentLinePoints.length > 0) allLinesData.push({ id: currentTempLineId, tipo: currentLineType === 'franja_curva' ? 'franja-preview' : currentLineType, puntos: currentLinePoints });
     if (isArquitecto2Active && arq2LinePoints.length > 0) allLinesData.push({ id: arq2TempLineId, tipo: 'lote-organico-preview', puntos: arq2LinePoints });
-    if (isArquitecto2Active && arq2FilaFrente.length >= 2) allLinesData.push({ id: 'arq2_fila_frente', tipo: 'franja-preview', puntos: arq2FilaFrente });
-    if (isArquitecto2Active && arq2FilaFondo.length >= 2) allLinesData.push({ id: 'arq2_fila_fondo', tipo: 'franja-preview', puntos: arq2FilaFondo });
     if (isLineaPinesActive && lineaPinesPoints.length > 0) allLinesData.push({ id: lineaPinesTempId, tipo: 'linea-pines-guia', puntos: lineaPinesPoints });
     if (franjaPreviewQuad) allLinesData.push({ id: 'franja_preview_quad', tipo: 'franja-preview', puntos: franjaPreviewQuad }); if (franjaCurvaFrente.length > 0) allLinesData.push({ id: 'franja_curva_preview_frente', tipo: 'franja-preview', puntos: franjaCurvaFrente }); if (franjaCurvaPreviewStrip) allLinesData.push({ id: 'franja_curva_preview_strip', tipo: 'franja-preview', puntos: franjaCurvaPreviewStrip }); franjaPreviewDivs.forEach(d => allLinesData.push(d));
     allLinesData.forEach(line => {
@@ -3824,8 +3829,6 @@ function updateSVGPaths() {
         if (!lineData && lineId === 'franja_curva_preview_strip' && franjaCurvaPreviewStrip?.length >= 3) lineData = { tipo: 'franja-preview', puntos: franjaCurvaPreviewStrip };
         if (!lineData && lineId.startsWith('franja_preview_div_')) lineData = franjaPreviewDivs.find(d => d.id === lineId);
         if (!lineData && lineId === arq2TempLineId && arq2LinePoints.length > 0) lineData = { tipo: 'lote-organico-preview', puntos: arq2LinePoints };
-        if (!lineData && lineId === 'arq2_fila_frente' && arq2FilaFrente.length >= 2) lineData = { tipo: 'franja-preview', puntos: arq2FilaFrente };
-        if (!lineData && lineId === 'arq2_fila_fondo' && arq2FilaFondo.length >= 2) lineData = { tipo: 'franja-preview', puntos: arq2FilaFondo };
         if (!lineData) return;
         let isClosed = shouldClosePolygonLine(lineId, lineData);
         if (cacheObj.gNode && lineData.tipo !== 'calle' && lineData.tipo !== 'franja-grupo' && lineData.tipo !== 'franja-curva-grupo') { if (lineData.puntos && lineData.puntos.length > 0) { let polyStatus = lineData.loteStatus || 'disponible'; if (!lineData.loteStatus && !(lineData.franjaNumero || lineData.tipo === 'area-invisible')) { let cP = 0, cY = 0; lineData.puntos.forEach(pt => { cP += pt[0]; cY += pt[1]; }); cP /= lineData.puntos.length; cY /= lineData.puntos.length; let closestPin = null; let minDist = 30; BaseDatosLotes.forEach(pin => { if(pin.tipo === 'lote') { let dist = Math.pow(pin.pitch - cP, 2) + Math.pow(pin.yaw - cY, 2); if(dist < minDist) { minDist = dist; closestPin = pin; } } }); if (closestPin) polyStatus = closestPin.status; } cacheObj.gNode.setAttribute('data-status', polyStatus); } }
