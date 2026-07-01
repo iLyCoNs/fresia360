@@ -869,6 +869,22 @@ function getPathClassForLine(line) {
     if (line.tipo === 'borde-macro') return 'linea-borde-macro';
     return 'linea-solida';
 }
+function resolveSvgLayerForLine(line, layers) {
+    const { lLotes, lAristas } = layers;
+    if (!line) return lLotes;
+    if (line.tipo === 'divisoria' || line.tipo === 'borde-macro') return lAristas;
+    if (line.tipo === 'arista_solida' || line.tipo === 'arista_punteada') return lAristas;
+    if (line.tipo === 'franja-preview-div' || line.tipo === 'linea-pines-guia') return lAristas;
+    if (line.tipo === 'franja-grupo' || line.tipo === 'franja-preview') return lLotes;
+    return lLotes;
+}
+function ensureSvgLayerOrder(svg) {
+    if (!svg) return;
+    ['layer-calles-bordes', 'layer-calles-asfalto', 'layer-lotes', 'layer-aristas'].forEach(id => {
+        const g = document.getElementById(id);
+        if (g && g.parentNode === svg) svg.appendChild(g);
+    });
+}
 function straightenFranjaGroup(gid) {
     const grp = allDrawnLines.find(l => l.id === gid && l.tipo === 'franja-grupo');
     if (!grp || grp.puntos.length < 4) return false;
@@ -1208,7 +1224,7 @@ function applyCallePathStyles(paths, ancho, alpha) {
         borde.style.setProperty('stroke', 'rgba(255,255,255,0.94)', 'important');
         borde.style.setProperty('stroke-linecap', 'round', 'important');
         borde.style.setProperty('stroke-linejoin', 'round', 'important');
-        borde.style.setProperty('filter', 'drop-shadow(0 0 1px rgba(255,255,255,0.35))', 'important');
+        borde.style.removeProperty('filter');
     }
     if (asf) {
         asf.style.setProperty('stroke-width', sw.asfalto + 'px', 'important');
@@ -2052,10 +2068,17 @@ function syncSVGElements() {
                 if (bordeEl && bordeEl.parentNode !== lBordes) lBordes.appendChild(bordeEl);
                 if (asfEl && asfEl.parentNode !== lAsfalto) lAsfalto.appendChild(asfEl);
                 DOMCache.paths[line.id] = { base: [bordeEl, asfEl].filter(Boolean) };
+            } else if (line.tipo === 'arista_solida' || line.tipo === 'arista_punteada' || line.tipo === 'linea-pines-guia') {
+                const pEl = svg.querySelector(`path[data-line-id="${line.id}"]`);
+                const target = lAristas;
+                if (pEl && pEl.parentNode !== target) target.appendChild(pEl);
+                if (pEl) DOMCache.paths[line.id] = { base: [pEl] };
             } else {
                 const gNode = svg.querySelector(`g[data-line-id="${line.id}"]`);
                 if (gNode) {
                     gNode.dataset.tipo = line.tipo;
+                    const targetLayer = resolveSvgLayerForLine(line, { lBordes, lAsfalto, lLotes, lAristas });
+                    if (targetLayer && gNode.parentNode !== targetLayer) targetLayer.appendChild(gNode);
                     const pBase = gNode.querySelector('path');
                     if (pBase) pBase.setAttribute('class', getPathClassForLine(line));
                     bindSvgEraser(gNode, line.id);
@@ -2065,6 +2088,7 @@ function syncSVGElements() {
             }
         }
     });
+    ensureSvgLayerOrder(svg);
 }
 
 function updateSVGPaths() {

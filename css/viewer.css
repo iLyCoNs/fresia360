@@ -82,8 +82,14 @@ body.is-embedded #linea-pines-panel { bottom: 72px; left: 8px; width: min(248px,
     stroke: rgba(255, 255, 255, 0.94);
     stroke-linejoin: round;
     stroke-linecap: round;
-    filter: drop-shadow(0 0 1px rgba(255, 255, 255, 0.35));
     pointer-events: none;
+}
+#layer-calles-bordes path,
+#layer-calles-asfalto path {
+    filter: none !important;
+}
+#layer-lotes {
+    isolation: isolate;
 }
 .linea-calle-asfalto {
     fill: none;
