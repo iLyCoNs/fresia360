@@ -3200,6 +3200,7 @@ function setupNavPinTouchInteractions() {
         }
     };
 
+    // Activamos los eventos tanto para táctil como para mouse universalmente
     document.addEventListener('touchend', toggleNavArrow, { passive: false, capture: true });
     document.addEventListener('click', toggleNavArrow, { capture: true });
 
