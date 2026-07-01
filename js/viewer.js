@@ -910,7 +910,7 @@ function resolveSvgLayerForLine(line, layers) {
     if (line.tipo === 'divisoria' || line.tipo === 'borde-macro') return lAristas;
     if (line.tipo === 'arista_solida' || line.tipo === 'arista_punteada') return lAristas;
     if (line.tipo === 'franja-preview-div' || line.tipo === 'linea-pines-guia') return lAristas;
-    if (line.tipo === 'franja-grupo' || line.tipo === 'franja-preview') return lLotes;
+    if (line.tipo === 'franja-grupo' || line.tipo === 'franja-curva-grupo' || line.tipo === 'franja-preview') return lLotes;
     return lLotes;
 }
 function ensureSvgLayerOrder(svg) {
@@ -2128,24 +2128,29 @@ function commitFranjaFromModal() {
     if (!pending || !cb) { closeFranjaLotesModal(); return; }
     const N = Math.max(1, Math.min(40, parseInt(document.getElementById('franja-modal-count')?.value, 10) || franjaDraftCount));
     const weights = getFranjaModalWeights();
-    if (weights.length !== N) { alert('⚠️ Actualiza la lista para que coincida con la cantidad de lotes.'); return; }
+    if (weights.length !== N) { alert('⚠️ Actualiza la lista para coincidir.'); return; }
     const splits = weightsToFranjaSplits(weights);
     
     franjaDraftCount = N; franjaDraftBaseM2 = Math.round(weights.reduce((a, b) => a + b, 0) / N);
     closeFranjaLotesModal();
 
-    if (pending.tipo === 'curva') {
+    const finalBuilt = buildFranjaScreenPointsSnapped(pending.ax, pending.ay, pending.bx, pending.by, N, null, splits);
+    if (!finalBuilt) { alert('⚠️ No se pudo proyectar la franja.'); refreshAllHotspots(); return; }
+
+    if (pending.tipo === 'franja_curva') {
         const gid = 'franja_curva_' + Date.now();
-        allDrawnLines.push({ id: gid, tipo: 'franja-curva-grupo', franjaCount: N, frente: pending.frente, fondo: pending.fondo, franjaSplits: splits });
+        const topPts = [], botPts = [];
+        const segs = 6;
+        for (let i = 0; i <= segs; i++) {
+            topPts.push(lerpPY(finalBuilt.topPts[0], finalBuilt.topPts[N], i / segs));
+            botPts.push(lerpPY(finalBuilt.botPts[0], finalBuilt.botPts[N], i / segs));
+        }
+        allDrawnLines.push({ id: gid, tipo: 'franja-curva-grupo', franjaCount: N, frente: topPts, fondo: botPts, franjaSplits: splits });
         rebuildFranjaCurvaGroup(gid);
-        franjaCurvaFase = 1; franjaCurvaFrente = []; franjaCurvaPreviewStrip = null;
-        ensureStitchedDivisorias();
         refreshAllHotspots(); saveToLocal(); flashScreenSuccess();
         return;
     }
 
-    const finalBuilt = buildFranjaScreenPointsSnapped(pending.ax, pending.ay, pending.bx, pending.by, N, null, splits);
-    if (!finalBuilt) { alert('⚠️ No se pudo proyectar la franja.'); refreshAllHotspots(); return; }
     finalizeNewFranja(finalBuilt.topPts, finalBuilt.botPts, N, pending.snap, splits);
     refreshAllHotspots(); saveToLocal(); flashScreenSuccess();
 }
@@ -2168,6 +2173,7 @@ function shouldClosePolygonLine(lineId, lineData) {
     if (lineData.tipo === 'franja-preview-div' || lineData.tipo === 'linea-pines-guia') return false;
     if (lineId === currentTempLineId || lineId === lineaPinesTempId) return false;
     if (lineData.tipo === 'franja-preview') return lineId === 'franja_preview_quad' || lineId === 'franja_curva_preview_strip';
+    if (lineData.tipo === 'franja-curva-grupo') return true;
     return true;
 }
 
@@ -2373,7 +2379,7 @@ function syncSVGElements() {
                 const pEdge = document.createElementNS("http://www.w3.org/2000/svg", "path"); pEdge.dataset.lineId = line.id;
                 pEdge.setAttribute("class", line.tipo === 'arista_solida' ? 'linea-mp-perimetro' : 'linea-mp-interna');
                 lAristas.appendChild(pEdge); DOMCache.paths[line.id] = { base: [pEdge] };
-            } else if (line.tipo === 'franja-grupo') {
+            } else if (line.tipo === 'franja-grupo' || line.tipo === 'franja-curva-grupo') {
                 const gGrp = document.createElementNS("http://www.w3.org/2000/svg", "g"); gGrp.dataset.lineId = line.id; gGrp.dataset.tipo = 'franja-grupo';
                 const pGrp = document.createElementNS("http://www.w3.org/2000/svg", "path");
                 pGrp.setAttribute("class", "linea-franja-preview");
@@ -2443,8 +2449,11 @@ function updateSVGPaths() {
         if (!lineData && lineId.startsWith('franja_preview_div_')) lineData = franjaPreviewDivs.find(d => d.id === lineId);
         if (!lineData) return;
         let isClosed = shouldClosePolygonLine(lineId, lineData);
-        if (cacheObj.gNode && lineData.tipo !== 'calle' && lineData.tipo !== 'franja-grupo') { if (lineData.puntos && lineData.puntos.length > 0) { let polyStatus = 'disponible'; if (lineData.franjaNumero || lineData.tipo === 'area-invisible') polyStatus = 'disponible'; else { let cP = 0, cY = 0; lineData.puntos.forEach(pt => { cP += pt[0]; cY += pt[1]; }); cP /= lineData.puntos.length; cY /= lineData.puntos.length; let closestPin = null; let minDist = 30; BaseDatosLotes.forEach(pin => { if(pin.tipo === 'lote') { let dist = Math.pow(pin.pitch - cP, 2) + Math.pow(pin.yaw - cY, 2); if(dist < minDist) { minDist = dist; closestPin = pin; } } }); if (closestPin) polyStatus = closestPin.status; } cacheObj.gNode.setAttribute('data-status', polyStatus); } }
-        let dBase = '', pts = lineData.puntos, hasVisiblePoints = false;
+        if (cacheObj.gNode && lineData.tipo !== 'calle' && lineData.tipo !== 'franja-grupo' && lineData.tipo !== 'franja-curva-grupo') { if (lineData.puntos && lineData.puntos.length > 0) { let polyStatus = 'disponible'; if (lineData.franjaNumero || lineData.tipo === 'area-invisible') polyStatus = 'disponible'; else { let cP = 0, cY = 0; lineData.puntos.forEach(pt => { cP += pt[0]; cY += pt[1]; }); cP /= lineData.puntos.length; cY /= lineData.puntos.length; let closestPin = null; let minDist = 30; BaseDatosLotes.forEach(pin => { if(pin.tipo === 'lote') { let dist = Math.pow(pin.pitch - cP, 2) + Math.pow(pin.yaw - cY, 2); if(dist < minDist) { minDist = dist; closestPin = pin; } } }); if (closestPin) polyStatus = closestPin.status; } cacheObj.gNode.setAttribute('data-status', polyStatus); } }
+        let dBase = '';
+        let pts = lineData.puntos;
+        if (lineData.tipo === 'franja-curva-grupo') pts = [...lineData.frente, ...[...lineData.fondo].reverse()];
+        let hasVisiblePoints = false;
         for (let i = 0; i < pts.length; i++) {
             let p1 = pts[i], p2 = pts[(i + 1) % pts.length];
             if (!isClosed && i === pts.length - 1) break;
@@ -2631,7 +2640,7 @@ function bindPanoramaPointerEvents() {
             }
             lastClickTime = Date.now();
             if (isDevModeDrawActive && currentLineType === 'eraser') { runEraserAtEvent(mock); return; }
-            if (isDevModeDrawActive && currentLineType === 'franja') {
+            if (isDevModeDrawActive && (currentLineType === 'franja' || currentLineType === 'franja_curva')) {
                 if (!franjaCornerA) {
                     const coords = visor360.mouseEventToCoords(mock); if (!coords) return;
                     const snapA = snapFranjaScreenRect(mock.clientX, mock.clientY, mock.clientX, mock.clientY);
@@ -2639,29 +2648,10 @@ function bindPanoramaPointerEvents() {
                     try { visor360.addHotSpot({ id: 'franja_preview_a', pitch: franjaCornerA.pitch, yaw: franjaCornerA.yaw, createTooltipFunc: (div) => { div.classList.add('vertex-marker','franja-corner-marker','drawing-node'); div.id = 'franja_preview_a'; }, createTooltipArgs: {} }); } catch(e) {}
                 } else {
                     const built = buildFranjaScreenPointsSnapped(franjaCornerA.sx, franjaCornerA.sy, mock.clientX, mock.clientY, Math.max(1, franjaDraftCount));
-                    if (!built) { clearFranjaDraft(); alert('⚠️ No se pudo proyectar la franja. Ajusta la vista para que el área quede visible en pantalla.'); return; }
+                    if (!built) { clearFranjaDraft(); alert('⚠️ No se pudo proyectar la franja. Ajusta la vista.'); return; }
                     const snap = built.snap;
-                    franjaPendingCreate = { ax: franjaCornerA.sx, ay: franjaCornerA.sy, bx: mock.clientX, by: mock.clientY, snap };
+                    franjaPendingCreate = { ax: franjaCornerA.sx, ay: franjaCornerA.sy, bx: mock.clientX, by: mock.clientY, snap, tipo: currentLineType };
                     clearFranjaDraft();
-                    if (snap?.gapFillH) {
-                        if (!finalizeExtendFranja(snap)) {
-                            alert('⚠️ No se pudo extender la hilera. Dibuja desde el borde de la franja existente hacia el hueco o el nuevo ancho.');
-                            franjaPendingCreate = null;
-                            refreshAllHotspots();
-                            return;
-                        }
-                        franjaPendingCreate = null;
-                        refreshAllHotspots(); saveToLocal(); flashScreenSuccess();
-                        return;
-                    }
-                    if (snap?.gapFill) {
-                        const finalBuilt = buildFranjaScreenPointsSnapped(franjaPendingCreate.ax, franjaPendingCreate.ay, franjaPendingCreate.bx, franjaPendingCreate.by, 1);
-                        if (!finalBuilt) { franjaPendingCreate = null; alert('⚠️ No se pudo proyectar el hueco.'); refreshAllHotspots(); return; }
-                        finalizeNewFranja(finalBuilt.topPts, finalBuilt.botPts, 1, snap);
-                        franjaPendingCreate = null;
-                        refreshAllHotspots(); saveToLocal(); flashScreenSuccess();
-                        return;
-                    }
                     openFranjaLotesModal(franjaDraftCount, commitFranjaFromModal);
                 }
                 return;
@@ -2740,18 +2730,11 @@ function bindPanoramaPointerEvents() {
             updateSVGPaths();
             return;
         }
-        if (isDevModeDrawActive && currentLineType === 'franja' && franjaCornerA) {
+        if (isDevModeDrawActive && (currentLineType === 'franja' || currentLineType === 'franja_curva') && franjaCornerA) {
             window.lastMouseX = mock.clientX; window.lastMouseY = mock.clientY;
             updateFranjaPreview(mock.clientX, mock.clientY);
             syncSVGElements(); updateSVGPaths();
             if (snapCursor) snapCursor.classList.remove('active');
-            return;
-        }
-        if (isDevModeDrawActive && currentLineType === 'franja_curva' && franjaCurvaFase === 2) {
-            window.lastMouseX = mock.clientX; window.lastMouseY = mock.clientY;
-            refreshFranjaCurvaPreview();
-            syncSVGElements(); updateSVGPaths();
-            try { const coords = visor360.mouseEventToCoords(mock); updateDrawModeSnap(mock, coords); } catch (err) {}
             return;
         }
         if (!isDevModeDrawActive || !visor360 || currentLineType === 'eraser') { if (snapCursor) snapCursor.classList.remove('active'); return; }
@@ -3013,29 +2996,6 @@ function setupDevModes() {
             finishCalleDrawing();
             return;
         }
-        if (e.code === 'Enter' && isDevModeDrawActive && currentLineType === 'franja_curva') {
-            e.preventDefault();
-            if (franjaCurvaFase === 1 && currentLinePoints.length >= 2) {
-                franjaCurvaFrente = [...currentLinePoints];
-                currentLinePoints = []; franjaCurvaFase = 2;
-                currentTempLineId = 'temp_' + Date.now();
-                franjaCurvaPreviewStrip = null;
-                mostrarToast('Fase 2: Dibuja la curva TRASERA (fondo) y presiona Enter', true);
-                refreshAllHotspots(true); syncSVGElements(); updateSVGPaths();
-            } else if (franjaCurvaFase === 2 && currentLinePoints.length >= 2) {
-                let franjaCurvaFondo = [...currentLinePoints];
-                const dDirect = Math.hypot(franjaCurvaFrente[0][0] - franjaCurvaFondo[0][0], franjaCurvaFrente[0][1] - franjaCurvaFondo[0][1]);
-                const dCross = Math.hypot(franjaCurvaFrente[0][0] - franjaCurvaFondo[franjaCurvaFondo.length-1][0], franjaCurvaFrente[0][1] - franjaCurvaFondo[franjaCurvaFondo.length-1][1]);
-                if (dCross < dDirect) franjaCurvaFondo.reverse();
-                currentLinePoints = [];
-                franjaCurvaPreviewStrip = null;
-                refreshFranjaCurvaPreview();
-                franjaPendingCreate = { tipo: 'curva', frente: franjaCurvaFrente, fondo: franjaCurvaFondo };
-                syncSVGElements(); updateSVGPaths();
-                openFranjaLotesModal(franjaDraftCount, commitFranjaFromModal);
-            }
-            return;
-        }
         if (e.code === 'Escape' && isLineaPinesActive) {
             e.preventDefault();
             clearLineaPinesDraft();
@@ -3063,10 +3023,8 @@ function setupDevModes() {
     document.getElementById('btn-eraser')?.addEventListener('click', (e) => { setDrawMode('eraser', e.target); });
     
     function setDrawMode(mode, targetBtn) { 
-        if (mode !== 'franja') clearFranjaDraft(); 
+        if (mode !== 'franja' && mode !== 'franja_curva') clearFranjaDraft(); 
         if (mode !== 'calle') closeCalleToolPanel(); 
-        if (mode !== 'franja_curva') { franjaCurvaFase = 0; franjaCurvaFrente = []; franjaCurvaPreviewStrip = null; }
-        else { franjaCurvaFase = 1; currentLinePoints = []; mostrarToast('Fase 1: Dibuja la curva FRONTAL (calle) y presiona Enter', true); }
         currentLineType = mode; document.body.classList.toggle('eraser-mode-active', mode === 'eraser'); document.querySelectorAll('#dev-toolbar-draw .dev-btn:not(.action):not(.export):not(.export-ai):not(.nuke)').forEach(b => b.classList.remove('active')); if(targetBtn) targetBtn.classList.add('active'); 
     }
     const bindCallePanel = (id, fn) => { const el = document.getElementById(id); if (!el) return; el.addEventListener('input', fn); el.addEventListener('change', fn); };
