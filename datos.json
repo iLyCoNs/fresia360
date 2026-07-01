@@ -228,7 +228,7 @@
       "rutaEtiquetaTrafico": "Madrugada/noche",
       "rutaFuente": "osrm",
       "rutaCalculadaEn": 1782878020191,
-      "rutaEscenarioTrafico": "auto"
+      "rutaEscenarioTrafico": "libre"
     },
     {
       "pitch": -26.77,
@@ -236,16 +236,16 @@
       "tipo": "ruta",
       "titulo": "RUTA V-30 A FRESIA",
       "descripcion": "Entrar a V-362",
-      "coordenadasDestino": "-41.198, -73.355",
+      "coordenadasDestino": "-41.219378217559395, -73.30913366110684",
       "id": "nuevo_1782709687467",
       "numero": "30",
-      "distancia": "6.3 KM",
-      "tiempo": "6 MIN",
+      "distancia": "1.7 KM",
+      "tiempo": "2 MIN",
       "rutaFactorTrafico": 0.92,
       "rutaEtiquetaTrafico": "Madrugada/noche",
       "rutaFuente": "osrm",
       "rutaCalculadaEn": 1782878020649,
-      "rutaEscenarioTrafico": "auto"
+      "rutaEscenarioTrafico": "libre"
     },
     {
       "pitch": -2.05,
@@ -266,7 +266,7 @@
       "coordenadasDestino": "-41.225350322375895, -73.31899437036822",
       "distancia": "0.0 KM",
       "tiempo": "0 MIN",
-      "rutaEscenarioTrafico": "auto",
+      "rutaEscenarioTrafico": "libre",
       "id": "nuevo_1782877991422",
       "numero": "00",
       "rutaFactorTrafico": 0.92,
