@@ -93,6 +93,14 @@
         .calle-ui-check { justify-content: flex-start !important; gap: 6px !important; cursor: pointer; }
         .calle-ui-check input { width: auto; margin: 0; accent-color: #3b82f6; }
         .calle-ui-hint { margin: 10px 0 0; font-size: 8px; line-height: 1.45; color: #64748b; font-weight: 600; }
+        #btn-calle-finish { width: 100%; margin-top: 10px; padding: 10px 12px; border: none; border-radius: 10px; background: rgba(16,185,129,0.35); color: #94a3b8; font-size: 10px; font-weight: 800; letter-spacing: 0.3px; cursor: not-allowed; transition: background 0.15s, color 0.15s, transform 0.12s, box-shadow 0.15s; }
+        #btn-calle-finish.is-ready { background: linear-gradient(135deg, #10b981, #059669); color: #fff; cursor: pointer; box-shadow: 0 4px 14px rgba(16,185,129,0.35); }
+        #btn-calle-finish.is-ready:hover { filter: brightness(1.08); transform: translateY(-1px); }
+        #btn-calle-finish.is-ready:active { transform: translateY(0); }
+        #calle-draw-status { display: block; margin-top: 6px; font-size: 8px; font-weight: 700; color: #64748b; text-align: center; line-height: 1.35; }
+        #calle-draw-status.is-ready { color: #34d399; }
+        .vertex-marker.calle-finish-vertex { background: #10b981 !important; border-color: #fff !important; width: 16px !important; height: 16px !important; box-shadow: 0 0 0 5px rgba(16,185,129,0.2), 0 0 18px rgba(16,185,129,0.85) !important; animation: calleFinishPulse 0.85s ease-in-out infinite alternate; cursor: pointer !important; }
+        @keyframes calleFinishPulse { from { transform: translate(-50%,-50%) scale(1); } to { transform: translate(-50%,-50%) scale(1.35); box-shadow: 0 0 0 8px rgba(16,185,129,0.12), 0 0 24px rgba(16,185,129,1) !important; } }
         body.is-embedded #calle-tool-panel { bottom: 72px; left: 8px; width: min(248px, calc(100vw - 16px)); }
         #snap-cursor.is-calle-finish { border-color: #10b981 !important; background: rgba(16,185,129,0.3) !important; width: 26px !important; height: 26px !important; box-shadow: 0 0 0 5px rgba(16,185,129,0.15), 0 0 18px rgba(16,185,129,0.65); }
         #snap-cursor.is-calle-edge { border-color: #3b82f6 !important; background: rgba(59,130,246,0.28) !important; box-shadow: 0 0 0 4px rgba(59,130,246,0.12), 0 0 18px rgba(59,130,246,0.55); }
@@ -421,7 +429,7 @@
                 </div>
             </div>
         </div>
-        <div id="calle-tool-panel"><h4>🛣️ Servidumbre de paso</h4><label>Grosor <span id="calle-ui-ancho-val">8.0</span></label><input type="range" id="calle-ui-ancho" min="2" max="28" step="0.5" value="8"><div id="calle-width-preview"><div id="calle-width-preview-bar"></div></div><label>Transparencia <span id="calle-ui-alpha-val">85%</span></label><input type="range" id="calle-ui-alpha" min="0.15" max="1" step="0.05" value="0.85"><label>Tamaño texto <span id="calle-ui-label-val">1.0×</span></label><input type="range" id="calle-ui-label" min="0.5" max="2.5" step="0.1" value="1"><label class="calle-ui-check"><input type="checkbox" id="calle-ui-show-label" checked> Etiqueta SERVIDUMBRE DE PASO</label><label class="calle-ui-check"><input type="checkbox" id="calle-ui-snap-franja"> Pegar a borde franja (opcional)</label><p class="calle-ui-hint">Doble clic en el mismo punto para terminar esta calle. Arrastra ✥ para mover la calle entera.</p></div>
+        <div id="calle-tool-panel"><h4>🛣️ Servidumbre de paso</h4><label>Grosor <span id="calle-ui-ancho-val">8.0</span></label><input type="range" id="calle-ui-ancho" min="2" max="28" step="0.5" value="8"><div id="calle-width-preview"><div id="calle-width-preview-bar"></div></div><label>Transparencia <span id="calle-ui-alpha-val">85%</span></label><input type="range" id="calle-ui-alpha" min="0.15" max="1" step="0.05" value="0.85"><label>Tamaño texto <span id="calle-ui-label-val">1.0×</span></label><input type="range" id="calle-ui-label" min="0.5" max="2.5" step="0.1" value="1"><label class="calle-ui-check"><input type="checkbox" id="calle-ui-show-label" checked> Etiqueta SERVIDUMBRE DE PASO</label><label class="calle-ui-check"><input type="checkbox" id="calle-ui-snap-franja"> Pegar a borde franja (opcional)</label><button type="button" id="btn-calle-finish">✓ Terminar calle</button><span id="calle-draw-status">Coloca al menos 2 puntos en el mapa</span><p class="calle-ui-hint">Termina con el botón verde, doble clic, Enter o clic en el último punto (verde). Luego arrastra ✥ para mover la calle.</p></div>
         <div id="franja-lotes-modal"><div class="modal-content franja-modal-box"><h3>🏘️ Franja de Lotes</h3><p class="franja-modal-hint">Indica cuántos lotes y el tamaño de cada uno en m². El ancho en el mapa será proporcional (ej. 7000 m² = 40% más ancho que 5000 m²).</p><div class="franja-modal-count-row"><input type="number" id="franja-modal-count" min="1" max="40" value="10"><button type="button" id="franja-modal-apply-count">Actualizar</button></div><div class="franja-scale-preview" id="franja-modal-scale-preview"></div><div class="franja-modal-rows" id="franja-modal-rows"></div><div class="franja-modal-tools"><button type="button" id="franja-modal-equal">Igualar todos</button><button type="button" id="franja-modal-last-big">Último +40% (7000)</button></div><div class="modal-btns"><button class="btn-cancel" id="franja-modal-cancel">Cancelar</button><button class="btn-save" id="franja-modal-confirm">Crear franja</button></div></div></div>
         <div id="global-event-interceptor" style="position: absolute; top:0; left:0; width:100%; height:100%; pointer-events: none; z-index: 9999999;"></div>
         <div id="snap-cursor"></div>
@@ -432,7 +440,7 @@
             <div class="filter-group"><button class="filter-btn active" data-status="todos">Todos</button><button class="filter-btn" data-status="favoritos">❤️ Favs</button><button class="filter-btn" data-status="disponible">Disp.</button><button class="filter-btn" data-status="reservado">Reser.</button><button class="filter-btn" data-status="vendido">Vend.</button><button class="filter-btn" data-status="no_disponible">No Disp.</button></div>
             <div class="lotes-list" id="js-lotes-list"></div>
         </div>
-        <div id="dev-toolbar-draw" class="dev-toolbar"><div class="macos-header"><div class="macos-dots"><i></i><i></i><i></i></div><div class="dev-toolbar-title">MODO ARQUITECTO (DIBUJO LIBRE)</div><div style="width: 42px;"></div></div><div class="dev-tools-row"><button class="dev-btn active" id="btn-draw-solid">Sólida</button><button class="dev-btn" id="btn-draw-dash">Punteada</button><button class="dev-btn" id="btn-draw-street" title="Servidumbre: panel de grosor/transparencia/texto. Doble clic mismo punto termina. ✥ mueve la calle.">🛣️ Calle</button><button class="dev-btn" id="btn-draw-cut" style="color: #f59e0b;" title="Apunta hacia donde quieres cortar">✂️ Subdividir</button><button class="dev-btn" id="btn-draw-divisoria" title="Dibuja una línea punteada interna (no se cierra automáticamente)">📏 Divisoria</button><button class="dev-btn btn-franja-lotes" id="btn-draw-franja" style="color: #10b981; font-weight: 800;" title="2 clics: dibuja el rectángulo → cantidad de lotes y m² de cada uno (ancho proporcional)">Franja Lotes</button><button class="dev-btn" id="btn-straighten-franja" style="color: #f59e0b; font-weight: 800;" title="Endereza franja(s): bordes y divisiones en líneas rectas para levantamiento">📏 Enderezar</button><div style="width: 1px; height: 20px; background: rgba(255,255,255,0.2); margin: 0 5px;"></div><button class="dev-btn" id="btn-auto-macro" style="color: #a855f7; font-weight: 800;" title="Convierte lotes adyacentes en un Macro-Lote">✨ AUTO-MACRO</button><button class="dev-btn" id="btn-eraser" style="color: #fca5a5;">🧹 Goma</button><div style="width: 1px; height: 20px; background: rgba(255,255,255,0.2); margin: 0 5px;"></div><button class="dev-btn action" id="btn-undo-point" title="Borrar último vértice trazado">Deshacer Punto</button><button class="dev-btn nuke" id="btn-nuke">🗑️ Limpiar Todo</button><button class="dev-btn export-ai" title="Guardar directamente en el servidor">☁️ GUARDAR EN LA NUBE</button></div></div>
+        <div id="dev-toolbar-draw" class="dev-toolbar"><div class="macos-header"><div class="macos-dots"><i></i><i></i><i></i></div><div class="dev-toolbar-title">MODO ARQUITECTO (DIBUJO LIBRE)</div><div style="width: 42px;"></div></div><div class="dev-tools-row"><button class="dev-btn active" id="btn-draw-solid">Sólida</button><button class="dev-btn" id="btn-draw-dash">Punteada</button><button class="dev-btn" id="btn-draw-street" title="Servidumbre: panel de grosor. Botón Terminar calle o Enter al tener 2+ puntos. ✥ mueve la calle.">🛣️ Calle</button><button class="dev-btn" id="btn-draw-cut" style="color: #f59e0b;" title="Apunta hacia donde quieres cortar">✂️ Subdividir</button><button class="dev-btn" id="btn-draw-divisoria" title="Dibuja una línea punteada interna (no se cierra automáticamente)">📏 Divisoria</button><button class="dev-btn btn-franja-lotes" id="btn-draw-franja" style="color: #10b981; font-weight: 800;" title="2 clics: dibuja el rectángulo → cantidad de lotes y m² de cada uno (ancho proporcional)">Franja Lotes</button><button class="dev-btn" id="btn-straighten-franja" style="color: #f59e0b; font-weight: 800;" title="Endereza franja(s): bordes y divisiones en líneas rectas para levantamiento">📏 Enderezar</button><div style="width: 1px; height: 20px; background: rgba(255,255,255,0.2); margin: 0 5px;"></div><button class="dev-btn" id="btn-auto-macro" style="color: #a855f7; font-weight: 800;" title="Convierte lotes adyacentes en un Macro-Lote">✨ AUTO-MACRO</button><button class="dev-btn" id="btn-eraser" style="color: #fca5a5;">🧹 Goma</button><div style="width: 1px; height: 20px; background: rgba(255,255,255,0.2); margin: 0 5px;"></div><button class="dev-btn action" id="btn-undo-point" title="Borrar último vértice trazado">Deshacer Punto</button><button class="dev-btn nuke" id="btn-nuke">🗑️ Limpiar Todo</button><button class="dev-btn export-ai" title="Guardar directamente en el servidor">☁️ GUARDAR EN LA NUBE</button></div></div>
         <div id="dev-toolbar-pins" class="dev-toolbar"><div class="macos-header"><div class="macos-dots"><i></i><i></i><i></i></div><div class="dev-toolbar-title">MODO PINES (MAPEO)</div><div style="width: 42px;"></div></div><div class="dev-tools-row"><button class="dev-btn active btn-pin-disp" data-pintype="disponible">Disp.</button><button class="dev-btn btn-pin-res" data-pintype="reservado">Res.</button><button class="dev-btn btn-pin-vend" data-pintype="vendido">Vend.</button><button class="dev-btn btn-pin-nodisp" data-pintype="no_disponible">No Disp.</button><div style="width: 1px; height: 20px; background: rgba(255,255,255,0.2); margin: 0 5px;"></div><button class="dev-btn btn-pin-360" data-pintype="vista360">Pin 360</button><button class="dev-btn btn-pin-casa" data-pintype="casa360">Casa 360</button><button class="dev-btn btn-pin-hor" data-pintype="horizonte">Horizonte</button><button class="dev-btn btn-pin-ruta" data-pintype="ruta">Ruta</button><button class="dev-btn" id="btn-set-drone" style="color: #f59e0b;" title="Establecer Coordenadas Base (Lat, Lng)">📍 Origen Drone</button><button class="dev-btn" id="btn-set-north" style="color: #34d399;" title="Fijar la vista actual como el Norte Magnético">🧭 Fijar Norte</button><div style="width: 1px; height: 20px; background: rgba(255,255,255,0.2); margin: 0 5px;"></div><button class="dev-btn action" id="btn-heatmap" title="Activa Telemetría Visual">🔥 Mapa Calor</button><button class="dev-btn" id="btn-edit-titles" style="color: #cbd5e1;" title="Editar Título y Subtítulo Central">📝 Títulos</button><button class="dev-btn nuke" id="btn-nuke-pins">🗑️ Limpiar Todo</button><button class="dev-btn export-ai" title="Guardar directamente en el servidor">☁️ GUARDAR EN LA NUBE</button></div></div>
         <div class="premium-dock" id="js-dock">
             <div class="dock-legend"><div class="legend-item"><div class="legend-dot dot-disp"></div><span class="legend-text">Disponible</span></div><div class="legend-item"><div class="legend-dot dot-res"></div><span class="legend-text">Reservado</span></div><div class="legend-item"><div class="legend-dot dot-vend"></div><span class="legend-text">Vendido</span></div><div class="legend-item"><div class="legend-dot dot-nodisp"></div><span class="legend-text">No Disp.</span></div></div>
@@ -1440,6 +1448,24 @@
                 bar.style.width = pct + '%';
                 bar.style.opacity = String(draftCalleAlpha);
             }
+            const finishBtn = document.getElementById('btn-calle-finish');
+            const drawStatus = document.getElementById('calle-draw-status');
+            const n = currentLinePoints.length;
+            const canFinish = currentLineType === 'calle' && n >= 2;
+            if (finishBtn) finishBtn.classList.toggle('is-ready', canFinish);
+            if (drawStatus) {
+                drawStatus.classList.toggle('is-ready', canFinish);
+                drawStatus.textContent = canFinish
+                    ? `${n} puntos — listo para terminar`
+                    : (n === 1 ? '1 punto — falta al menos uno más' : 'Coloca al menos 2 puntos en el mapa');
+            }
+        }
+        function finishCalleDrawing() {
+            if (currentLineType !== 'calle' || currentLinePoints.length < 2) return false;
+            anclarTrazoActivo();
+            syncCallePanelUI();
+            flashScreenSuccess();
+            return true;
         }
         function openCalleToolPanel() {
             document.getElementById('calle-tool-panel')?.classList.add('open');
@@ -1588,10 +1614,15 @@
             if (draftCalleSnapFranja && snappedCoords && !isNearFranjaCornerScreen(mock.clientX, mock.clientY, 32)) {
                 p = snappedCoords[0]; y = snappedCoords[1];
             }
+            if (isSnapToClose && currentLinePoints.length >= 2) {
+                finishCalleDrawing();
+                lastCalleTap = null;
+                return;
+            }
             const now = Date.now();
-            if (lastCalleTap && now - lastCalleTap.time < 380 && Math.hypot(mock.clientX - lastCalleTap.x, mock.clientY - lastCalleTap.y) < 20) {
+            if (lastCalleTap && now - lastCalleTap.time < 450 && Math.hypot(mock.clientX - lastCalleTap.x, mock.clientY - lastCalleTap.y) < 28) {
                 if (currentLinePoints.length >= 2) {
-                    anclarTrazoActivo();
+                    finishCalleDrawing();
                     lastCalleTap = null;
                     return;
                 }
@@ -1602,6 +1633,7 @@
             visor360.addHotSpot({ pitch: p, yaw: y, id: _hid, createTooltipFunc: renderHiddenVertex, createTooltipArgs: { lineId: currentTempLineId, type: 'calle', isGuide: true, idx: currentLinePoints.length - 1, hsId: _hid } });
             syncSVGElements();
             updateSVGPaths();
+            syncCallePanelUI();
             refreshAllHotspots(true);
         }
         function getAllStripSnapTargets() {
@@ -2344,6 +2376,17 @@
                 if (draggingVertex) { 
                     if(draggingVertex.el) draggingVertex.el.classList.remove('is-dragging'); 
                     let mock = getMockEvent(e);
+                    const sx = draggingVertex.startX ?? mock.clientX;
+                    const sy = draggingVertex.startY ?? mock.clientY;
+                    const wasTap = Math.hypot(mock.clientX - sx, mock.clientY - sy) < 8;
+                    const isCalleFinishVtx = currentLineType === 'calle' && draggingVertex.lineId === currentTempLineId && draggingVertex.idx === currentLinePoints.length - 1 && currentLinePoints.length >= 2;
+                    if (wasTap && isCalleFinishVtx) {
+                        draggingVertex = null;
+                        window.lastMouseX = undefined;
+                        window.lastMouseY = undefined;
+                        finishCalleDrawing();
+                        return;
+                    }
                     let coords = visor360.mouseEventToCoords(mock);
                     if(coords && !isNaN(coords[0])) applyDraggedVertexCoords(coords);
                     draggingVertex = null; 
@@ -2364,7 +2407,18 @@
                 }
                 const timeDiff = Date.now() - startTime; const moveDist = Math.sqrt( Math.pow(mock.clientX - startX, 2) + Math.pow(mock.clientY - startY, 2) );
                 if (timeDiff < 500 && moveDist < 10) {
-                    if (Date.now() - lastClickTime < 300 && isDevModeDrawActive && currentLineType !== 'franja' && currentLineType !== 'calle') { anclarTrazoActivo(); lastClickTime = 0; return; }
+                    if (Date.now() - lastClickTime < 350 && isDevModeDrawActive && currentLineType !== 'franja') {
+                        if (currentLineType === 'calle' && currentLinePoints.length >= 2) {
+                            finishCalleDrawing();
+                            lastClickTime = 0;
+                            return;
+                        }
+                        if (currentLineType !== 'calle') {
+                            anclarTrazoActivo();
+                            lastClickTime = 0;
+                            return;
+                        }
+                    }
                     lastClickTime = Date.now();
                     if (isDevModeDrawActive && currentLineType === 'eraser') { runEraserAtEvent(mock); return; }
                     if (isDevModeDrawActive && currentLineType === 'franja') {
@@ -2696,6 +2750,7 @@
                 currentLinePoints = [];
                 currentTempLineId = 'temp_' + Date.now();
                 lastCalleTap = null;
+                syncCallePanelUI();
                 refreshAllHotspots();
                 saveToLocal();
             }
@@ -2705,7 +2760,15 @@
 
         function setupDevModes() {
             document.querySelectorAll('.dev-toolbar').forEach(tb => { tb.addEventListener('mousedown', e => e.stopPropagation()); tb.addEventListener('mouseup', e => e.stopPropagation()); tb.addEventListener('touchstart', e => e.stopPropagation(), {passive: true}); tb.addEventListener('touchend', e => e.stopPropagation()); });
-            document.addEventListener('keydown', (e) => { if (e.ctrlKey && e.code === 'Space') { e.preventDefault(); if(isDevModePinsActive) togglePinsMode(false); toggleDrawMode(!isDevModeDrawActive); } if (e.ctrlKey && (e.code === 'KeyP' || e.key.toLowerCase() === 'p')) { e.preventDefault(); if(isDevModeDrawActive) toggleDrawMode(false); togglePinsMode(!isDevModePinsActive); } if (e.ctrlKey && (e.code === 'KeyZ' || e.key.toLowerCase() === 'z')) { e.preventDefault(); if (isDevModeDrawActive) { if (currentLinePoints.length > 0) document.getElementById('btn-undo-point')?.click(); else if (allDrawnLines.length > 0) document.getElementById('btn-delete-last-line')?.click(); } } });
+            document.addEventListener('keydown', (e) => {
+                if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT')) return;
+                if (e.code === 'Enter' && isDevModeDrawActive && currentLineType === 'calle' && currentLinePoints.length >= 2) {
+                    e.preventDefault();
+                    finishCalleDrawing();
+                    return;
+                }
+                if (e.ctrlKey && e.code === 'Space') { e.preventDefault(); if(isDevModePinsActive) togglePinsMode(false); toggleDrawMode(!isDevModeDrawActive); } if (e.ctrlKey && (e.code === 'KeyP' || e.key.toLowerCase() === 'p')) { e.preventDefault(); if(isDevModeDrawActive) toggleDrawMode(false); togglePinsMode(!isDevModePinsActive); } if (e.ctrlKey && (e.code === 'KeyZ' || e.key.toLowerCase() === 'z')) { e.preventDefault(); if (isDevModeDrawActive) { if (currentLinePoints.length > 0) document.getElementById('btn-undo-point')?.click(); else if (allDrawnLines.length > 0) document.getElementById('btn-delete-last-line')?.click(); } }
+            });
             
             document.getElementById('btn-draw-solid')?.addEventListener('click', (e) => { setDrawMode('solida', e.target); }); 
             document.getElementById('btn-draw-dash')?.addEventListener('click', (e) => { setDrawMode('punteada', e.target); }); 
@@ -2723,6 +2786,7 @@
             bindCallePanel('calle-ui-label', (e) => { draftCalleLabelScale = Math.max(0.5, Math.min(2.5, parseFloat(e.target.value) || 1)); syncCallePanelUI(); refreshAllHotspots(true); });
             bindCallePanel('calle-ui-show-label', (e) => { draftCalleShowLabel = !!e.target.checked; refreshAllHotspots(true); });
             bindCallePanel('calle-ui-snap-franja', (e) => { draftCalleSnapFranja = !!e.target.checked; });
+            document.getElementById('btn-calle-finish')?.addEventListener('click', (e) => { e.stopPropagation(); finishCalleDrawing(); });
             document.getElementById('calle-tool-panel')?.addEventListener('mousedown', e => e.stopPropagation());
             document.getElementById('calle-tool-panel')?.addEventListener('touchstart', e => e.stopPropagation(), { passive: true });
             
@@ -2744,7 +2808,7 @@
             document.getElementById('franja-lotes-modal')?.addEventListener('mousedown', e => e.stopPropagation());
             document.getElementById('franja-lotes-modal')?.addEventListener('touchstart', e => e.stopPropagation(), { passive: true });
             
-            document.getElementById('btn-undo-point')?.addEventListener('click', () => { if (currentLinePoints.length > 0) { currentLinePoints.pop(); refreshAllHotspots(); } });
+            document.getElementById('btn-undo-point')?.addEventListener('click', () => { if (currentLinePoints.length > 0) { currentLinePoints.pop(); if (currentLineType === 'calle') syncCallePanelUI(); refreshAllHotspots(); } });
 
             const btnDeleteLastLine = document.createElement('button'); btnDeleteLastLine.id = 'btn-delete-last-line'; btnDeleteLastLine.style.display = 'none'; document.body.appendChild(btnDeleteLastLine);
             btnDeleteLastLine.addEventListener('click', () => { if (allDrawnLines.length > 0) { allDrawnLines.pop(); refreshAllHotspots(); saveToLocal(); } });
@@ -2960,6 +3024,9 @@
             if (!DOMCache.markers[args.lineId]) DOMCache.markers[args.lineId] = { base: [] }; DOMCache.markers[args.lineId].base[args.idx] = hotSpotDiv; 
             if (args.lineId === currentTempLineId) { hotSpotDiv.classList.add('drawing-node'); }
             if (args.lineId === currentTempLineId && args.idx === 0 && currentLinePoints.length >= 3 && currentLineType !== 'cortar' && currentLineType !== 'eraser') { hotSpotDiv.classList.add('origin-vertex'); }
+            if (args.lineId === currentTempLineId && currentLineType === 'calle' && args.idx === currentLinePoints.length - 1 && currentLinePoints.length >= 2) {
+                hotSpotDiv.classList.add('calle-finish-vertex');
+            }
             const onEraseVertex = (e) => {
                 if (currentLineType !== 'eraser') return;
                 e.stopPropagation(); e.preventDefault();
@@ -2970,7 +3037,12 @@
             hotSpotDiv.addEventListener('mousedown', onEraseVertex);
             hotSpotDiv.addEventListener('touchstart', onEraseVertex, { passive: false });
             if (args.isGuide && currentLineType !== 'eraser' && currentLineType !== 'cortar' && args.type !== 'divisoria' && args.type !== 'borde-macro' && (args.type !== 'calle' || currentLineType === 'calle')) { 
-                const startDragGuide = (e) => { e.stopPropagation(); e.preventDefault(); hotSpotDiv.classList.add('is-dragging'); draggingVertex = { lineId: args.lineId, idx: args.idx, el: hotSpotDiv, hsId: args.hsId }; }; 
+                const startDragGuide = (e) => {
+                    e.stopPropagation(); e.preventDefault();
+                    const m0 = getMockEvent(e);
+                    hotSpotDiv.classList.add('is-dragging');
+                    draggingVertex = { lineId: args.lineId, idx: args.idx, el: hotSpotDiv, hsId: args.hsId, startX: m0.clientX, startY: m0.clientY };
+                }; 
                 hotSpotDiv.addEventListener('mousedown', startDragGuide); hotSpotDiv.addEventListener('touchstart', startDragGuide, {passive: false}); 
             } 
         }
