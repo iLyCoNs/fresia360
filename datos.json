@@ -407,6 +407,18 @@
       "numero": "00",
       "coordenadasDestino": "-41.15267979576247, -73.42133206030601",
       "rutaEscenarioTrafico": "auto"
+    },
+    {
+      "pitch": -53.97,
+      "yaw": -172.69,
+      "titulo": "ACCESO PRINCIPAL",
+      "tipo": "ruta",
+      "coordenadasDestino": "-41.22596336821739, -73.31922916318742",
+      "distancia": "0.1 KM",
+      "tiempo": "0 MIN",
+      "rutaEscenarioTrafico": "auto",
+      "id": "nuevo_1782871298761",
+      "numero": "00"
     }
   ],
   "trazos": [
