@@ -1225,9 +1225,9 @@ function getCalleStrokeWidths(anchoFactor) {
     const base = getCalleDynBasePx();
     const factor = anchoFactor || draftCalleAncho || 8;
     
-    // FIX: Reducción del 20% del grosor general solo en dispositivos móviles
+    // FIX: Reducción del 35% del grosor general solo en dispositivos móviles (20% + 15%)
     const isMobile = window.innerWidth <= 768;
-    const scale = isMobile ? 0.8 : 1.0;
+    const scale = isMobile ? 0.65 : 1.0;
     
     // Aplicamos la escala al asfalto y a la línea blanca fina
     const asf = Math.max(4, base * factor * scale);
