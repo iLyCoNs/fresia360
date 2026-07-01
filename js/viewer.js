@@ -1829,7 +1829,7 @@ function snapFranjaScreenRect(ax, ay, bx, by, opts) {
     }
     let gapFill = false, upperGid = null, lowerGid = null, upper = null, lower = null;
     if (!gapFillH) {
-        let bestCol = null, bestColD = SNAP * 3;
+        let bestCol = null, bestColD = SNAP * 5;
         targets.forEach(t => {
             const dc = Math.abs(cx - (t.left + t.right) / 2);
             if (dc < bestColD) { bestColD = dc; bestCol = t; }
@@ -1955,7 +1955,7 @@ function ensureStitchedDivisorias() {
     }
     
     // Pass 2: Exact matching borders across ANY two different franjas (Handles sides automatically)
-    const tol = 0.08;
+    const tol = 0.35;
     const toDelete = new Set();
     const newDivs = [];
     const borders = allDrawnLines.filter(l => l.tipo === 'borde-macro' && l.franjaGrupo);
@@ -2172,6 +2172,7 @@ function finalizeExtendFranja(snap) {
         const newG = allDrawnLines.find(l => l.id === gid);
         if (newG && tryMergeFranjaHorizontal(newG.id)) return gid;
         if (mergeFranjasHorizontal(stripGid, gid, false)) return stripGid;
+        straightenFranjaGroup(stripGid);
         return gid;
     }
     if (!stripGid) return null;
