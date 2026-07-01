@@ -354,6 +354,53 @@
             body.is-embedded.dev-mode-pins-active .horizon-hud-wrapper .horizon-expand-arrow, body.is-embedded.dev-mode-pins-active .ruta-hud-wrapper .ruta-expand-arrow { display: none !important; }
             body.is-embedded.dev-mode-pins-active .horizon-hud-wrapper .horizon-pill-extra, body.is-embedded.dev-mode-pins-active .ruta-hud-wrapper .horizon-pill-extra { max-width: none !important; opacity: 1 !important; overflow: visible !important; pointer-events: auto !important; }
         }
+        /* --- FASE 1 PERF MÓVIL: HUD sólido + animaciones pausadas al pan --- */
+        body.is-touch-device .premium-header,
+        body.is-touch-device .premium-compass-container,
+        body.is-touch-device .poi-trigger-btn,
+        body.is-touch-device .poi-panel,
+        body.is-touch-device .premium-dock,
+        body.is-touch-device .dock-legend,
+        body.is-touch-device .lote-card,
+        body.is-touch-device .portal-card,
+        body.is-touch-device .ruta-glass-pill,
+        body.is-touch-device .horizon-detail-card,
+        body.is-touch-device .casa-glass-card,
+        body.is-touch-device .pin-360,
+        body.is-touch-device .pin-quick-actions,
+        body.is-touch-device .card-status-pill,
+        body.is-touch-device .card-fav-btn,
+        body.is-touch-device .premium-sidebar,
+        body.is-touch-device .close-map-btn,
+        body.is-touch-device #sun-hud,
+        body.is-touch-device .dev-toolbar,
+        body.is-touch-device .route-pin-info-card,
+        body.is-touch-device .gps-tracker-box,
+        body.is-touch-device .btn-directions {
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
+        }
+        body.is-touch-device .premium-header { background: rgba(9, 11, 17, 0.94) !important; }
+        body.is-touch-device .premium-compass-container { background: rgba(9, 11, 17, 0.94) !important; }
+        body.is-touch-device .poi-trigger-btn { background: rgba(9, 11, 17, 0.94) !important; }
+        body.is-touch-device .poi-panel { background: rgba(9, 11, 17, 0.97) !important; }
+        body.is-touch-device .premium-dock { background: rgba(9, 11, 17, 0.94) !important; }
+        body.is-touch-device .dock-legend { background: rgba(9, 11, 17, 0.94) !important; }
+        body.is-touch-device .lote-card,
+        body.is-touch-device .portal-card { background: rgba(250, 250, 252, 0.97) !important; }
+        body.is-touch-device .premium-sidebar { background: rgba(9, 11, 17, 0.97) !important; }
+        body.is-touch-device .ruta-glass-pill { background: rgba(9, 11, 17, 0.92) !important; }
+        body.is-touch-device .poi-icon { animation: none !important; }
+        body.panorama-dragging .pin-teardrop-body,
+        body.panorama-dragging .pin-teardrop-container,
+        body.panorama-dragging .smart-pin-wrapper.has-360 .pin-teardrop-container,
+        body.panorama-dragging .pin-360,
+        body.panorama-dragging .horizon-expand-arrow,
+        body.panorama-dragging .ruta-expand-arrow,
+        body.panorama-dragging .card-video-badge {
+            animation-play-state: paused !important;
+        }
+        body.panorama-dragging .poi-icon { animation: none !important; }
     </style>
 </head>
 <body>
@@ -519,9 +566,43 @@
             setTimeout(() => { toast.style.opacity='0'; toast.style.transform='translate(-50%,-55%) scale(0.92)'; setTimeout(() => toast.remove(), 280); }, 3000);
         }
 
+        const TouchPerfPhase1 = {
+            overlayFrame: 0, panBindDone: false,
+            init() {
+                if (!isTouchDevice()) return;
+                document.body.classList.add('is-touch-device');
+                this.bindPanoramaDragClass();
+            },
+            bindPanoramaDragClass() {
+                if (this.panBindDone) return;
+                const container = document.getElementById('panorama-container');
+                if (!container) return;
+                this.panBindDone = true;
+                const onStart = () => { document.body.classList.add('panorama-dragging'); };
+                const onEnd = () => { document.body.classList.remove('panorama-dragging'); this.applyOverlayDecor(); };
+                container.addEventListener('mousedown', onStart);
+                container.addEventListener('touchstart', onStart, { passive: true });
+                window.addEventListener('mouseup', onEnd);
+                window.addEventListener('touchend', onEnd);
+                window.addEventListener('touchcancel', onEnd);
+            },
+            shouldUpdateOverlayDecorThisFrame() { this.overlayFrame++; return (this.overlayFrame % 2) === 0; },
+            applyOverlayDecor() {
+                if (!visor360) return;
+                const isMobile = DOMCache.viewport.w <= 768, currentHfov = visor360.getHfov();
+                let newScale = (isMobile ? 0.30 : 0.45) * (DEFAULT_HFOV / currentHfov);
+                newScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, newScale));
+                document.querySelectorAll('.pin-scaler').forEach((s) => { s.style.transform = `scale(${newScale})`; });
+                let zoomFactor = DEFAULT_HFOV / currentHfov, baseStroke = isMobile ? 1.2 : 2.0, dynStroke = baseStroke * zoomFactor;
+                if (isMobile) { dynStroke = Math.max(0.8, Math.min(dynStroke, 3.0)); } else { dynStroke = Math.max(1.5, Math.min(dynStroke, 4.5)); }
+                document.documentElement.style.setProperty('--stroke-dyn', dynStroke + 'px');
+                document.documentElement.style.setProperty('--stroke-dyn-hover', (dynStroke + 1.2) + 'px');
+            }
+        };
+
         const SmartGpuProfile = {
             maxDPR: 1.25, maxTextureSize: 4096, _blobUrl: null, isHighEnd: false,
-            init() { document.body.classList.add('is-touch-device'); const caps = this.probeWebGL(); const ram = navigator.deviceMemory || 4; if (ram > 6 && caps.maxTextureSize >= 8192) { this.isHighEnd = true; this.maxTextureSize = caps.maxTextureSize; } else { this.isHighEnd = false; this.maxTextureSize = Math.min(caps.maxTextureSize || 4096, 4096); } },
+            init() { TouchPerfPhase1.init(); const caps = this.probeWebGL(); const ram = navigator.deviceMemory || 4; if (ram > 6 && caps.maxTextureSize >= 8192) { this.isHighEnd = true; this.maxTextureSize = caps.maxTextureSize; } else { this.isHighEnd = false; this.maxTextureSize = Math.min(caps.maxTextureSize || 4096, 4096); } },
             probeWebGL() { const attrs = { alpha: false, antialias: false, depth: false, stencil: false, failIfMajorPerformanceCaveat: false }; try { const canvas = document.createElement('canvas'); canvas.width = 8; canvas.height = 8; const gl = canvas.getContext('webgl', attrs) || canvas.getContext('experimental-webgl', attrs); if (!gl) return { ok: false, maxTextureSize: 2048 }; return { ok: true, maxTextureSize: gl.getParameter(gl.MAX_TEXTURE_SIZE) || 4096 }; } catch (e) { return { ok: false, maxTextureSize: 2048 }; } },
             loadImage(url) { return new Promise((resolve, reject) => { const img = new Image(); img.crossOrigin = 'anonymous'; img.onload = () => resolve(img); img.onerror = () => reject(new Error('Panorama load failed')); img.src = url + (url.includes('?') ? '&' : '?') + 'probe=' + Date.now(); }); },
             async preparePanorama(url, forceLite) { if (this.isHighEnd && !forceLite) return url; try { const img = await this.loadImage(url); const w = img.naturalWidth || img.width; const h = img.naturalHeight || img.height; const effective = Math.max(w / 2, h); const budget = forceLite ? 2048 : this.maxTextureSize; if (effective <= budget * 0.92) return url; const scale = (budget * 0.88) / effective; const canvas = document.createElement('canvas'); let newWidth = Math.floor(w * scale); if (newWidth % 2 !== 0) newWidth += 1; canvas.width = newWidth; canvas.height = newWidth / 2; const ctx = canvas.getContext('2d'); ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high'; ctx.drawImage(img, 0, 0, canvas.width, canvas.height); return await new Promise((resolve) => { canvas.toBlob((blob) => { if (!blob) { resolve(url); return; } if (this._blobUrl) URL.revokeObjectURL(this._blobUrl); this._blobUrl = URL.createObjectURL(blob); resolve(this._blobUrl); }, 'image/jpeg', 0.88); }); } catch (e) { return url; } },
@@ -2525,11 +2606,7 @@
                     originalRender.apply(this, arguments);
                     if (isSvgRenderAllowed() && shouldUpdateSVGThisFrame()) updateSVGPaths();
                     const compassDial = document.getElementById('js-compass'); if (compassDial) { compassDial.style.transform = `rotate(${-(visor360.getYaw() - NorteOffset)}deg)`; }
-                    const isMobile = DOMCache.viewport.w <= 768; const currentHfov = visor360.getHfov();
-                    let newScale = (isMobile ? 0.30 : 0.45) * (DEFAULT_HFOV / currentHfov); newScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, newScale)); document.querySelectorAll('.pin-scaler').forEach((s) => { s.style.transform = `scale(${newScale})`; });
-                    let zoomFactor = DEFAULT_HFOV / currentHfov; let baseStroke = isMobile ? 1.2 : 2.0; let dynStroke = baseStroke * zoomFactor;
-                    if (isMobile) { dynStroke = Math.max(0.8, Math.min(dynStroke, 3.0)); } else { dynStroke = Math.max(1.5, Math.min(dynStroke, 4.5)); }
-                    document.documentElement.style.setProperty('--stroke-dyn', dynStroke + 'px'); document.documentElement.style.setProperty('--stroke-dyn-hover', (dynStroke + 1.2) + 'px');
+                    if (!isTouchDevice() || TouchPerfPhase1.shouldUpdateOverlayDecorThisFrame()) TouchPerfPhase1.applyOverlayDecor();
                 }; try { renderer.render(); } catch(e) {}
             }
         }
