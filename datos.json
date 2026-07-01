@@ -6,8 +6,8 @@
   "norte": -112.61619796926988,
   "lotes": [
     {
-      "pitch": -58.62,
-      "yaw": -178.5,
+      "pitch": -58.1,
+      "yaw": 179.83,
       "tipo": "lote",
       "status": "disponible",
       "titulo": "Lote 01",
@@ -34,8 +34,8 @@
       }
     },
     {
-      "pitch": -64.68,
-      "yaw": -177.25,
+      "pitch": -64.15,
+      "yaw": -179.54,
       "tipo": "lote",
       "status": "disponible",
       "titulo": "Lote 02",
@@ -63,8 +63,8 @@
       "videoUrl": "https://ilycons.github.io/fresia360/suelo.html"
     },
     {
-      "pitch": -71.5,
-      "yaw": -175.12,
+      "pitch": -70.96,
+      "yaw": -178.39,
       "tipo": "lote",
       "status": "disponible",
       "titulo": "Lote 03",
@@ -91,8 +91,8 @@
       }
     },
     {
-      "pitch": -78.9,
-      "yaw": -169.95,
+      "pitch": -78.03,
+      "yaw": -176.82,
       "tipo": "lote",
       "status": "disponible",
       "titulo": "Lote 04",
@@ -119,8 +119,8 @@
       }
     },
     {
-      "pitch": -86.24,
-      "yaw": -142.47,
+      "pitch": -85.67,
+      "yaw": -162.73,
       "tipo": "lote",
       "status": "disponible",
       "titulo": "Lote 05",
@@ -147,8 +147,8 @@
       }
     },
     {
-      "pitch": -84.24,
-      "yaw": -27.1,
+      "pitch": -86.24,
+      "yaw": -22.01,
       "tipo": "lote",
       "status": "disponible",
       "titulo": "Lote 06",
@@ -175,8 +175,8 @@
       }
     },
     {
-      "pitch": -76.59,
-      "yaw": -12.56,
+      "pitch": -78.52,
+      "yaw": -9.06,
       "tipo": "lote",
       "status": "disponible",
       "titulo": "Lote 07",
@@ -203,8 +203,8 @@
       }
     },
     {
-      "pitch": -69.14,
-      "yaw": -8.73,
+      "pitch": -71.01,
+      "yaw": -7.15,
       "tipo": "lote",
       "status": "disponible",
       "titulo": "Lote 08",
@@ -231,8 +231,8 @@
       }
     },
     {
-      "pitch": -62.29,
-      "yaw": -6.97,
+      "pitch": -64.42,
+      "yaw": -5.79,
       "tipo": "lote",
       "status": "disponible",
       "titulo": "Lote 09",
@@ -259,8 +259,8 @@
       }
     },
     {
-      "pitch": -56.53,
-      "yaw": -5.79,
+      "pitch": -57.27,
+      "yaw": -4.82,
       "tipo": "lote",
       "status": "disponible",
       "titulo": "Lote 10",
@@ -378,7 +378,7 @@
       "rutaFactorTrafico": 0.88,
       "rutaEtiquetaTrafico": "Tráfico libre / madrugada",
       "rutaFuente": "osrm",
-      "rutaCalculadaEn": 1782879222510,
+      "rutaCalculadaEn": 1782879854576,
       "rutaEscenarioTrafico": "libre"
     },
     {
@@ -395,7 +395,7 @@
       "rutaFactorTrafico": 0.88,
       "rutaEtiquetaTrafico": "Tráfico libre / madrugada",
       "rutaFuente": "osrm",
-      "rutaCalculadaEn": 1782879222961,
+      "rutaCalculadaEn": 1782879855017,
       "rutaEscenarioTrafico": "libre"
     },
     {
@@ -423,7 +423,7 @@
       "rutaFactorTrafico": 0.88,
       "rutaEtiquetaTrafico": "Tráfico libre / madrugada",
       "rutaFuente": "osrm",
-      "rutaCalculadaEn": 1782879223412
+      "rutaCalculadaEn": 1782879855466
     }
   ],
   "trazos": [
@@ -732,7 +732,7 @@
       ]
     },
     {
-      "id": "brd_auto_1782879233546_0",
+      "id": "brd_auto_1782879865288_0",
       "tipo": "borde-macro",
       "puntos": [
         [
@@ -747,7 +747,7 @@
       "franjaGrupo": "franja_1782877752620"
     },
     {
-      "id": "div_auto_1782879233546_1",
+      "id": "div_auto_1782879865288_1",
       "tipo": "divisoria",
       "puntos": [
         [
@@ -762,7 +762,7 @@
       "franjaGrupo": "franja_1782877752620"
     },
     {
-      "id": "brd_auto_1782879233546_2",
+      "id": "brd_auto_1782879865288_2",
       "tipo": "borde-macro",
       "puntos": [
         [
@@ -777,7 +777,7 @@
       "franjaGrupo": "franja_1782877752620"
     },
     {
-      "id": "brd_auto_1782879233546_3",
+      "id": "brd_auto_1782879865288_3",
       "tipo": "borde-macro",
       "puntos": [
         [
@@ -792,7 +792,7 @@
       "franjaGrupo": "franja_1782877752620"
     },
     {
-      "id": "brd_auto_1782879233546_4",
+      "id": "brd_auto_1782879865288_4",
       "tipo": "borde-macro",
       "puntos": [
         [
@@ -807,7 +807,7 @@
       "franjaGrupo": "franja_1782877752620"
     },
     {
-      "id": "div_auto_1782879233546_5",
+      "id": "div_auto_1782879865288_5",
       "tipo": "divisoria",
       "puntos": [
         [
@@ -822,7 +822,7 @@
       "franjaGrupo": "franja_1782877752620"
     },
     {
-      "id": "brd_auto_1782879233546_6",
+      "id": "brd_auto_1782879865288_6",
       "tipo": "borde-macro",
       "puntos": [
         [
@@ -837,7 +837,7 @@
       "franjaGrupo": "franja_1782877752620"
     },
     {
-      "id": "brd_auto_1782879233546_7",
+      "id": "brd_auto_1782879865288_7",
       "tipo": "borde-macro",
       "puntos": [
         [
@@ -852,7 +852,7 @@
       "franjaGrupo": "franja_1782877752620"
     },
     {
-      "id": "div_auto_1782879233546_8",
+      "id": "div_auto_1782879865288_8",
       "tipo": "divisoria",
       "puntos": [
         [
@@ -867,7 +867,7 @@
       "franjaGrupo": "franja_1782877752620"
     },
     {
-      "id": "brd_auto_1782879233546_9",
+      "id": "brd_auto_1782879865288_9",
       "tipo": "borde-macro",
       "puntos": [
         [
@@ -882,7 +882,7 @@
       "franjaGrupo": "franja_1782877752620"
     },
     {
-      "id": "brd_auto_1782879233546_10",
+      "id": "brd_auto_1782879865288_10",
       "tipo": "borde-macro",
       "puntos": [
         [
@@ -897,7 +897,7 @@
       "franjaGrupo": "franja_1782877752620"
     },
     {
-      "id": "div_auto_1782879233546_11",
+      "id": "div_auto_1782879865288_11",
       "tipo": "divisoria",
       "puntos": [
         [
@@ -912,7 +912,7 @@
       "franjaGrupo": "franja_1782877752620"
     },
     {
-      "id": "brd_auto_1782879233546_12",
+      "id": "brd_auto_1782879865288_12",
       "tipo": "borde-macro",
       "puntos": [
         [
@@ -927,7 +927,7 @@
       "franjaGrupo": "franja_1782877752620"
     },
     {
-      "id": "brd_auto_1782879233546_13",
+      "id": "brd_auto_1782879865288_13",
       "tipo": "borde-macro",
       "puntos": [
         [
@@ -942,7 +942,7 @@
       "franjaGrupo": "franja_1782877752620"
     },
     {
-      "id": "div_auto_1782879233546_14",
+      "id": "div_auto_1782879865288_14",
       "tipo": "divisoria",
       "puntos": [
         [
@@ -957,7 +957,7 @@
       "franjaGrupo": "franja_1782877752620"
     },
     {
-      "id": "brd_auto_1782879233546_15",
+      "id": "brd_auto_1782879865288_15",
       "tipo": "borde-macro",
       "puntos": [
         [
@@ -972,7 +972,7 @@
       "franjaGrupo": "franja_1782877752620"
     },
     {
-      "id": "brd_auto_1782879233546_16",
+      "id": "brd_auto_1782879865288_16",
       "tipo": "borde-macro",
       "puntos": [
         [
@@ -987,7 +987,7 @@
       "franjaGrupo": "franja_1782877752620"
     },
     {
-      "id": "div_auto_1782879233546_17",
+      "id": "div_auto_1782879865288_17",
       "tipo": "divisoria",
       "puntos": [
         [
@@ -1002,7 +1002,7 @@
       "franjaGrupo": "franja_1782877752620"
     },
     {
-      "id": "brd_auto_1782879233546_18",
+      "id": "brd_auto_1782879865288_18",
       "tipo": "borde-macro",
       "puntos": [
         [
@@ -1017,7 +1017,7 @@
       "franjaGrupo": "franja_1782877752620"
     },
     {
-      "id": "brd_auto_1782879233546_19",
+      "id": "brd_auto_1782879865288_19",
       "tipo": "borde-macro",
       "puntos": [
         [
@@ -1032,7 +1032,7 @@
       "franjaGrupo": "franja_1782877752620"
     },
     {
-      "id": "div_auto_1782879233546_20",
+      "id": "div_auto_1782879865288_20",
       "tipo": "divisoria",
       "puntos": [
         [
@@ -1047,7 +1047,7 @@
       "franjaGrupo": "franja_1782877752620"
     },
     {
-      "id": "brd_auto_1782879233546_21",
+      "id": "brd_auto_1782879865288_21",
       "tipo": "borde-macro",
       "puntos": [
         [
@@ -1062,7 +1062,7 @@
       "franjaGrupo": "franja_1782877752620"
     },
     {
-      "id": "brd_auto_1782879233546_22",
+      "id": "brd_auto_1782879865288_22",
       "tipo": "borde-macro",
       "puntos": [
         [
@@ -1077,7 +1077,7 @@
       "franjaGrupo": "franja_1782877752620"
     },
     {
-      "id": "div_auto_1782879233546_23",
+      "id": "div_auto_1782879865288_23",
       "tipo": "divisoria",
       "puntos": [
         [
@@ -1092,7 +1092,7 @@
       "franjaGrupo": "franja_1782877752620"
     },
     {
-      "id": "brd_auto_1782879233546_24",
+      "id": "brd_auto_1782879865288_24",
       "tipo": "borde-macro",
       "puntos": [
         [
@@ -1107,7 +1107,7 @@
       "franjaGrupo": "franja_1782877752620"
     },
     {
-      "id": "brd_auto_1782879233546_25",
+      "id": "brd_auto_1782879865288_25",
       "tipo": "borde-macro",
       "puntos": [
         [
@@ -1122,7 +1122,7 @@
       "franjaGrupo": "franja_1782877752620"
     },
     {
-      "id": "div_auto_1782879233546_26",
+      "id": "div_auto_1782879865288_26",
       "tipo": "divisoria",
       "puntos": [
         [
@@ -1137,7 +1137,7 @@
       "franjaGrupo": "franja_1782877752620"
     },
     {
-      "id": "brd_auto_1782879233546_27",
+      "id": "brd_auto_1782879865288_27",
       "tipo": "borde-macro",
       "puntos": [
         [
@@ -1152,7 +1152,7 @@
       "franjaGrupo": "franja_1782877752620"
     },
     {
-      "id": "brd_auto_1782879233546_28",
+      "id": "brd_auto_1782879865288_28",
       "tipo": "borde-macro",
       "puntos": [
         [
@@ -1167,7 +1167,7 @@
       "franjaGrupo": "franja_1782877752620"
     },
     {
-      "id": "brd_auto_1782879233546_29",
+      "id": "brd_auto_1782879865288_29",
       "tipo": "borde-macro",
       "puntos": [
         [
@@ -1182,7 +1182,7 @@
       "franjaGrupo": "franja_1782877752620"
     },
     {
-      "id": "brd_auto_1782879233546_30",
+      "id": "brd_auto_1782879865288_30",
       "tipo": "borde-macro",
       "puntos": [
         [
