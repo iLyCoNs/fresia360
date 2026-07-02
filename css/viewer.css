@@ -440,7 +440,6 @@ body.arq2-active .arq2-panel { transform: translateX(0); visibility: visible; op
 #arq2-fila-modal.open { visibility: visible; opacity: 1; pointer-events: auto; }
 .arq2-fila-modal-box { max-width: 480px; width: calc(100% - 32px); }
 #snap-cursor.is-costura { border-color: #22d3ee !important; background: rgba(34, 211, 238, 0.28) !important; width: 24px !important; height: 24px !important; box-shadow: 0 0 0 5px rgba(34, 211, 238, 0.15), 0 0 18px rgba(34, 211, 238, 0.65); }
-.linea-punteada-costura { fill: rgba(var(--c-disp), 0.18); stroke: rgba(255,255,255,0.75); stroke-width: calc(var(--stroke-dyn) * 0.42); stroke-dasharray: 3 5; vector-effect: non-scaling-stroke; pointer-events: none; }
 body.arq2-active #dev-toolbar-draw.show { opacity: 0.35; pointer-events: none; }
 body.is-touch-device .arq2-panel { backdrop-filter: none; background: rgba(9, 11, 17, 0.97); }
 .arq2-semaphore { margin: 0 0 8px; font-size: 12px; font-weight: 700; padding: 6px 10px; border-radius: 8px; background: rgba(255,255,255,0.06); }
@@ -461,7 +460,8 @@ body.is-touch-device .arq2-panel { backdrop-filter: none; background: rgba(9, 11
 @keyframes arq2Pulse { 0% { r: 6; opacity: 0.8; } 100% { r: 10.8; opacity: 0; } }
 #layer-arq2-feedback { pointer-events: none; }
 g.lote-organico, g.fila-variable-lote { isolation: isolate; mix-blend-mode: normal; }
-g.lote-organico path.linea-solida, g.fila-variable-lote path.linea-solida { fill: rgba(16, 185, 129, 0.16) !important; fill-opacity: 1 !important; stroke: #ffffff !important; stroke-width: 2 !important; vector-effect: non-scaling-stroke; mix-blend-mode: normal; }
+g.lote-organico path.linea-organico-fill, g.fila-variable-lote path.linea-organico-fill { fill: rgba(16, 185, 129, 0.16) !important; fill-opacity: 1 !important; stroke: none !important; mix-blend-mode: normal; pointer-events: auto; }
+g.lote-organico path.linea-organico-perimetro, g.fila-variable-lote path.linea-organico-perimetro { fill: none !important; stroke: #ffffff !important; stroke-width: 2 !important; stroke-dasharray: none !important; vector-effect: non-scaling-stroke; mix-blend-mode: normal; pointer-events: none; }
 .linea-punteada-costura { fill: none !important; stroke: rgba(255,255,255,0.75); stroke-width: 2; vector-effect: non-scaling-stroke; pointer-events: none; mix-blend-mode: normal; }
 .linea-punteada-costura[data-costura-style="punteada"] { stroke-dasharray: 6,6; }
 .linea-punteada-costura[data-costura-style="solida"], .linea-solida-costura[data-costura-style="solida"] { stroke-dasharray: none; }
@@ -479,7 +479,15 @@ g.lote-organico path.linea-solida, g.fila-variable-lote path.linea-solida { fill
 .arq2-demo-replay-btn { color: #fde68a; border-color: rgba(245,158,11,0.35); }
 .linea-solida-costura { fill: none !important; stroke: rgba(255,255,255,0.9); stroke-width: 2; vector-effect: non-scaling-stroke; pointer-events: none; mix-blend-mode: normal; }
 .vertex-marker.origin-vertex.origin-vertex-ready { transform: scale(1.5); transform-origin: center center; }
-g.lote-organico.arq2-costura-selected path.linea-solida { stroke: #06b6d4; stroke-width: 2.5; }
+g.lote-organico.arq2-costura-selected path.linea-organico-perimetro { stroke: #06b6d4; stroke-width: 2.5; }
+#layer-calles-arq2 { pointer-events: none; }
+.linea-calle-arq2-fill { fill: rgba(80,80,85,0.55); stroke: none; vector-effect: non-scaling-stroke; pointer-events: none; mix-blend-mode: normal; }
+.linea-calle-arq2-borde { fill: none; stroke: rgba(255,255,255,0.92); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; pointer-events: none; mix-blend-mode: normal; }
+.arq2-calle-curva-row { display: none; flex-direction: column; gap: 6px; margin: 0 0 10px; font-size: 11px; color: #cbd5e1; }
+.arq2-calle-curva-row label { display: flex; justify-content: space-between; align-items: center; font-weight: 600; }
+.arq2-calle-curva-row input[type="range"] { width: 100%; accent-color: #64748b; }
+#arq2-calle-width-preview { height: 36px; margin: 2px 0 0; background: rgba(255,255,255,0.04); border-radius: 8px; border: 1px dashed rgba(255,255,255,0.12); display: flex; align-items: center; justify-content: center; overflow: hidden; }
+#arq2-calle-width-preview-bar { height: 100%; min-width: 4px; background: rgba(30,35,45,0.85); border: 1px solid rgba(255,255,255,0.94); border-radius: 2px; box-shadow: 0 0 1px rgba(255,255,255,0.35), inset 0 0 8px rgba(0,0,0,0.35); transition: width 0.12s, opacity 0.12s; }
 #arq2-demo-layer { pointer-events: none; }
 .arq2-demo-root { transform-origin: center; transition: opacity 0.8s ease, transform 0.8s ease; }
 .arq2-demo-root.arq2-demo-fadeout { opacity: 0; transform: scale(0.95); }

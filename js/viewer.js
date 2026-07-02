@@ -307,7 +307,7 @@ function revealLoteoOverlay() {
     if (renderer) hookRendererOverlay(renderer);
 }
 const DEFAULT_HFOV = 125, MAX_SCALE = 1.0, MIN_SCALE = 0.20, SNAP_DISTANCE = 8.0;
-let lastDevDrawClickMs = 0, lastArq2DrawClickMs = 0, closeOriginHighlighted = false;
+let lastDevDrawClickMs = 0, lastArq2DrawClickMs = 0, closeOriginHighlighted = false, arq2CalleCurvaAncho = 8;
 
 function getCloseSnapScreenRadiusPx() {
     const hfov = visor360?.getHfov?.() || DEFAULT_HFOV;
@@ -381,6 +381,15 @@ function arq2_applyCosturaStrokeAttrs(pathEl, style) {
     pathEl.setAttribute('stroke-dasharray', isPunteada ? '6,6' : 'none');
     pathEl.setAttribute('data-shared-edge', 'true');
     pathEl.setAttribute('data-costura-style', isPunteada ? 'punteada' : 'solida');
+}
+function arq2_getCosturaEstilo(lineData) {
+    return lineData?.costuraEstilo || lineData?.costuraStyle || arq2CosturaStyle || 'punteada';
+}
+function arq2_applyCosturaEstiloToPath(pathEl, estilo) {
+    if (!pathEl) return;
+    if (estilo === 'punteada') pathEl.setAttribute('stroke-dasharray', '6,6');
+    else if (estilo === 'solida') pathEl.setAttribute('stroke-dasharray', 'none');
+    pathEl.setAttribute('data-costura-style', estilo === 'solida' ? 'solida' : 'punteada');
 }
 function updateCloseOriginHighlight(active) {
     closeOriginHighlighted = !!active;
@@ -993,6 +1002,10 @@ function getPathClassForLine(line) {
 function resolveSvgLayerForLine(line, layers) {
     const { lLotes, lAristas } = layers;
     if (!line) return lLotes;
+    if (line.tipo === 'calle-curva-arq2' || line.tipo === 'calle-curva-arq2-preview') {
+        const lArq2 = document.getElementById('layer-calles-arq2');
+        return lArq2 || layers.lAsfalto || lLotes;
+    }
     if (line.tipo === 'divisoria' || line.tipo === 'borde-macro') return lAristas;
     if (line.tipo === 'arista_solida' || line.tipo === 'arista_punteada') return lAristas;
     if (line.tipo === 'franja-preview-div' || line.tipo === 'linea-pines-guia') return lAristas;
@@ -1001,7 +1014,7 @@ function resolveSvgLayerForLine(line, layers) {
 }
 function ensureSvgLayerOrder(svg) {
     if (!svg) return;
-    ['layer-calles-bordes', 'layer-calles-asfalto', 'layer-lotes', 'layer-aristas', 'arq2-demo-layer', 'layer-arq2-feedback'].forEach(id => {
+    ['layer-calles-bordes', 'layer-calles-asfalto', 'layer-calles-arq2', 'layer-lotes', 'layer-aristas', 'arq2-demo-layer', 'layer-arq2-feedback'].forEach(id => {
         const g = document.getElementById(id);
         if (g && g.parentNode === svg) svg.appendChild(g);
     });
@@ -2453,7 +2466,9 @@ const ARQ2_STEPS = [
     { tool: 'relleno-auto', id: 'close', text: 'Enter o clic en el origen — numeración correlativa automática.' },
     { tool: 'fila-variable', id: 'contorno', text: 'Dibuja el contorno COMPLETO de la hilera (todo el terreno junto, como un solo lote grande). Cierra con Enter.' },
     { tool: 'fila-variable', id: 'modal', text: 'Indica cuántos lotes y sus m² en la ventana emergente.' },
-    { tool: 'fila-variable', id: 'done', text: 'Listo — las divisiones internas se dibujan solas, proporcionales.' }
+    { tool: 'fila-variable', id: 'done', text: 'Listo — las divisiones internas se dibujan solas, proporcionales.' },
+    { tool: 'calle-curva-arq2', id: 'draw', text: 'Clics sucesivos sobre el EJE CENTRAL de la calle (centro del camino, no los bordes).' },
+    { tool: 'calle-curva-arq2', id: 'finish', text: 'Enter para terminar — curvas suaves automáticas, terminaciones redondeadas.' }
 ];
 function arq2_applyOrganicPathAttrs(pathEl, role) {
     if (!pathEl) return;
@@ -2472,6 +2487,19 @@ function arq2_applyOrganicPathAttrs(pathEl, role) {
         pathEl.style.pointerEvents = 'none';
         pathEl.style.mixBlendMode = 'normal';
     } else if (role === 'shared-solid') {
+        pathEl.setAttribute('fill', 'none');
+        pathEl.setAttribute('stroke', '#ffffff');
+        pathEl.setAttribute('stroke-width', '2');
+        pathEl.setAttribute('stroke-dasharray', 'none');
+        pathEl.style.pointerEvents = 'none';
+        pathEl.style.mixBlendMode = 'normal';
+    } else if (role === 'fill') {
+        pathEl.setAttribute('fill', 'rgba(16,185,129,0.16)');
+        pathEl.setAttribute('fill-opacity', '1');
+        pathEl.setAttribute('stroke', 'none');
+        pathEl.style.pointerEvents = 'auto';
+        pathEl.style.mixBlendMode = 'normal';
+    } else if (role === 'perimeter') {
         pathEl.setAttribute('fill', 'none');
         pathEl.setAttribute('stroke', '#ffffff');
         pathEl.setAttribute('stroke-width', '2');
@@ -2584,6 +2612,10 @@ function arq2_clearVisualFeedback() {
 }
 function arq2_resolveActiveStepId() {
     const pts = arq2_getActiveDrawPoints();
+    if (arq2Tool === 'calle-curva-arq2') {
+        if (pts.length === 0) return 'draw';
+        return pts.length >= 2 ? 'finish' : 'draw';
+    }
     if (arq2Tool === 'fila-variable') {
         if (document.getElementById('franja-lotes-modal')?.classList.contains('open') || arq2PendingFila?.contorno) return 'modal';
         if (pts.length === 0) return 'contorno';
@@ -2607,7 +2639,7 @@ function arq2_updatePanelStep() {
     const smoothRow = document.getElementById('arq2-smooth-row');
     const filaDesc = document.getElementById('arq2-fila-desc');
     if (!list) return;
-    const toolKey = arq2Tool === 'relleno-auto' ? 'relleno-auto' : (arq2Tool === 'costura' ? 'costura' : (arq2Tool === 'fila-variable' ? 'fila-variable' : 'lote-libre'));
+    const toolKey = arq2Tool === 'calle-curva-arq2' ? 'calle-curva-arq2' : (arq2Tool === 'relleno-auto' ? 'relleno-auto' : (arq2Tool === 'costura' ? 'costura' : (arq2Tool === 'fila-variable' ? 'fila-variable' : 'lote-libre')));
     const activeId = arq2_resolveActiveStepId();
     const steps = ARQ2_STEPS.filter(s => s.tool === toolKey);
     list.innerHTML = '';
@@ -2635,6 +2667,8 @@ function arq2_updatePanelStep() {
     }
     if (demoReplay) demoReplay.style.display = toolKey === 'fila-variable' ? 'block' : 'none';
     if (filaDesc) filaDesc.style.display = toolKey === 'fila-variable' ? 'block' : 'none';
+    const calleRow = document.getElementById('arq2-calle-curva-row');
+    if (calleRow) calleRow.style.display = toolKey === 'calle-curva-arq2' ? 'flex' : 'none';
     document.getElementById('arq2-costura-punteada')?.classList.toggle('active', arq2CosturaStyle === 'punteada');
     document.getElementById('arq2-costura-solida')?.classList.toggle('active', arq2CosturaStyle === 'solida');
     if (sem) {
@@ -2778,6 +2812,167 @@ function arq2_catmullRomOpen(points, segmentsPerCurve = 8) {
         }
     }
     return out;
+}
+function arq2_smoothCalleAxis(points) {
+    if (!points || points.length < 2) return points ? points.map(p => [...p]) : [];
+    return arq2_catmullRomOpen(points, 12);
+}
+function arq2_getCalleCurvaHalfWidthPx(anchoFactor) {
+    const factor = Math.max(4, Math.min(15, anchoFactor || arq2CalleCurvaAncho || 8));
+    return getCalleHalfWidthPx(factor * 0.72);
+}
+function arq2_offsetSplinePath(smoothedPoints, halfWidthPx) {
+    const proj = getPanoramaScreenProjector();
+    if (!proj || !smoothedPoints || smoothedPoints.length < 2) return { left: [], right: [] };
+    const left = [], right = [];
+    for (let i = 0; i < smoothedPoints.length; i++) {
+        const prev = smoothedPoints[Math.max(0, i - 1)];
+        const next = smoothedPoints[Math.min(smoothedPoints.length - 1, i + 1)];
+        const scPrev = proj.toScreen(prev[0], prev[1]);
+        const scNext = proj.toScreen(next[0], next[1]);
+        const scCur = proj.toScreen(smoothedPoints[i][0], smoothedPoints[i][1]);
+        if (!scPrev || !scNext || !scCur) continue;
+        let dx = scNext[0] - scPrev[0], dy = scNext[1] - scPrev[1];
+        const len = Math.hypot(dx, dy);
+        if (len < 1e-6) continue;
+        const nx = -dy / len, ny = dx / len;
+        const lPy = proj.toPY(scCur[0] + nx * halfWidthPx, scCur[1] + ny * halfWidthPx);
+        const rPy = proj.toPY(scCur[0] - nx * halfWidthPx, scCur[1] - ny * halfWidthPx);
+        if (lPy) left.push([parseFloat(lPy[0].toFixed(4)), parseFloat(lPy[1].toFixed(4))]);
+        if (rPy) right.push([parseFloat(rPy[0].toFixed(4)), parseFloat(rPy[1].toFixed(4))]);
+    }
+    return { left, right };
+}
+function arq2_buildCalleCurvaGeometry(ejeOriginal, anchoFactor) {
+    const eje = arq2_smoothCalleAxis(ejeOriginal);
+    const halfPx = arq2_getCalleCurvaHalfWidthPx(anchoFactor);
+    const { left, right } = arq2_offsetSplinePath(eje, halfPx);
+    if (left.length < 2 || right.length < 2) return null;
+    return {
+        ejeOriginal: ejeOriginal.map(p => [...p]),
+        puntosSuavizados: eje,
+        ancho: anchoFactor,
+        left,
+        right,
+        fillPoly: [...left, ...[...right].reverse()],
+        halfPx
+    };
+}
+function arq2_projectOpenPolylineD(pts, getCamFn, cx, cySc, f) {
+    if (!pts || pts.length < 2) return '';
+    let d = '', hasVisible = false;
+    for (let i = 0; i < pts.length - 1; i++) {
+        const p1 = pts[i], p2 = pts[i + 1];
+        const c1 = getCamFn(p1[0], p1[1]), c2 = getCamFn(p2[0], p2[1]);
+        if (c1.z <= 0.0001 && c2.z <= 0.0001) continue;
+        let s1, s2;
+        if (c1.z > 0.0001) { s1 = { x: cx + (c1.x / c1.z) * f, y: cySc - (c1.y / c1.z) * f }; hasVisible = true; }
+        else { const t = c1.z / (c1.z - c2.z); s1 = { x: cx + ((c1.x + t * (c2.x - c1.x)) / 0.0001) * f, y: cySc - ((c1.y + t * (c2.y - c1.y)) / 0.0001) * f }; }
+        if (c2.z > 0.0001) { s2 = { x: cx + (c2.x / c2.z) * f, y: cySc - (c2.y / c2.z) * f }; hasVisible = true; }
+        else { const t = c2.z / (c2.z - c1.z); s2 = { x: cx + ((c2.x + t * (c1.x - c2.x)) / 0.0001) * f, y: cySc - ((c2.y + t * (c1.y - c2.y)) / 0.0001) * f }; }
+        if (isNaN(s1.x) || isNaN(s1.y) || isNaN(s2.x) || isNaN(s2.y)) continue;
+        if (d === '') d += `M ${s1.x},${s1.y} L ${s2.x},${s2.y} `;
+        else { if (c1.z <= 0.0001) d += `M ${s1.x},${s1.y} `; d += `L ${s2.x},${s2.y} `; }
+    }
+    return hasVisible ? d : '';
+}
+function arq2_projectScreenCapArc(sA, sB) {
+    if (!sA || !sB) return '';
+    const mx = (sA.x + sB.x) / 2, my = (sA.y + sB.y) / 2;
+    const r = Math.max(1, Math.hypot(sA.x - sB.x, sA.y - sB.y) / 2);
+    return `M ${sA.x},${sA.y} A ${r},${r} 0 0 1 ${sB.x},${sB.y}`;
+}
+function arq2_projectCalleCurvaPaths(lineData, getCamFn, cx, cySc, f) {
+    const left = lineData.left, right = lineData.right;
+    if (!left?.length || !right?.length) return null;
+    const toScreen = (py) => {
+        const c = getCamFn(py[0], py[1]);
+        if (c.z <= 0.0001) return null;
+        return { x: cx + (c.x / c.z) * f, y: cySc - (c.y / c.z) * f };
+    };
+    const sLeft = left.map(toScreen).filter(Boolean);
+    const sRight = right.map(toScreen).filter(Boolean);
+    if (sLeft.length < 2 || sRight.length < 2) return null;
+    let dFill = `M ${sLeft[0].x},${sLeft[0].y}`;
+    for (let i = 1; i < sLeft.length; i++) dFill += ` L ${sLeft[i].x},${sLeft[i].y}`;
+    for (let i = sRight.length - 1; i >= 0; i--) dFill += ` L ${sRight[i].x},${sRight[i].y}`;
+    dFill += ' Z';
+    const dLeft = arq2_projectOpenPolylineD(left, getCamFn, cx, cySc, f);
+    const dRight = arq2_projectOpenPolylineD(right, getCamFn, cx, cySc, f);
+    const capStart = arq2_projectScreenCapArc(sLeft[0], sRight[0]);
+    const capEnd = arq2_projectScreenCapArc(sLeft[sLeft.length - 1], sRight[sRight.length - 1]);
+    return { dFill, dLeft, dRight, capStart, capEnd };
+}
+function arq2_finishCalleCurva() {
+    if (arq2LinePoints.length < 2) { alert('Coloca al menos 2 puntos en el eje central de la calle.'); return; }
+    const geo = arq2_buildCalleCurvaGeometry([...arq2LinePoints], arq2CalleCurvaAncho);
+    if (!geo) { alert('No se pudo generar la calle curva. Ajusta la vista e intenta de nuevo.'); return; }
+    const id = 'arq2_calle_' + Date.now();
+    allDrawnLines.push({
+        id,
+        tipo: 'calle-curva-arq2',
+        ejeOriginal: geo.ejeOriginal,
+        puntosSuavizados: geo.puntosSuavizados,
+        ancho: geo.ancho,
+        left: geo.left,
+        right: geo.right,
+        puntos: geo.fillPoly
+    });
+    arq2_clearDraft();
+    refreshAllHotspots(true);
+    saveToLocal();
+    flashScreenSuccess();
+    arq2_setStatusText('Calle curva guardada ✓');
+}
+function arq2_getCalleCurvaPreviewLineData() {
+    let eje = arq2LinePoints.map(p => [...p]);
+    if (window.lastMouseX !== undefined && visor360) {
+        const proj = getPanoramaScreenProjector();
+        const mx = window.lastMouseX - DOMCache.viewport.left, my = window.lastMouseY - DOMCache.viewport.top;
+        if (proj) {
+            const py = proj.toPY(mx, my);
+            if (py) eje.push([parseFloat(py[0].toFixed(3)), parseFloat(py[1].toFixed(3))]);
+        }
+    }
+    if (eje.length < 2) return { id: arq2TempLineId, tipo: 'calle-curva-arq2-preview', ejeOriginal: eje, puntos: eje };
+    const geo = arq2_buildCalleCurvaGeometry(eje, arq2CalleCurvaAncho);
+    if (!geo) return { id: arq2TempLineId, tipo: 'calle-curva-arq2-preview', ejeOriginal: eje, puntos: eje };
+    return { id: arq2TempLineId, tipo: 'calle-curva-arq2-preview', ejeOriginal: geo.ejeOriginal, puntosSuavizados: geo.puntosSuavizados, ancho: geo.ancho, left: geo.left, right: geo.right, puntos: geo.fillPoly };
+}
+function arq2_syncCalleCurvaPanelUI() {
+    const valEl = document.getElementById('arq2-calle-ancho-val');
+    const slider = document.getElementById('arq2-calle-ancho');
+    const bar = document.getElementById('arq2-calle-width-preview-bar');
+    if (slider) slider.value = arq2CalleCurvaAncho;
+    if (valEl) valEl.textContent = arq2CalleCurvaAncho.toFixed(1);
+    if (bar) bar.style.width = Math.max(8, Math.min(100, ((arq2CalleCurvaAncho - 4) / 11) * 100)) + '%';
+}
+function arq2_ensurePanelExtras() {
+    const row = document.querySelector('.arq2-tool-row');
+    if (row && !document.getElementById('arq2-tool-calle-curva')) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'dev-btn arq2-tool-btn';
+        btn.id = 'arq2-tool-calle-curva';
+        btn.dataset.arq2Tool = 'calle-curva-arq2';
+        btn.textContent = '🛣️ Calle Curva';
+        row.appendChild(btn);
+        btn.addEventListener('click', () => arq2_setTool('calle-curva-arq2'));
+    }
+    if (!document.getElementById('arq2-calle-curva-row') && document.getElementById('arq2-panel')) {
+        const rowEl = document.createElement('div');
+        rowEl.id = 'arq2-calle-curva-row';
+        rowEl.className = 'arq2-calle-curva-row';
+        rowEl.innerHTML = '<label>Ancho calle <span id="arq2-calle-ancho-val">8.0</span></label><input type="range" id="arq2-calle-ancho" min="4" max="15" step="0.5" value="8"><div id="arq2-calle-width-preview"><div id="arq2-calle-width-preview-bar"></div></div>';
+        document.getElementById('arq2-smooth-row')?.insertAdjacentElement('afterend', rowEl);
+        document.getElementById('arq2-calle-ancho')?.addEventListener('input', (e) => {
+            arq2CalleCurvaAncho = Math.max(4, Math.min(15, parseFloat(e.target.value) || 8));
+            arq2_syncCalleCurvaPanelUI();
+            syncSVGElements();
+            updateSVGPaths();
+        });
+    }
+    arq2_syncCalleCurvaPanelUI();
 }
 function arq2_adaptiveSmooth(points, segmentsPerCurve = 8) {
     if (!arq2SmoothCurves || !points || points.length < 3) return points.map(p => [...p]);
@@ -2938,6 +3133,12 @@ function arq2_distributeVariableWidthsAlongSpline(splinePoints, weightsArray) {
 }
 function arq2_getSnapPolylinePoints(line) {
     if (!line) return [];
+    if (line.tipo === 'calle-curva-arq2' || line.tipo === 'calle-curva-arq2-preview') {
+        const pts = [];
+        if (line.left?.length) pts.push(...line.left);
+        if (line.right?.length) pts.push(...line.right);
+        return pts;
+    }
     if (line.tipo === 'franja-curva-grupo') {
         const pts = [];
         if (line.frente?.length) pts.push(...line.frente);
@@ -2952,7 +3153,7 @@ function arq2_isUniversalSnapTarget(line) {
     return arq2_getSnapPolylinePoints(line).length >= 2;
 }
 function arq2_isLineClosedForSnap(line) {
-    if (line.tipo === 'calle' || line.tipo === 'cortar') return false;
+    if (line.tipo === 'calle' || line.tipo === 'cortar' || line.tipo === 'calle-curva-arq2' || line.tipo === 'calle-curva-arq2-preview') return false;
     const pts = arq2_getSewPolygonPoints(line);
     return pts.length >= 3;
 }
@@ -3009,7 +3210,7 @@ function arq2_registerSharedEdges(newLineId) {
     nue.sharedSegs = nue.sharedSegs || [];
     nue.sharedSegStyles = nue.sharedSegStyles || {};
     nue.sharedSegMeta = nue.sharedSegMeta || {};
-    const styleDefault = nue.costuraStyle || arq2CosturaStyle || 'punteada';
+    const styleDefault = arq2_getCosturaEstilo(nue);
     const nSeg = nuePts.length;
     allDrawnLines.forEach(other => {
         if (other.id === newLineId) return;
@@ -3083,12 +3284,13 @@ function arq2_weldVerticesToNeighbors(lineId) {
 }
 function arq2_getSharedSegStyle(lineData, segIdx) {
     if (!lineData?.sharedSegs?.includes(segIdx)) return null;
-    return lineData.sharedSegStyles?.[segIdx] || lineData.costuraStyle || 'punteada';
+    return lineData.sharedSegStyles?.[segIdx] || lineData.costuraEstilo || lineData.costuraStyle || 'punteada';
 }
 function arq2_setCosturaStyleForLine(lineId, style) {
     const line = allDrawnLines.find(l => l.id === lineId);
     if (!line || !line.sharedSegs?.length) return;
     line.costuraStyle = style;
+    line.costuraEstilo = style;
     line.sharedSegs.forEach(i => {
         line.sharedSegStyles[i] = style;
         const meta = line.sharedSegMeta?.[i];
@@ -3365,6 +3567,7 @@ function arq2_clearDraft() {
 function arq2_setTool(tool) {
     arq2Tool = tool;
     arq2_clearDraft();
+    arq2_ensurePanelExtras();
     document.querySelectorAll('.arq2-tool-btn').forEach(b => b.classList.toggle('active', b.dataset.arq2Tool === tool));
     arq2_updatePanelStep();
     if (tool === 'fila-variable' && isArquitecto2Active) arq2_startDemoAnimation(false);
@@ -3381,6 +3584,7 @@ function arq2_toggleArquitecto2(force) {
     } else {
         arq2_ensureFeedbackLayer();
         arq2_ensureDemoLayer();
+        arq2_ensurePanelExtras();
         arq2_setTool(arq2Tool);
         refreshAllHotspots(true);
     }
@@ -3405,6 +3609,24 @@ function arq2_buildSharedEdgePaths(pts, sharedSegs, sharedStyles, isClosed, getC
     }
     return { dPunteada, dSolida };
 }
+function arq2_buildNonSharedEdgePaths(pts, sharedSegs, isClosed, getCamFn, cx, cySc, f) {
+    let d = '';
+    const segN = isClosed ? pts.length : pts.length - 1;
+    for (let i = 0; i < segN; i++) {
+        if (sharedSegs && sharedSegs.includes(i)) continue;
+        const p1 = pts[i], p2 = pts[(i + 1) % pts.length];
+        const c1 = getCamFn(p1[0], p1[1]), c2 = getCamFn(p2[0], p2[1]);
+        if (c1.z <= 0.0001 && c2.z <= 0.0001) continue;
+        let s1, s2;
+        if (c1.z > 0.0001) s1 = { x: cx + (c1.x / c1.z) * f, y: cySc - (c1.y / c1.z) * f };
+        else { const t = c1.z / (c1.z - c2.z); s1 = { x: cx + ((c1.x + t * (c2.x - c1.x)) / 0.0001) * f, y: cySc - ((c1.y + t * (c2.y - c1.y)) / 0.0001) * f }; }
+        if (c2.z > 0.0001) s2 = { x: cx + (c2.x / c2.z) * f, y: cySc - (c2.y / c2.z) * f };
+        else { const t = c2.z / (c2.z - c1.z); s2 = { x: cx + ((c2.x + t * (c1.x - c2.x)) / 0.0001) * f, y: cySc - ((c2.y + t * (c1.y - c2.y)) / 0.0001) * f }; }
+        const seg = `M ${s1.x},${s1.y} L ${s2.x},${s2.y} `;
+        d += seg;
+    }
+    return d;
+}
 function arq2_buildSegmentPaths(pts, sharedSegs, isClosed, getCamFn, cx, cySc, f) {
     return arq2_buildSharedEdgePaths(pts, sharedSegs, null, isClosed, getCamFn, cx, cySc, f);
 }
@@ -3418,7 +3640,11 @@ function arq2_finishLoteOrganico(rawPoints, useCostura) {
     if (smoothed.length < 3) return;
     const id = 'arq2_org_' + Date.now();
     const entry = { id, tipo: 'lote-organico', puntos: smoothed, sharedSegs: [], sharedSegStyles: {}, sharedSegMeta: {} };
-    if (useCostura) entry.costuraStyle = arq2CosturaStyle || 'punteada';
+    if (useCostura) {
+        entry.costuraStyle = arq2CosturaStyle || 'punteada';
+        entry.costuraEstilo = arq2CosturaStyle || 'punteada';
+        console.log('Costura guardada:', id, entry.costuraEstilo);
+    }
     if (!arq2_applyAutoFill(entry)) return;
     allDrawnLines.push(entry);
     if (useCostura) {
@@ -3440,6 +3666,7 @@ function arq2_shouldAutoCloseAt(p, y, isDblClick) {
     return isDblClick || canTriggerPolygonAutoClose();
 }
 function arq2_tryClosePolygon(isDblClick, p, y) {
+    if (arq2Tool === 'calle-curva-arq2') return false;
     const pts = arq2LinePoints;
     const minPts = arq2Tool === 'fila-variable' ? 4 : 3;
     if (pts.length < minPts) return false;
@@ -3549,11 +3776,15 @@ function arq2_onPanoramaClick(mock, isDblClick) {
 }
 function arq2_onEnterKey() {
     if (!isArquitecto2Active) return false;
+    if (arq2Tool === 'calle-curva-arq2' && arq2LinePoints.length >= 2) {
+        arq2_finishCalleCurva();
+        return true;
+    }
     if (arq2Tool === 'fila-variable' && arq2LinePoints.length >= 4) {
         arq2_finishFilaContour();
         return true;
     }
-    if (arq2Tool !== 'fila-variable' && arq2LinePoints.length >= 3) {
+    if (arq2Tool !== 'fila-variable' && arq2Tool !== 'calle-curva-arq2' && arq2LinePoints.length >= 3) {
         arq2_finishLoteOrganico([...arq2LinePoints], arq2Tool === 'costura');
         return true;
     }
@@ -3586,12 +3817,13 @@ function arq2_setup() {
     });
     document.getElementById('arq2-costura-toggle-selected')?.addEventListener('click', arq2_toggleSelectedCosturaStyle);
     document.getElementById('arq2-fila-demo-replay')?.addEventListener('click', () => arq2_startDemoAnimation(true));
+    arq2_ensurePanelExtras();
     arq2_updatePanelStep();
 }
 
 function shouldClosePolygonLine(lineId, lineData) {
     if (!lineData) return false;
-    if (lineData.tipo === 'calle' || lineData.tipo === 'cortar' || lineData.tipo === 'divisoria' || lineData.tipo === 'borde-macro' || lineData.tipo === 'arista_solida' || lineData.tipo === 'arista_punteada') return false;
+    if (lineData.tipo === 'calle' || lineData.tipo === 'cortar' || lineData.tipo === 'calle-curva-arq2' || lineData.tipo === 'calle-curva-arq2-preview' || lineData.tipo === 'divisoria' || lineData.tipo === 'borde-macro' || lineData.tipo === 'arista_solida' || lineData.tipo === 'arista_punteada') return false;
     if (lineData.tipo === 'franja-preview-div' || lineData.tipo === 'linea-pines-guia') return false;
     if (lineId === currentTempLineId || lineId === lineaPinesTempId || lineId === arq2TempLineId) return false;
     if (lineData.tipo === 'lote-organico-preview') return false;
@@ -3811,7 +4043,9 @@ function getHotspotsConfig() {
 function syncSVGElements() {
     if(!isSvgRenderAllowed()) return; const svg = document.getElementById('loteo-svg'); if(!svg) return;
     let lBordes = document.getElementById('layer-calles-bordes'), lAsfalto = document.getElementById('layer-calles-asfalto'), lLotes = document.getElementById('layer-lotes'), lAristas = document.getElementById('layer-aristas');
-    if(!lBordes) { svg.innerHTML = '<g id="layer-calles-bordes"></g><g id="layer-calles-asfalto"></g><g id="layer-lotes"></g><g id="layer-aristas"></g>'; lBordes = document.getElementById('layer-calles-bordes'); lAsfalto = document.getElementById('layer-calles-asfalto'); lLotes = document.getElementById('layer-lotes'); lAristas = document.getElementById('layer-aristas'); }
+    if(!lBordes) { svg.innerHTML = '<g id="layer-calles-bordes"></g><g id="layer-calles-asfalto"></g><g id="layer-calles-arq2"></g><g id="layer-lotes"></g><g id="layer-aristas"></g>'; lBordes = document.getElementById('layer-calles-bordes'); lAsfalto = document.getElementById('layer-calles-asfalto'); lLotes = document.getElementById('layer-lotes'); lAristas = document.getElementById('layer-aristas'); }
+    let lCallesArq2 = document.getElementById('layer-calles-arq2');
+    if (!lCallesArq2 && svg) { lCallesArq2 = document.createElementNS("http://www.w3.org/2000/svg", "g"); lCallesArq2.id = 'layer-calles-arq2'; svg.insertBefore(lCallesArq2, lLotes); }
     const currentLineIds = allDrawnLines.map(l => l.id);
     if (currentLinePoints.length > 0) currentLineIds.push(currentTempLineId);
     if (isArquitecto2Active && arq2LinePoints.length > 0) {
@@ -3822,7 +4056,10 @@ function syncSVGElements() {
     Array.from(svg.querySelectorAll('[data-line-id]')).forEach(el => { if (!currentLineIds.includes(el.dataset.lineId)) el.remove(); });
     DOMCache.paths = {}; const allLinesData = [...allDrawnLines];
     if (currentLinePoints.length > 0) allLinesData.push({ id: currentTempLineId, tipo: currentLineType === 'franja_curva' ? 'franja-preview' : currentLineType, puntos: currentLinePoints });
-    if (isArquitecto2Active && arq2LinePoints.length > 0) allLinesData.push({ id: arq2TempLineId, tipo: 'lote-organico-preview', puntos: arq2LinePoints });
+    if (isArquitecto2Active && arq2LinePoints.length > 0) {
+        if (arq2Tool === 'calle-curva-arq2') allLinesData.push(arq2_getCalleCurvaPreviewLineData());
+        else allLinesData.push({ id: arq2TempLineId, tipo: 'lote-organico-preview', puntos: arq2LinePoints });
+    }
     if (isLineaPinesActive && lineaPinesPoints.length > 0) allLinesData.push({ id: lineaPinesTempId, tipo: 'linea-pines-guia', puntos: lineaPinesPoints });
     if (franjaPreviewQuad) allLinesData.push({ id: 'franja_preview_quad', tipo: 'franja-preview', puntos: franjaPreviewQuad }); if (franjaCurvaFrente.length > 0) allLinesData.push({ id: 'franja_curva_preview_frente', tipo: 'franja-preview', puntos: franjaCurvaFrente }); if (franjaCurvaPreviewStrip) allLinesData.push({ id: 'franja_curva_preview_strip', tipo: 'franja-preview', puntos: franjaCurvaPreviewStrip }); franjaPreviewDivs.forEach(d => allLinesData.push(d));
     allLinesData.forEach(line => {
@@ -3856,6 +4093,30 @@ function syncSVGElements() {
                 pGuide.dataset.lineId = line.id;
                 lAristas.appendChild(pGuide);
                 DOMCache.paths[line.id] = { base: [pGuide] };
+            } else if (line.tipo === 'calle-curva-arq2' || line.tipo === 'calle-curva-arq2-preview') {
+                const gCalle = document.createElementNS("http://www.w3.org/2000/svg", "g");
+                gCalle.dataset.lineId = line.id;
+                gCalle.dataset.tipo = line.tipo;
+                gCalle.classList.add('calle-curva-arq2-grupo');
+                const mkPath = (cls, edge) => {
+                    const p = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                    p.setAttribute('class', cls);
+                    if (edge) p.dataset.edgeRole = edge;
+                    return p;
+                };
+                const pFill = mkPath('linea-calle-arq2-fill');
+                const pLeft = mkPath('linea-calle-arq2-borde', 'left');
+                const pRight = mkPath('linea-calle-arq2-borde', 'right');
+                const pCapStart = mkPath('linea-calle-arq2-borde', 'cap-start');
+                const pCapEnd = mkPath('linea-calle-arq2-borde', 'cap-end');
+                gCalle.appendChild(pFill);
+                gCalle.appendChild(pLeft);
+                gCalle.appendChild(pRight);
+                gCalle.appendChild(pCapStart);
+                gCalle.appendChild(pCapEnd);
+                bindSvgEraser(gCalle, line.id);
+                lCallesArq2.appendChild(gCalle);
+                DOMCache.paths[line.id] = { gNode: gCalle, base: [pFill, pLeft, pRight, pCapStart, pCapEnd] };
             } else if (line.tipo === 'lote-organico' || line.tipo === 'fila-variable-lote') {
                 const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
                 g.dataset.lineId = line.id;
@@ -3864,9 +4125,9 @@ function syncSVGElements() {
                 g.style.isolation = 'isolate';
                 g.style.mixBlendMode = 'normal';
                 g.setAttribute('data-status', line.loteStatus || 'disponible');
-                const pSolid = document.createElementNS("http://www.w3.org/2000/svg", "path");
-                pSolid.setAttribute("class", "linea-solida");
-                pSolid.dataset.edgeRole = 'solid';
+                const pFill = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                pFill.setAttribute("class", "linea-organico-fill");
+                pFill.dataset.edgeRole = 'fill';
                 const pDash = document.createElementNS("http://www.w3.org/2000/svg", "path");
                 pDash.setAttribute("class", "linea-punteada-costura");
                 pDash.dataset.edgeRole = 'shared-punteada';
@@ -3874,15 +4135,20 @@ function syncSVGElements() {
                 const pSolidEdge = document.createElementNS("http://www.w3.org/2000/svg", "path");
                 pSolidEdge.setAttribute("class", "linea-solida-costura");
                 pSolidEdge.dataset.edgeRole = 'shared-solida';
-                g.appendChild(pSolid);
+                const pPerimeter = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                pPerimeter.setAttribute("class", "linea-organico-perimetro");
+                pPerimeter.dataset.edgeRole = 'perimeter';
+                g.appendChild(pFill);
                 g.appendChild(pDash);
                 g.appendChild(pSolidEdge);
-                arq2_applyOrganicPathAttrs(pSolid, 'solid');
+                g.appendChild(pPerimeter);
+                arq2_applyOrganicPathAttrs(pFill, 'fill');
                 arq2_applyOrganicPathAttrs(pDash, 'dash');
                 arq2_applyOrganicPathAttrs(pSolidEdge, 'shared-solid');
+                arq2_applyOrganicPathAttrs(pPerimeter, 'perimeter');
                 bindSvgEraser(g, line.id);
                 lLotes.appendChild(g);
-                DOMCache.paths[line.id] = { gNode: g, base: [pSolid, pDash, pSolidEdge] };
+                DOMCache.paths[line.id] = { gNode: g, base: [pFill, pDash, pSolidEdge, pPerimeter] };
             } else if (line.tipo === 'lote-organico-preview') {
                 const gPrev = document.createElementNS("http://www.w3.org/2000/svg", "g");
                 gPrev.dataset.lineId = line.id;
@@ -3924,16 +4190,29 @@ function syncSVGElements() {
                         gNode.style.isolation = 'isolate';
                         gNode.style.mixBlendMode = 'normal';
                         let paths = Array.from(gNode.querySelectorAll('path'));
-                        if (paths.length < 3) {
-                            const pSolidEdge = document.createElementNS("http://www.w3.org/2000/svg", "path");
-                            pSolidEdge.setAttribute("class", "linea-solida-costura");
-                            pSolidEdge.dataset.edgeRole = 'shared-solida';
-                            gNode.appendChild(pSolidEdge);
+                        while (paths.length < 4) {
+                            const pExtra = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                            if (paths.length === 0) { pExtra.setAttribute('class', 'linea-organico-fill'); pExtra.dataset.edgeRole = 'fill'; arq2_applyOrganicPathAttrs(pExtra, 'fill'); }
+                            else if (paths.length === 1) { pExtra.setAttribute('class', 'linea-punteada-costura'); pExtra.dataset.edgeRole = 'shared-punteada'; arq2_applyOrganicPathAttrs(pExtra, 'dash'); }
+                            else if (paths.length === 2) { pExtra.setAttribute('class', 'linea-solida-costura'); pExtra.dataset.edgeRole = 'shared-solida'; arq2_applyOrganicPathAttrs(pExtra, 'shared-solid'); }
+                            else { pExtra.setAttribute('class', 'linea-organico-perimetro'); pExtra.dataset.edgeRole = 'perimeter'; arq2_applyOrganicPathAttrs(pExtra, 'perimeter'); }
+                            gNode.appendChild(pExtra);
                             paths = Array.from(gNode.querySelectorAll('path'));
                         }
-                        if (paths[0]) arq2_applyOrganicPathAttrs(paths[0], 'solid');
-                        if (paths[1]) { paths[1].setAttribute('class', 'linea-punteada-costura'); arq2_applyCosturaStrokeAttrs(paths[1], 'punteada'); }
-                        if (paths[2]) { paths[2].setAttribute('class', 'linea-solida-costura'); arq2_applyOrganicPathAttrs(paths[2], 'shared-solid'); arq2_applyCosturaStrokeAttrs(paths[2], 'solida'); }
+                        if (paths[0]) arq2_applyOrganicPathAttrs(paths[0], 'fill');
+                        if (paths[1]) { paths[1].setAttribute('class', 'linea-punteada-costura'); arq2_applyCosturaEstiloToPath(paths[1], 'punteada'); }
+                        if (paths[2]) { paths[2].setAttribute('class', 'linea-solida-costura'); arq2_applyOrganicPathAttrs(paths[2], 'shared-solid'); arq2_applyCosturaEstiloToPath(paths[2], 'solida'); }
+                        if (paths[3]) { paths[3].setAttribute('class', 'linea-organico-perimetro'); arq2_applyOrganicPathAttrs(paths[3], 'perimeter'); }
+                    } else if (line.tipo === 'calle-curva-arq2' || line.tipo === 'calle-curva-arq2-preview') {
+                        const targetLayer = lCallesArq2 || resolveSvgLayerForLine(line, { lBordes, lAsfalto, lLotes, lAristas });
+                        if (targetLayer && gNode.parentNode !== targetLayer) targetLayer.appendChild(gNode);
+                        let paths = Array.from(gNode.querySelectorAll('path'));
+                        while (paths.length < 5) {
+                            const pExtra = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                            pExtra.setAttribute('class', paths.length === 0 ? 'linea-calle-arq2-fill' : 'linea-calle-arq2-borde');
+                            gNode.appendChild(pExtra);
+                            paths = Array.from(gNode.querySelectorAll('path'));
+                        }
                     }
                     bindSvgEraser(gNode, line.id);
                     if (pBase) bindSvgEraser(pBase, line.id);
@@ -3960,23 +4239,52 @@ function updateSVGPaths() {
         if (!lineData && lineId === 'franja_curva_preview_frente' && franjaCurvaFrente.length >= 2) lineData = { tipo: 'franja-preview', puntos: franjaCurvaFrente };
         if (!lineData && lineId === 'franja_curva_preview_strip' && franjaCurvaPreviewStrip?.length >= 3) lineData = { tipo: 'franja-preview', puntos: franjaCurvaPreviewStrip };
         if (!lineData && lineId.startsWith('franja_preview_div_')) lineData = franjaPreviewDivs.find(d => d.id === lineId);
-        if (!lineData && lineId === arq2TempLineId && arq2LinePoints.length > 0) lineData = { tipo: 'lote-organico-preview', puntos: arq2LinePoints };
+        if (!lineData && lineId === arq2TempLineId && arq2LinePoints.length > 0) {
+            lineData = arq2Tool === 'calle-curva-arq2' ? arq2_getCalleCurvaPreviewLineData() : { tipo: 'lote-organico-preview', puntos: arq2LinePoints };
+        }
         if (!lineData) return;
         let isClosed = shouldClosePolygonLine(lineId, lineData);
-        if (cacheObj.gNode && lineData.tipo !== 'calle' && lineData.tipo !== 'franja-grupo' && lineData.tipo !== 'franja-curva-grupo') { if (lineData.puntos && lineData.puntos.length > 0) { let polyStatus = lineData.loteStatus || 'disponible'; if (!lineData.loteStatus && !(lineData.franjaNumero || lineData.tipo === 'area-invisible')) { let cP = 0, cY = 0; lineData.puntos.forEach(pt => { cP += pt[0]; cY += pt[1]; }); cP /= lineData.puntos.length; cY /= lineData.puntos.length; let closestPin = null; let minDist = 30; BaseDatosLotes.forEach(pin => { if(pin.tipo === 'lote') { let dist = Math.pow(pin.pitch - cP, 2) + Math.pow(pin.yaw - cY, 2); if(dist < minDist) { minDist = dist; closestPin = pin; } } }); if (closestPin) polyStatus = closestPin.status; } cacheObj.gNode.setAttribute('data-status', polyStatus); } }
+        if (cacheObj.gNode && lineData.tipo !== 'calle' && lineData.tipo !== 'calle-curva-arq2' && lineData.tipo !== 'calle-curva-arq2-preview' && lineData.tipo !== 'franja-grupo' && lineData.tipo !== 'franja-curva-grupo') { if (lineData.puntos && lineData.puntos.length > 0) { let polyStatus = lineData.loteStatus || 'disponible'; if (!lineData.loteStatus && !(lineData.franjaNumero || lineData.tipo === 'area-invisible')) { let cP = 0, cY = 0; lineData.puntos.forEach(pt => { cP += pt[0]; cY += pt[1]; }); cP /= lineData.puntos.length; cY /= lineData.puntos.length; let closestPin = null; let minDist = 30; BaseDatosLotes.forEach(pin => { if(pin.tipo === 'lote') { let dist = Math.pow(pin.pitch - cP, 2) + Math.pow(pin.yaw - cY, 2); if(dist < minDist) { minDist = dist; closestPin = pin; } } }); if (closestPin) polyStatus = closestPin.status; } cacheObj.gNode.setAttribute('data-status', polyStatus); } }
+        if ((lineData.tipo === 'calle-curva-arq2' || lineData.tipo === 'calle-curva-arq2-preview') && cacheObj.base?.length >= 3) {
+            const geoLine = lineData.tipo === 'calle-curva-arq2-preview' ? arq2_getCalleCurvaPreviewLineData() : lineData;
+            if (!geoLine.left?.length || !geoLine.right?.length) return;
+            const projected = arq2_projectCalleCurvaPaths(geoLine, getCam, cx, cy_screen, f);
+            if (!projected) return;
+            cacheObj.base[0].setAttribute('d', projected.dFill || 'M -999 -999');
+            cacheObj.base[1].setAttribute('d', projected.dLeft || 'M -999 -999');
+            cacheObj.base[2].setAttribute('d', projected.dRight || 'M -999 -999');
+            if (cacheObj.base[3]) cacheObj.base[3].setAttribute('d', projected.capStart || 'M -999 -999');
+            if (cacheObj.base[4]) cacheObj.base[4].setAttribute('d', projected.capEnd || 'M -999 -999');
+            return;
+        }
         if ((lineData.tipo === 'lote-organico' || lineData.tipo === 'fila-variable-lote') && cacheObj.base && cacheObj.base.length >= 2) {
             const dFill = arq2_projectPolylineD(lineData.puntos, true, getCam, cx, cy_screen, f);
             const shared = arq2_buildSharedEdgePaths(lineData.puntos, lineData.sharedSegs, lineData.sharedSegStyles, true, getCam, cx, cy_screen, f);
+            const dPerimeter = arq2_buildNonSharedEdgePaths(lineData.puntos, lineData.sharedSegs, true, getCam, cx, cy_screen, f);
+            const estiloGuardado = arq2_getCosturaEstilo(lineData);
             cacheObj.base[0].setAttribute('d', dFill.trim() || 'M -999 -999');
-            cacheObj.base[1].setAttribute('d', shared.dPunteada.trim() || 'M -999 -999');
-            cacheObj.base[1].setAttribute('class', 'linea-punteada-costura');
-            arq2_applyOrganicPathAttrs(cacheObj.base[0], 'solid');
-            arq2_applyCosturaStrokeAttrs(cacheObj.base[1], 'punteada');
+            arq2_applyOrganicPathAttrs(cacheObj.base[0], 'fill');
+            if (cacheObj.base[1]) {
+                cacheObj.base[1].setAttribute('d', shared.dPunteada.trim() || 'M -999 -999');
+                cacheObj.base[1].setAttribute('class', 'linea-punteada-costura');
+                arq2_applyCosturaEstiloToPath(cacheObj.base[1], estiloGuardado === 'solida' && !shared.dPunteada.trim() ? 'solida' : 'punteada');
+            }
             if (cacheObj.base[2]) {
                 cacheObj.base[2].setAttribute('d', shared.dSolida.trim() || 'M -999 -999');
                 cacheObj.base[2].setAttribute('class', 'linea-solida-costura');
-                arq2_applyOrganicPathAttrs(cacheObj.base[2], 'shared-solid');
-                arq2_applyCosturaStrokeAttrs(cacheObj.base[2], 'solida');
+                arq2_applyCosturaEstiloToPath(cacheObj.base[2], 'solida');
+            }
+            if (!cacheObj.base[3] && cacheObj.gNode) {
+                const pPerimeter = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                pPerimeter.setAttribute('class', 'linea-organico-perimetro');
+                pPerimeter.dataset.edgeRole = 'perimeter';
+                cacheObj.gNode.appendChild(pPerimeter);
+                cacheObj.base.push(pPerimeter);
+            }
+            if (cacheObj.base[3]) {
+                cacheObj.base[3].setAttribute('d', dPerimeter.trim() || 'M -999 -999');
+                cacheObj.base[3].setAttribute('class', 'linea-organico-perimetro');
+                arq2_applyOrganicPathAttrs(cacheObj.base[3], 'perimeter');
             }
             return;
         }
