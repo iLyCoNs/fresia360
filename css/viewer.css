@@ -481,8 +481,8 @@ g.lote-organico path.linea-organico-perimetro, g.fila-variable-lote path.linea-o
 .vertex-marker.origin-vertex.origin-vertex-ready { transform: scale(1.5); transform-origin: center center; }
 g.lote-organico.arq2-costura-selected path.linea-organico-perimetro { stroke: #06b6d4; stroke-width: 2.5; }
 #layer-calles-arq2 { pointer-events: none; }
-.linea-calle-arq2-fill { fill: rgba(80,80,85,0.55); stroke: none; vector-effect: non-scaling-stroke; pointer-events: none; mix-blend-mode: normal; }
-.linea-calle-arq2-borde { fill: none; stroke: rgba(255,255,255,0.92); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; pointer-events: none; mix-blend-mode: normal; }
+.linea-calle-arq2-fill { fill: rgba(255,255,255,0.55); stroke: none; vector-effect: non-scaling-stroke; pointer-events: none; mix-blend-mode: normal; }
+.linea-calle-arq2-borde { fill: none; stroke: rgba(255,255,255,0.92); stroke-width: 2; stroke-linecap: butt; stroke-linejoin: miter; vector-effect: non-scaling-stroke; pointer-events: none; mix-blend-mode: normal; }
 .arq2-calle-curva-row { display: none; flex-direction: column; gap: 6px; margin: 0 0 10px; font-size: 11px; color: #cbd5e1; }
 .arq2-calle-curva-row label { display: flex; justify-content: space-between; align-items: center; font-weight: 600; }
 .arq2-calle-curva-row input[type="range"] { width: 100%; accent-color: #64748b; }

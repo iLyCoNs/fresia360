@@ -307,7 +307,7 @@ function revealLoteoOverlay() {
     if (renderer) hookRendererOverlay(renderer);
 }
 const DEFAULT_HFOV = 125, MAX_SCALE = 1.0, MIN_SCALE = 0.20, SNAP_DISTANCE = 8.0;
-let lastDevDrawClickMs = 0, lastArq2DrawClickMs = 0, closeOriginHighlighted = false, arq2CalleCurvaAncho = 8;
+let lastDevDrawClickMs = 0, lastArq2DrawClickMs = 0, closeOriginHighlighted = false, arq2CalleCurvaAncho = 8, draftCalleCurvaAlpha = 0.55;
 
 function getCloseSnapScreenRadiusPx() {
     const hfov = visor360?.getHfov?.() || DEFAULT_HFOV;
@@ -2817,6 +2817,76 @@ function arq2_smoothCalleAxis(points) {
     if (!points || points.length < 2) return points ? points.map(p => [...p]) : [];
     return arq2_catmullRomOpen(points, 12);
 }
+function arq2_estimateScreenCurvatureRadius(points, i, proj) {
+    if (!points || points.length < 2 || !proj) return Infinity;
+    const i0 = Math.max(0, i - 1), i1 = i, i2 = Math.min(points.length - 1, i + 1);
+    if (i0 === i1 || i1 === i2) return Infinity;
+    const s0 = proj.toScreen(points[i0][0], points[i0][1]);
+    const s1 = proj.toScreen(points[i1][0], points[i1][1]);
+    const s2 = proj.toScreen(points[i2][0], points[i2][1]);
+    if (!s0 || !s1 || !s2) return Infinity;
+    const a = Math.hypot(s1[0] - s0[0], s1[1] - s0[1]);
+    const b = Math.hypot(s2[0] - s1[0], s2[1] - s1[1]);
+    const c = Math.hypot(s2[0] - s0[0], s2[1] - s0[1]);
+    const area2 = Math.abs((s1[0] - s0[0]) * (s2[1] - s0[1]) - (s1[1] - s0[1]) * (s2[0] - s0[0]));
+    if (area2 < 1e-3) return Infinity;
+    return (a * b * c) / area2;
+}
+function arq2_chaikinOpenSmoothOnce(points) {
+    if (!points || points.length < 3) return points ? points.map(p => [...p]) : [];
+    const out = [[...points[0]]];
+    for (let i = 0; i < points.length - 1; i++) {
+        const p0 = points[i], p1 = points[i + 1];
+        out.push([parseFloat((p0[0] * 0.75 + p1[0] * 0.25).toFixed(4)), parseFloat((p0[1] * 0.75 + p1[1] * 0.25).toFixed(4))]);
+        out.push([parseFloat((p0[0] * 0.25 + p1[0] * 0.75).toFixed(4)), parseFloat((p0[1] * 0.25 + p1[1] * 0.75).toFixed(4))]);
+    }
+    out.push([...points[points.length - 1]]);
+    return out;
+}
+function arq2_enforceMinCurveRadius(smoothedPoints, minRadiusPx) {
+    const proj = getPanoramaScreenProjector();
+    if (!proj || !smoothedPoints || smoothedPoints.length < 3) return smoothedPoints ? smoothedPoints.map(p => [...p]) : [];
+    let pts = smoothedPoints.map(p => [...p]);
+    const minR = Math.max(1, minRadiusPx || 1);
+    for (let pass = 0; pass < 10; pass++) {
+        let changed = false;
+        for (let i = 1; i < pts.length - 1; i++) {
+            const r = arq2_estimateScreenCurvatureRadius(pts, i, proj);
+            if (r < minR) {
+                const prev = pts[i - 1], next = pts[i + 1];
+                pts[i] = [
+                    parseFloat(((prev[0] + pts[i][0] + next[0]) / 3).toFixed(4)),
+                    parseFloat(((prev[1] + pts[i][1] + next[1]) / 3).toFixed(4))
+                ];
+                changed = true;
+            }
+        }
+        if (!changed) break;
+        if (pass === 4 || pass === 8) pts = arq2_chaikinOpenSmoothOnce(pts);
+    }
+    return pts;
+}
+function arq2_removeSelfIntersections(pointsArray) {
+    if (!pointsArray || pointsArray.length < 4) return pointsArray ? pointsArray.map(p => [...p]) : [];
+    let pts = pointsArray.map(p => [...p]);
+    for (let pass = 0; pass < 16; pass++) {
+        let removed = false;
+        outer: for (let i = 0; i < pts.length - 3; i++) {
+            const a1 = pts[i], a2 = pts[i + 1];
+            for (let j = i + 2; j < pts.length - 1; j++) {
+                const b1 = pts[j], b2 = pts[j + 1];
+                const hit = intersectSegments(a1, a2, b1, b2);
+                if (!hit) continue;
+                const hx = parseFloat(hit[0].toFixed(4)), hy = parseFloat(hit[1].toFixed(4));
+                pts = pts.slice(0, i + 1).concat([[hx, hy]], pts.slice(j + 1));
+                removed = true;
+                break outer;
+            }
+        }
+        if (!removed) break;
+    }
+    return pts.length >= 2 ? pts : pointsArray.map(p => [...p]);
+}
 function arq2_getCalleCurvaHalfWidthPx(anchoFactor) {
     const factor = Math.max(4, Math.min(15, anchoFactor || arq2CalleCurvaAncho || 8));
     return getCalleHalfWidthPx(factor * 0.72);
@@ -2841,17 +2911,33 @@ function arq2_offsetSplinePath(smoothedPoints, halfWidthPx) {
         if (lPy) left.push([parseFloat(lPy[0].toFixed(4)), parseFloat(lPy[1].toFixed(4))]);
         if (rPy) right.push([parseFloat(rPy[0].toFixed(4)), parseFloat(rPy[1].toFixed(4))]);
     }
-    return { left, right };
+    return {
+        left: arq2_removeSelfIntersections(left),
+        right: arq2_removeSelfIntersections(right)
+    };
 }
-function arq2_buildCalleCurvaGeometry(ejeOriginal, anchoFactor) {
-    const eje = arq2_smoothCalleAxis(ejeOriginal);
+function arq2_getCalleCurvaAlpha(lineData) {
+    return Math.max(0.15, Math.min(1, lineData?.calleCurvaAlpha ?? draftCalleCurvaAlpha ?? 0.55));
+}
+function arq2_applyCalleCurvaFillStyle(pathEl, alpha) {
+    if (!pathEl) return;
+    const a = arq2_getCalleCurvaAlpha({ calleCurvaAlpha: alpha });
+    pathEl.setAttribute('fill', `rgba(255,255,255,${a})`);
+    pathEl.setAttribute('stroke', 'none');
+    pathEl.style.fill = `rgba(255,255,255,${a})`;
+}
+function arq2_buildCalleCurvaGeometry(ejeOriginal, anchoFactor, alphaFactor) {
+    let eje = arq2_smoothCalleAxis(ejeOriginal);
     const halfPx = arq2_getCalleCurvaHalfWidthPx(anchoFactor);
+    eje = arq2_enforceMinCurveRadius(eje, halfPx * 1.3);
     const { left, right } = arq2_offsetSplinePath(eje, halfPx);
     if (left.length < 2 || right.length < 2) return null;
+    const calleCurvaAlpha = Math.max(0.15, Math.min(1, alphaFactor ?? draftCalleCurvaAlpha ?? 0.55));
     return {
         ejeOriginal: ejeOriginal.map(p => [...p]),
         puntosSuavizados: eje,
         ancho: anchoFactor,
+        calleCurvaAlpha,
         left,
         right,
         fillPoly: [...left, ...[...right].reverse()],
@@ -2876,11 +2962,9 @@ function arq2_projectOpenPolylineD(pts, getCamFn, cx, cySc, f) {
     }
     return hasVisible ? d : '';
 }
-function arq2_projectScreenCapArc(sA, sB) {
+function arq2_projectScreenCapLine(sA, sB) {
     if (!sA || !sB) return '';
-    const mx = (sA.x + sB.x) / 2, my = (sA.y + sB.y) / 2;
-    const r = Math.max(1, Math.hypot(sA.x - sB.x, sA.y - sB.y) / 2);
-    return `M ${sA.x},${sA.y} A ${r},${r} 0 0 1 ${sB.x},${sB.y}`;
+    return `M ${sA.x},${sA.y} L ${sB.x},${sB.y}`;
 }
 function arq2_projectCalleCurvaPaths(lineData, getCamFn, cx, cySc, f) {
     const left = lineData.left, right = lineData.right;
@@ -2899,13 +2983,13 @@ function arq2_projectCalleCurvaPaths(lineData, getCamFn, cx, cySc, f) {
     dFill += ' Z';
     const dLeft = arq2_projectOpenPolylineD(left, getCamFn, cx, cySc, f);
     const dRight = arq2_projectOpenPolylineD(right, getCamFn, cx, cySc, f);
-    const capStart = arq2_projectScreenCapArc(sLeft[0], sRight[0]);
-    const capEnd = arq2_projectScreenCapArc(sLeft[sLeft.length - 1], sRight[sRight.length - 1]);
-    return { dFill, dLeft, dRight, capStart, capEnd };
+    const capStart = arq2_projectScreenCapLine(sLeft[0], sRight[0]);
+    const capEnd = arq2_projectScreenCapLine(sLeft[sLeft.length - 1], sRight[sRight.length - 1]);
+    return { dFill, dLeft, dRight, capStart, capEnd, calleCurvaAlpha: lineData.calleCurvaAlpha };
 }
 function arq2_finishCalleCurva() {
     if (arq2LinePoints.length < 2) { alert('Coloca al menos 2 puntos en el eje central de la calle.'); return; }
-    const geo = arq2_buildCalleCurvaGeometry([...arq2LinePoints], arq2CalleCurvaAncho);
+    const geo = arq2_buildCalleCurvaGeometry([...arq2LinePoints], arq2CalleCurvaAncho, draftCalleCurvaAlpha);
     if (!geo) { alert('No se pudo generar la calle curva. Ajusta la vista e intenta de nuevo.'); return; }
     const id = 'arq2_calle_' + Date.now();
     allDrawnLines.push({
@@ -2914,6 +2998,7 @@ function arq2_finishCalleCurva() {
         ejeOriginal: geo.ejeOriginal,
         puntosSuavizados: geo.puntosSuavizados,
         ancho: geo.ancho,
+        calleCurvaAlpha: geo.calleCurvaAlpha,
         left: geo.left,
         right: geo.right,
         puntos: geo.fillPoly
@@ -2934,18 +3019,36 @@ function arq2_getCalleCurvaPreviewLineData() {
             if (py) eje.push([parseFloat(py[0].toFixed(3)), parseFloat(py[1].toFixed(3))]);
         }
     }
-    if (eje.length < 2) return { id: arq2TempLineId, tipo: 'calle-curva-arq2-preview', ejeOriginal: eje, puntos: eje };
-    const geo = arq2_buildCalleCurvaGeometry(eje, arq2CalleCurvaAncho);
-    if (!geo) return { id: arq2TempLineId, tipo: 'calle-curva-arq2-preview', ejeOriginal: eje, puntos: eje };
-    return { id: arq2TempLineId, tipo: 'calle-curva-arq2-preview', ejeOriginal: geo.ejeOriginal, puntosSuavizados: geo.puntosSuavizados, ancho: geo.ancho, left: geo.left, right: geo.right, puntos: geo.fillPoly };
+    if (eje.length < 2) return { id: arq2TempLineId, tipo: 'calle-curva-arq2-preview', ejeOriginal: eje, puntos: eje, calleCurvaAlpha: draftCalleCurvaAlpha };
+    const geo = arq2_buildCalleCurvaGeometry(eje, arq2CalleCurvaAncho, draftCalleCurvaAlpha);
+    if (!geo) return { id: arq2TempLineId, tipo: 'calle-curva-arq2-preview', ejeOriginal: eje, puntos: eje, calleCurvaAlpha: draftCalleCurvaAlpha };
+    return { id: arq2TempLineId, tipo: 'calle-curva-arq2-preview', ejeOriginal: geo.ejeOriginal, puntosSuavizados: geo.puntosSuavizados, ancho: geo.ancho, calleCurvaAlpha: geo.calleCurvaAlpha, left: geo.left, right: geo.right, puntos: geo.fillPoly };
 }
 function arq2_syncCalleCurvaPanelUI() {
     const valEl = document.getElementById('arq2-calle-ancho-val');
     const slider = document.getElementById('arq2-calle-ancho');
     const bar = document.getElementById('arq2-calle-width-preview-bar');
+    const alphaEl = document.getElementById('arq2-calle-alpha');
+    const alphaVal = document.getElementById('arq2-calle-alpha-val');
     if (slider) slider.value = arq2CalleCurvaAncho;
     if (valEl) valEl.textContent = arq2CalleCurvaAncho.toFixed(1);
-    if (bar) bar.style.width = Math.max(8, Math.min(100, ((arq2CalleCurvaAncho - 4) / 11) * 100)) + '%';
+    if (bar) {
+        bar.style.width = Math.max(8, Math.min(100, ((arq2CalleCurvaAncho - 4) / 11) * 100)) + '%';
+        bar.style.opacity = String(draftCalleCurvaAlpha);
+    }
+    if (alphaEl) alphaEl.value = draftCalleCurvaAlpha;
+    if (alphaVal) alphaVal.textContent = Math.round(draftCalleCurvaAlpha * 100) + '%';
+}
+function arq2_bindCalleCurvaAlphaSlider() {
+    const alphaEl = document.getElementById('arq2-calle-alpha');
+    if (!alphaEl || alphaEl.dataset.bound === '1') return;
+    alphaEl.dataset.bound = '1';
+    alphaEl.addEventListener('input', (e) => {
+        draftCalleCurvaAlpha = Math.max(0.15, Math.min(1, parseFloat(e.target.value) || 0.55));
+        arq2_syncCalleCurvaPanelUI();
+        syncSVGElements();
+        updateSVGPaths();
+    });
 }
 function arq2_ensurePanelExtras() {
     const row = document.querySelector('.arq2-tool-row');
@@ -2963,7 +3066,7 @@ function arq2_ensurePanelExtras() {
         const rowEl = document.createElement('div');
         rowEl.id = 'arq2-calle-curva-row';
         rowEl.className = 'arq2-calle-curva-row';
-        rowEl.innerHTML = '<label>Ancho calle <span id="arq2-calle-ancho-val">8.0</span></label><input type="range" id="arq2-calle-ancho" min="4" max="15" step="0.5" value="8"><div id="arq2-calle-width-preview"><div id="arq2-calle-width-preview-bar"></div></div>';
+        rowEl.innerHTML = '<label>Ancho calle <span id="arq2-calle-ancho-val">8.0</span></label><input type="range" id="arq2-calle-ancho" min="4" max="15" step="0.5" value="8"><div id="arq2-calle-width-preview"><div id="arq2-calle-width-preview-bar"></div></div><label>Transparencia <span id="arq2-calle-alpha-val">55%</span></label><input type="range" id="arq2-calle-alpha" min="0.15" max="1" step="0.05" value="0.55">';
         document.getElementById('arq2-smooth-row')?.insertAdjacentElement('afterend', rowEl);
         document.getElementById('arq2-calle-ancho')?.addEventListener('input', (e) => {
             arq2CalleCurvaAncho = Math.max(4, Math.min(15, parseFloat(e.target.value) || 8));
@@ -2971,6 +3074,14 @@ function arq2_ensurePanelExtras() {
             syncSVGElements();
             updateSVGPaths();
         });
+        arq2_bindCalleCurvaAlphaSlider();
+    } else if (!document.getElementById('arq2-calle-alpha') && document.getElementById('arq2-calle-curva-row')) {
+        const alphaWrap = document.createElement('div');
+        alphaWrap.innerHTML = '<label>Transparencia <span id="arq2-calle-alpha-val">55%</span></label><input type="range" id="arq2-calle-alpha" min="0.15" max="1" step="0.05" value="0.55">';
+        document.getElementById('arq2-calle-curva-row')?.appendChild(alphaWrap);
+        arq2_bindCalleCurvaAlphaSlider();
+    } else {
+        arq2_bindCalleCurvaAlphaSlider();
     }
     arq2_syncCalleCurvaPanelUI();
 }
@@ -4255,6 +4366,7 @@ function updateSVGPaths() {
             cacheObj.base[2].setAttribute('d', projected.dRight || 'M -999 -999');
             if (cacheObj.base[3]) cacheObj.base[3].setAttribute('d', projected.capStart || 'M -999 -999');
             if (cacheObj.base[4]) cacheObj.base[4].setAttribute('d', projected.capEnd || 'M -999 -999');
+            arq2_applyCalleCurvaFillStyle(cacheObj.base[0], projected.calleCurvaAlpha ?? geoLine.calleCurvaAlpha);
             return;
         }
         if ((lineData.tipo === 'lote-organico' || lineData.tipo === 'fila-variable-lote') && cacheObj.base && cacheObj.base.length >= 2) {
