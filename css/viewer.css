@@ -460,8 +460,11 @@ body.is-touch-device .arq2-panel { backdrop-filter: none; background: rgba(9, 11
 #arq2-snap-magnet.arq2-snap-pulse { animation: arq2Pulse 1.2s infinite; }
 @keyframes arq2Pulse { 0% { r: 6; opacity: 0.8; } 100% { r: 10.8; opacity: 0; } }
 #layer-arq2-feedback { pointer-events: none; }
-g.lote-organico path.linea-solida, g.fila-variable-lote path.linea-solida { fill: rgba(16, 185, 129, 0.16) !important; fill-opacity: 1 !important; stroke: #ffffff !important; stroke-width: 2 !important; vector-effect: non-scaling-stroke; }
-.linea-punteada-costura { fill: none !important; stroke: rgba(255,255,255,0.75); stroke-width: 2; stroke-dasharray: 3 5; vector-effect: non-scaling-stroke; pointer-events: none; }
+g.lote-organico, g.fila-variable-lote { isolation: isolate; mix-blend-mode: normal; }
+g.lote-organico path.linea-solida, g.fila-variable-lote path.linea-solida { fill: rgba(16, 185, 129, 0.16) !important; fill-opacity: 1 !important; stroke: #ffffff !important; stroke-width: 2 !important; vector-effect: non-scaling-stroke; mix-blend-mode: normal; }
+.linea-punteada-costura { fill: none !important; stroke: rgba(255,255,255,0.75); stroke-width: 2; vector-effect: non-scaling-stroke; pointer-events: none; mix-blend-mode: normal; }
+.linea-punteada-costura[data-costura-style="punteada"] { stroke-dasharray: 6,6; }
+.linea-punteada-costura[data-costura-style="solida"], .linea-solida-costura[data-costura-style="solida"] { stroke-dasharray: none; }
 .arq2-smooth-row { display: flex; align-items: center; gap: 8px; margin: 0 0 10px; font-size: 11px; color: #cbd5e1; cursor: pointer; }
 .arq2-smooth-row input { accent-color: #10b981; }
 .arq2-fila-direction-warn { display: none; margin: 0 0 8px; padding: 6px 10px; border-radius: 8px; font-size: 11px; font-weight: 700; color: #fecaca; background: rgba(127,29,29,0.85); border: 1px solid rgba(239,68,68,0.45); }
@@ -474,7 +477,8 @@ g.lote-organico path.linea-solida, g.fila-variable-lote path.linea-solida { fill
 .arq2-style-btn.active { background: rgba(245,158,11,0.22); border-color: rgba(245,158,11,0.55); color: #fde68a; font-weight: 700; }
 .arq2-context-btn { display: none; width: 100%; margin: 0 0 10px; padding: 8px 10px; font-size: 11px; font-weight: 600; border-radius: 8px; border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.08); color: #e2e8f0; cursor: pointer; }
 .arq2-demo-replay-btn { color: #fde68a; border-color: rgba(245,158,11,0.35); }
-.linea-solida-costura { fill: none !important; stroke: rgba(255,255,255,0.9); stroke-width: 2; vector-effect: non-scaling-stroke; pointer-events: none; }
+.linea-solida-costura { fill: none !important; stroke: rgba(255,255,255,0.9); stroke-width: 2; vector-effect: non-scaling-stroke; pointer-events: none; mix-blend-mode: normal; }
+.vertex-marker.origin-vertex.origin-vertex-ready { transform: scale(1.5); transform-origin: center center; }
 g.lote-organico.arq2-costura-selected path.linea-solida { stroke: #06b6d4; stroke-width: 2.5; }
 #arq2-demo-layer { pointer-events: none; }
 .arq2-demo-root { transform-origin: center; transition: opacity 0.8s ease, transform 0.8s ease; }

@@ -306,7 +306,88 @@ function revealLoteoOverlay() {
     const renderer = visor360.getRenderer && visor360.getRenderer();
     if (renderer) hookRendererOverlay(renderer);
 }
-const DEFAULT_HFOV = 125, MAX_SCALE = 1.0, MIN_SCALE = 0.20, SNAP_DISTANCE = 8.0; 
+const DEFAULT_HFOV = 125, MAX_SCALE = 1.0, MIN_SCALE = 0.20, SNAP_DISTANCE = 8.0;
+let lastDevDrawClickMs = 0, lastArq2DrawClickMs = 0, closeOriginHighlighted = false;
+
+function getCloseSnapScreenRadiusPx() {
+    const hfov = visor360?.getHfov?.() || DEFAULT_HFOV;
+    return Math.max(6, Math.min(16, 10 / (100 / hfov)));
+}
+function getCloseSnapPanoramaThreshold() {
+    const hfov = visor360?.getHfov?.() || DEFAULT_HFOV;
+    return Math.max(1.0, SNAP_DISTANCE * 0.22 * (hfov / DEFAULT_HFOV));
+}
+function canTriggerPolygonAutoClose() {
+    const last = isArquitecto2Active ? lastArq2DrawClickMs : lastDevDrawClickMs;
+    return Date.now() - last >= 300;
+}
+function isNearPolygonOriginPY(p, y, originPt) {
+    if (!originPt) return false;
+    const proj = getPanoramaScreenProjector();
+    if (proj && visor360) {
+        const s0 = proj.toScreen(originPt[0], originPt[1]);
+        const s1 = proj.toScreen(p, y);
+        if (s0 && s1) {
+            const dScreen = Math.hypot(s0[0] - s1[0], s0[1] - s1[1]);
+            if (dScreen < getCloseSnapScreenRadiusPx()) return true;
+        }
+    }
+    return Math.hypot(p - originPt[0], y - originPt[1]) < getCloseSnapPanoramaThreshold();
+}
+function arq2_isValidPYPoint(pt) {
+    return Array.isArray(pt) && pt.length >= 2 && isFinite(pt[0]) && isFinite(pt[1]) && !isNaN(pt[0]) && !isNaN(pt[1]);
+}
+function arq2_sanitizePolylinePoints(pts) {
+    if (!pts?.length) return [];
+    const out = [];
+    pts.forEach(pt => {
+        if (!arq2_isValidPYPoint(pt)) return;
+        if (out.length && Math.hypot(pt[0] - out[out.length - 1][0], pt[1] - out[out.length - 1][1]) < 1e-6) return;
+        out.push([parseFloat(pt[0]), parseFloat(pt[1])]);
+    });
+    return out;
+}
+function arq2_restoreAnchoredVertices(smoothed, anchors, tol = 0.06) {
+    if (!anchors?.length || !smoothed?.length) return smoothed;
+    return smoothed.map((pt, i) => {
+        if (i >= anchors.length) return pt;
+        const a = anchors[i];
+        if (Math.hypot(pt[0] - a[0], pt[1] - a[1]) < tol) return [parseFloat(a[0].toFixed(4)), parseFloat(a[1].toFixed(4))];
+        return pt;
+    });
+}
+function arq2_mergeSharedBoundaryVertices(lineId) {
+    const line = allDrawnLines.find(l => l.id === lineId);
+    if (!line?.puntos || !line.sharedSegs?.length) return;
+    line.sharedSegs.forEach(segIdx => {
+        const meta = line.sharedSegMeta?.[segIdx];
+        if (!meta?.lineId) return;
+        const other = allDrawnLines.find(l => l.id === meta.lineId);
+        if (!other?.puntos) return;
+        const n = line.puntos.length, on = other.puntos.length;
+        const i1 = segIdx, i2 = (segIdx + 1) % n;
+        const j1 = meta.segIdx, j2 = (meta.segIdx + 1) % on;
+        const mid1 = [(line.puntos[i1][0] + other.puntos[j1][0]) / 2, (line.puntos[i1][1] + other.puntos[j1][1]) / 2];
+        const mid2 = [(line.puntos[i2][0] + other.puntos[j2][0]) / 2, (line.puntos[i2][1] + other.puntos[j2][1]) / 2];
+        line.puntos[i1] = [parseFloat(mid1[0].toFixed(4)), parseFloat(mid1[1].toFixed(4))];
+        line.puntos[i2] = [parseFloat(mid2[0].toFixed(4)), parseFloat(mid2[1].toFixed(4))];
+        other.puntos[j1] = [...line.puntos[i1]];
+        other.puntos[j2] = [...line.puntos[i2]];
+    });
+}
+function arq2_applyCosturaStrokeAttrs(pathEl, style) {
+    if (!pathEl) return;
+    const isPunteada = style !== 'solida';
+    pathEl.setAttribute('stroke-dasharray', isPunteada ? '6,6' : 'none');
+    pathEl.setAttribute('data-shared-edge', 'true');
+    pathEl.setAttribute('data-costura-style', isPunteada ? 'punteada' : 'solida');
+}
+function updateCloseOriginHighlight(active) {
+    closeOriginHighlighted = !!active;
+    document.querySelectorAll('.vertex-marker.origin-vertex, .vertex-marker.origin-vertex-ready').forEach(el => {
+        el.classList.toggle('origin-vertex-ready', closeOriginHighlighted);
+    });
+}
 
 function intersectSegments(p0, p1, p2, p3) {
     let s1_x = p1[0] - p0[0], s1_y = p1[1] - p0[1]; let s2_x = p3[0] - p2[0], s2_y = p3[1] - p2[1];
@@ -1715,8 +1796,8 @@ function updateDrawModeSnap(mock, coords) {
             }
         }
         if (currentLinePoints.length >= 3 && currentLineType !== 'cortar' && currentLineType !== 'eraser' && currentLineType !== 'divisoria' && currentLineType !== 'franja') {
-            const dP0 = Math.hypot(coords[0] - currentLinePoints[0][0], coords[1] - currentLinePoints[0][1]);
-            if (dP0 < SNAP_DISTANCE) { foundSnap = true; snappedCoords = [...currentLinePoints[0]]; isSnapToClose = true; }
+            const nearOrigin = isNearPolygonOriginPY(coords[0], coords[1], currentLinePoints[0]);
+            if (nearOrigin && canTriggerPolygonAutoClose()) { foundSnap = true; snappedCoords = [...currentLinePoints[0]]; isSnapToClose = true; }
         }
         if (!foundSnap) {
             const allPts = [...currentLinePoints];
@@ -1743,6 +1824,7 @@ function updateDrawModeSnap(mock, coords) {
     } else {
         snapCursor.classList.remove('active', 'is-closing', 'is-calle-edge', 'is-calle-finish', 'is-costura');
     }
+    updateCloseOriginHighlight(isSnapToClose && currentLineType !== 'calle');
 }
 function handleCalleDrawClick(mock) {
     const coords = visor360.mouseEventToCoords(mock);
@@ -2310,8 +2392,8 @@ function commitFranjaFromModal() {
         const N = Math.max(1, Math.min(40, parseInt(document.getElementById('franja-modal-count')?.value, 10) || 4));
         const weights = getFranjaModalWeights();
         if (weights.length !== N) { alert('⚠️ Actualiza la lista para coincidir.'); return; }
-        closeFranjaLotesModal();
         arq2_commitFilaVariable(weights);
+        closeFranjaLotesModal();
         return;
     }
     const pending = franjaPendingCreate;
@@ -2381,17 +2463,21 @@ function arq2_applyOrganicPathAttrs(pathEl, role) {
         pathEl.setAttribute('stroke', '#ffffff');
         pathEl.setAttribute('stroke-width', '2');
         pathEl.style.pointerEvents = 'auto';
+        pathEl.style.mixBlendMode = 'normal';
     } else if (role === 'dash') {
         pathEl.setAttribute('fill', 'none');
         pathEl.setAttribute('stroke', '#ffffff');
         pathEl.setAttribute('stroke-width', '2');
-        pathEl.setAttribute('stroke-dasharray', '3 5');
+        pathEl.setAttribute('stroke-dasharray', '6,6');
         pathEl.style.pointerEvents = 'none';
+        pathEl.style.mixBlendMode = 'normal';
     } else if (role === 'shared-solid') {
         pathEl.setAttribute('fill', 'none');
         pathEl.setAttribute('stroke', '#ffffff');
         pathEl.setAttribute('stroke-width', '2');
+        pathEl.setAttribute('stroke-dasharray', 'none');
         pathEl.style.pointerEvents = 'none';
+        pathEl.style.mixBlendMode = 'normal';
     } else if (role === 'preview') {
         pathEl.setAttribute('fill', 'rgba(16,185,129,0.10)');
         pathEl.setAttribute('stroke', '#10b981');
@@ -2428,7 +2514,10 @@ function arq2_projectPolylineD(pts, isClosed, getCamFn, cx, cySc, f) {
         else { const t = c1.z / (c1.z - c2.z); s1 = { x: cx + ((c1.x + t * (c2.x - c1.x)) / 0.0001) * f, y: cySc - ((c1.y + t * (c2.y - c1.y)) / 0.0001) * f }; }
         if (c2.z > 0.0001) { s2 = { x: cx + (c2.x / c2.z) * f, y: cySc - (c2.y / c2.z) * f }; hasVisible = true; }
         else { const t = c2.z / (c2.z - c1.z); s2 = { x: cx + ((c2.x + t * (c1.x - c2.x)) / 0.0001) * f, y: cySc - ((c2.y + t * (c1.y - c2.y)) / 0.0001) * f }; }
-        if (isNaN(s1.x) || isNaN(s2.x)) continue;
+        if (isNaN(s1.x) || isNaN(s1.y) || isNaN(s2.x) || isNaN(s2.y)) {
+            console.warn('[Fila Variable] Punto de proyección inválido', { p1, p2, s1, s2 });
+            continue;
+        }
         if (d === '') d += `M ${s1.x},${s1.y} L ${s2.x},${s2.y} `;
         else { if (c1.z <= 0.0001) d += `M ${s1.x},${s1.y} `; d += `L ${s2.x},${s2.y} `; }
     }
@@ -2645,6 +2734,12 @@ function arq2_refreshFeedbackVisuals(mock) {
     } else if (magnet) { magnet.style.display = 'none'; magnet.classList.remove('arq2-snap-pulse'); }
     arq2_updateLiveCounter(mock);
     arq2_updatePanelStep();
+    const pts = arq2_getActiveDrawPoints();
+    if (mock && pts.length >= 3 && visor360) {
+        const coords = visor360.mouseEventToCoords(mock);
+        const near = coords && isNearPolygonOriginPY(coords[0], coords[1], pts[0]) && canTriggerPolygonAutoClose();
+        updateCloseOriginHighlight(!!near);
+    } else updateCloseOriginHighlight(false);
 }
 function arq2_catmullRomSmooth(points, segmentsPerCurve = 8) {
     if (!points || points.length < 3) return points ? points.map(p => [...p]) : [];
@@ -2789,7 +2884,11 @@ function arq2_buildFilaInternalDivisions(ejeFrente, ejeFondo, weights) {
     for (let i = 1; i < cum.length - 1; i++) {
         const tp = getPointAlongPolyline(ejeFrente, cum[i]);
         const bp = getPointAlongPolyline(ejeFondo, cum[i]);
-        if (tp && bp) divs.push([[...tp], [...bp]]);
+        if (!arq2_isValidPYPoint(tp) || !arq2_isValidPYPoint(bp)) {
+            console.warn('[Fila Variable] División inválida en t=' + cum[i], { tp, bp, ejeFrente, ejeFondo });
+            continue;
+        }
+        divs.push([[...tp], [...bp]]);
     }
     return divs;
 }
@@ -2810,7 +2909,11 @@ function arq2_computeFilaLotCentroids(ejeFrente, ejeFondo, weights) {
 }
 function arq2_finishFilaContour() {
     if (arq2LinePoints.length < 4) { alert('⚠ Dibuja al menos 4 puntos para el contorno completo de la hilera.'); return; }
-    arq2FilaVariableContorno = arq2_adaptiveSmooth([...arq2LinePoints], 8);
+    const raw = arq2_sanitizePolylinePoints([...arq2LinePoints]);
+    if (raw.length < 4) { alert('⚠ Contorno inválido. Usa 4–6 vértices bien definidos.'); return; }
+    arq2FilaVariableContorno = arq2SmoothCurves ? arq2_adaptiveSmooth(raw, 8) : raw;
+    arq2FilaVariableContorno = arq2_sanitizePolylinePoints(arq2FilaVariableContorno);
+    if (arq2FilaVariableContorno.length < 4) { alert('⚠ No se pudo generar la fila. Intenta con un contorno más simple (4-6 puntos) y vuelve a intentar.'); return; }
     arq2PendingFila = { contorno: [...arq2FilaVariableContorno] };
     arq2LinePoints = [];
     arq2TempLineId = 'arq2_temp_' + Date.now();
@@ -3307,8 +3410,12 @@ function arq2_buildSegmentPaths(pts, sharedSegs, isClosed, getCamFn, cx, cySc, f
 }
 function arq2_finishLoteOrganico(rawPoints, useCostura) {
     if (!rawPoints || rawPoints.length < 3) return;
-    const snapped = useCostura ? arq2_snapVerticesToExisting(rawPoints) : rawPoints.map(p => [...p]);
-    const smoothed = arq2_adaptiveSmooth(snapped, 8);
+    const snappedRaw = useCostura ? arq2_snapVerticesToExisting(rawPoints) : rawPoints.map(p => [...p]);
+    const anchors = snappedRaw.map(p => [...p]);
+    let smoothed = arq2_adaptiveSmooth(snappedRaw, 8);
+    if (useCostura) smoothed = arq2_restoreAnchoredVertices(smoothed, anchors, 0.06);
+    smoothed = arq2_sanitizePolylinePoints(smoothed);
+    if (smoothed.length < 3) return;
     const id = 'arq2_org_' + Date.now();
     const entry = { id, tipo: 'lote-organico', puntos: smoothed, sharedSegs: [], sharedSegStyles: {}, sharedSegMeta: {} };
     if (useCostura) entry.costuraStyle = arq2CosturaStyle || 'punteada';
@@ -3317,6 +3424,7 @@ function arq2_finishLoteOrganico(rawPoints, useCostura) {
     if (useCostura) {
         arq2_weldVerticesToNeighbors(id);
         arq2_registerSharedEdges(id);
+        arq2_mergeSharedBoundaryVertices(id);
     }
     arq2_clearDraft();
     refreshAllHotspots(true);
@@ -3324,29 +3432,45 @@ function arq2_finishLoteOrganico(rawPoints, useCostura) {
     flashScreenSuccess();
     arq2_setStatusText('Lote ' + entry.arq2Numero + ' guardado ✓');
 }
-function arq2_tryClosePolygon(isDblClick) {
-    if (arq2Tool === 'fila-variable') {
-        if (arq2LinePoints.length < 4) return false;
-        const d0 = Math.hypot(arq2LinePoints[0][0] - arq2LinePoints[arq2LinePoints.length - 1][0], arq2LinePoints[0][1] - arq2LinePoints[arq2LinePoints.length - 1][1]);
-        if (isDblClick || d0 < SNAP_DISTANCE) { arq2_finishFilaContour(); return true; }
-        return false;
-    }
-    if (arq2LinePoints.length < 3) return false;
-    let d0 = Math.hypot(arq2LinePoints[0][0] - arq2LinePoints[arq2LinePoints.length - 1][0], arq2LinePoints[0][1] - arq2LinePoints[arq2LinePoints.length - 1][1]);
-    if (isDblClick || d0 < SNAP_DISTANCE) {
-        arq2_finishLoteOrganico([...arq2LinePoints], arq2Tool === 'costura');
-        return true;
-    }
-    return false;
+function arq2_shouldAutoCloseAt(p, y, isDblClick) {
+    const pts = arq2_getActiveDrawPoints();
+    const minPts = arq2Tool === 'fila-variable' ? 4 : 3;
+    if (pts.length < minPts) return false;
+    if (!isNearPolygonOriginPY(p, y, pts[0])) return false;
+    return isDblClick || canTriggerPolygonAutoClose();
+}
+function arq2_tryClosePolygon(isDblClick, p, y) {
+    const pts = arq2LinePoints;
+    const minPts = arq2Tool === 'fila-variable' ? 4 : 3;
+    if (pts.length < minPts) return false;
+    if (p == null || y == null) return false;
+    if (!arq2_shouldAutoCloseAt(p, y, isDblClick)) return false;
+    if (arq2Tool === 'fila-variable') arq2_finishFilaContour();
+    else arq2_finishLoteOrganico([...pts], arq2Tool === 'costura');
+    return true;
 }
 function arq2_commitFilaVariable(weights) {
     if (!arq2PendingFila?.contorno || !weights?.length) return;
-    const contorno = arq2PendingFila.contorno;
+    const contorno = arq2_sanitizePolylinePoints(arq2PendingFila.contorno);
+    if (contorno.length < 4) {
+        alert('No se pudo generar la fila. Intenta con un contorno más simple (4-6 puntos) y vuelve a intentar.');
+        return;
+    }
     const axes = arq2_detectEjeYFondo(contorno);
     if (!axes) { alert('⚠ No se pudo detectar frente y fondo del contorno. Usa al menos 4 vértices bien definidos.'); return; }
     const { ejeFrente, ejeFondo } = axes;
+    const frontLen = getPolylineLength(ejeFrente), backLen = getPolylineLength(ejeFondo);
+    if (frontLen < 1e-6 || backLen < 1e-6) {
+        console.warn('[Fila Variable] Ejes con longitud cero', { ejeFrente, ejeFondo, contorno });
+        alert('No se pudo generar la fila. Intenta con un contorno más simple (4-6 puntos) y vuelve a intentar.');
+        return;
+    }
     const divs = arq2_buildFilaInternalDivisions(ejeFrente, ejeFondo, weights);
     const lotCentroids = arq2_computeFilaLotCentroids(ejeFrente, ejeFondo, weights);
+    if (contorno.length < 3 || !lotCentroids.length) {
+        alert('No se pudo generar la fila. Intenta con un contorno más simple (4-6 puntos) y vuelve a intentar.');
+        return;
+    }
     const gid = 'arq2_fila_' + Date.now();
     allDrawnLines.push({
         id: gid,
@@ -3361,12 +3485,15 @@ function arq2_commitFilaVariable(weights) {
         loteStatus: 'disponible'
     });
     divs.forEach((pts, idx) => {
+        if (!pts?.length || !arq2_isValidPYPoint(pts[0]) || !arq2_isValidPYPoint(pts[1])) return;
         allDrawnLines.push({ id: gid + '_div_' + (idx + 1), tipo: 'divisoria', puntos: pts, arq2Grupo: gid, franjaGrupo: gid });
     });
     arq2_registerSharedEdges(gid);
+    arq2_mergeSharedBoundaryVertices(gid);
     arq2PendingFila = null;
     arq2FilaVariableContorno = null;
     arq2_clearDraft();
+    syncSVGElements();
     refreshAllHotspots(true);
     saveToLocal();
     flashScreenSuccess();
@@ -3396,7 +3523,12 @@ function arq2_onPanoramaClick(mock, isDblClick) {
     if (document.getElementById('franja-lotes-modal')?.classList.contains('open')) return;
     const coords = visor360.mouseEventToCoords(mock);
     if (!coords || isNaN(coords[0])) return;
-    if (isDblClick) { if (arq2_tryClosePolygon(true)) return; }
+    let p = parseFloat(coords[0].toFixed(3)), y = parseFloat(coords[1].toFixed(3));
+    if (arq2CosturaSnap) {
+        p = parseFloat(arq2CosturaSnap.pitch.toFixed(3));
+        y = parseFloat(arq2CosturaSnap.yaw.toFixed(3));
+    }
+    if (arq2_tryClosePolygon(isDblClick, p, y)) { lastArq2DrawClickMs = Date.now(); return; }
     if (arq2Tool === 'costura' && arq2LinePoints.length === 0 && !arq2CosturaSnap) {
         const selId = findClosestLineAtScreen(mock.clientX, mock.clientY, 28);
         const sel = selId && allDrawnLines.find(l => l.id === selId);
@@ -3405,23 +3537,11 @@ function arq2_onPanoramaClick(mock, isDblClick) {
             return;
         }
     }
-    let p = parseFloat(coords[0].toFixed(3)), y = parseFloat(coords[1].toFixed(3));
-    if (arq2CosturaSnap) {
-        p = parseFloat(arq2CosturaSnap.pitch.toFixed(3));
-        y = parseFloat(arq2CosturaSnap.yaw.toFixed(3));
-    }
     if (arq2Tool === 'fila-variable' && arq2LinePoints.length === 0) arq2_stopDemoAnimation();
     arq2SelectedLineId = null;
     document.querySelectorAll('.arq2-costura-selected').forEach(g => g.classList.remove('arq2-costura-selected'));
-    if (arq2LinePoints.length >= 3 && arq2Tool !== 'fila-variable') {
-        const d0 = Math.hypot(p - arq2LinePoints[0][0], y - arq2LinePoints[0][1]);
-        if (d0 < SNAP_DISTANCE) { arq2_finishLoteOrganico([...arq2LinePoints], arq2Tool === 'costura'); return; }
-    }
-    if (arq2Tool === 'fila-variable' && arq2LinePoints.length >= 4) {
-        const d0 = Math.hypot(p - arq2LinePoints[0][0], y - arq2LinePoints[0][1]);
-        if (d0 < SNAP_DISTANCE) { arq2_finishFilaContour(); return; }
-    }
     arq2LinePoints.push([p, y]);
+    lastArq2DrawClickMs = Date.now();
     arq2_refreshFeedbackVisuals(mock);
     refreshAllHotspots(true);
     syncSVGElements();
@@ -3454,11 +3574,15 @@ function arq2_setup() {
     });
     document.getElementById('arq2-costura-punteada')?.addEventListener('click', () => {
         arq2CosturaStyle = 'punteada';
+        if (arq2SelectedLineId) arq2_setCosturaStyleForLine(arq2SelectedLineId, 'punteada');
         arq2_updatePanelStep();
+        updateSVGPaths();
     });
     document.getElementById('arq2-costura-solida')?.addEventListener('click', () => {
         arq2CosturaStyle = 'solida';
+        if (arq2SelectedLineId) arq2_setCosturaStyleForLine(arq2SelectedLineId, 'solida');
         arq2_updatePanelStep();
+        updateSVGPaths();
     });
     document.getElementById('arq2-costura-toggle-selected')?.addEventListener('click', arq2_toggleSelectedCosturaStyle);
     document.getElementById('arq2-fila-demo-replay')?.addEventListener('click', () => arq2_startDemoAnimation(true));
@@ -3480,10 +3604,14 @@ function shouldClosePolygonLine(lineId, lineData) {
 // --- MOTOR GEOMÉTRICO FRANJA CURVA ---
 function getPolylineLength(pts) { let len = 0; for (let i = 0; i < pts.length - 1; i++) len += Math.hypot(pts[i+1][0] - pts[i][0], pts[i+1][1] - pts[i][1]); return len; }
 function getPointAlongPolyline(pts, t) {
+    if (!pts || pts.length < 2) return pts?.[0] ? [...pts[0]] : null;
     if (t <= 0) return [...pts[0]]; if (t >= 1) return [...pts[pts.length - 1]];
-    const target = getPolylineLength(pts) * t; let acc = 0;
+    const totalLen = getPolylineLength(pts);
+    if (totalLen < 1e-8) return [...pts[0]];
+    const target = totalLen * t; let acc = 0;
     for (let i = 0; i < pts.length - 1; i++) {
         const d = Math.hypot(pts[i+1][0] - pts[i][0], pts[i+1][1] - pts[i][1]);
+        if (d < 1e-10) continue;
         if (acc + d >= target) { const segT = (target - acc) / d; return [pts[i][0] + (pts[i+1][0] - pts[i][0]) * segT, pts[i][1] + (pts[i+1][1] - pts[i][1]) * segT]; }
         acc += d;
     }
@@ -3733,6 +3861,8 @@ function syncSVGElements() {
                 g.dataset.lineId = line.id;
                 g.dataset.tipo = line.tipo;
                 g.classList.add('lote-interactivo', line.tipo === 'lote-organico' ? 'lote-organico' : 'fila-variable-lote');
+                g.style.isolation = 'isolate';
+                g.style.mixBlendMode = 'normal';
                 g.setAttribute('data-status', line.loteStatus || 'disponible');
                 const pSolid = document.createElementNS("http://www.w3.org/2000/svg", "path");
                 pSolid.setAttribute("class", "linea-solida");
@@ -3791,6 +3921,8 @@ function syncSVGElements() {
                     const pBase = gNode.querySelector('path');
                     if (pBase) pBase.setAttribute('class', getPathClassForLine(line));
                     if (line.tipo === 'lote-organico' || line.tipo === 'fila-variable-lote') {
+                        gNode.style.isolation = 'isolate';
+                        gNode.style.mixBlendMode = 'normal';
                         let paths = Array.from(gNode.querySelectorAll('path'));
                         if (paths.length < 3) {
                             const pSolidEdge = document.createElementNS("http://www.w3.org/2000/svg", "path");
@@ -3800,8 +3932,8 @@ function syncSVGElements() {
                             paths = Array.from(gNode.querySelectorAll('path'));
                         }
                         if (paths[0]) arq2_applyOrganicPathAttrs(paths[0], 'solid');
-                        if (paths[1]) { paths[1].setAttribute('class', 'linea-punteada-costura'); arq2_applyOrganicPathAttrs(paths[1], 'dash'); }
-                        if (paths[2]) { paths[2].setAttribute('class', 'linea-solida-costura'); arq2_applyOrganicPathAttrs(paths[2], 'shared-solid'); }
+                        if (paths[1]) { paths[1].setAttribute('class', 'linea-punteada-costura'); arq2_applyCosturaStrokeAttrs(paths[1], 'punteada'); }
+                        if (paths[2]) { paths[2].setAttribute('class', 'linea-solida-costura'); arq2_applyOrganicPathAttrs(paths[2], 'shared-solid'); arq2_applyCosturaStrokeAttrs(paths[2], 'solida'); }
                     }
                     bindSvgEraser(gNode, line.id);
                     if (pBase) bindSvgEraser(pBase, line.id);
@@ -3839,11 +3971,12 @@ function updateSVGPaths() {
             cacheObj.base[1].setAttribute('d', shared.dPunteada.trim() || 'M -999 -999');
             cacheObj.base[1].setAttribute('class', 'linea-punteada-costura');
             arq2_applyOrganicPathAttrs(cacheObj.base[0], 'solid');
-            arq2_applyOrganicPathAttrs(cacheObj.base[1], 'dash');
+            arq2_applyCosturaStrokeAttrs(cacheObj.base[1], 'punteada');
             if (cacheObj.base[2]) {
                 cacheObj.base[2].setAttribute('d', shared.dSolida.trim() || 'M -999 -999');
                 cacheObj.base[2].setAttribute('class', 'linea-solida-costura');
                 arq2_applyOrganicPathAttrs(cacheObj.base[2], 'shared-solid');
+                arq2_applyCosturaStrokeAttrs(cacheObj.base[2], 'solida');
             }
             return;
         }
@@ -4066,7 +4199,7 @@ function bindPanoramaPointerEvents() {
             }
             if (isDevModeDrawActive) {
                 if (currentLineType === 'calle') { handleCalleDrawClick(mock); return; }
-                const coords = visor360.mouseEventToCoords(mock); if (!coords) return; let p = coords[0], y = coords[1]; let isClosingShape = false;
+                const coords = visor360.mouseEventToCoords(mock); if (!coords) return; let p = coords[0], y = coords[1];
                 if (currentLineType === 'cortar') {
                     currentLinePoints.push([p, y]);
                     if (currentLinePoints.length === 2) {
@@ -4078,9 +4211,11 @@ function bindPanoramaPointerEvents() {
                     } return;
                 }
                 if (snappedCoords) { p = snappedCoords[0]; y = snappedCoords[1]; }
-                if (currentLineType !== 'calle' && currentLineType !== 'franja_curva' && currentLinePoints.length >= 3) { let dOrg = Math.sqrt(Math.pow(p-currentLinePoints[0][0],2)+Math.pow(y-currentLinePoints[0][1],2)); if (dOrg < SNAP_DISTANCE) isClosingShape = true; }
-                if (!isClosingShape && currentLineType !== 'calle' && currentLineType !== 'franja_curva' && snappedCoords && currentLinePoints.length >= 2 && Math.abs(p-currentLinePoints[0][0]) < 0.01 && Math.abs(y-currentLinePoints[0][1]) < 0.01) isClosingShape = true;
-                if (isClosingShape) { anclarTrazoActivo(); } else { currentLinePoints.push([p, y]); let _hid = 'temp_base_pt_'+Date.now(); visor360.addHotSpot({ pitch: p, yaw: y, id: _hid, createTooltipFunc: renderHiddenVertex, createTooltipArgs: { lineId: currentTempLineId, type: currentLineType, isGuide: true, idx: currentLinePoints.length-1, hsId: _hid }, }); syncSVGElements(); updateSVGPaths(); }
+                let isClosingShape = false;
+                if (currentLineType !== 'calle' && currentLineType !== 'franja_curva' && currentLinePoints.length >= 3) {
+                    if (isNearPolygonOriginPY(p, y, currentLinePoints[0]) && canTriggerPolygonAutoClose()) isClosingShape = true;
+                }
+                if (isClosingShape) { lastDevDrawClickMs = Date.now(); anclarTrazoActivo(); } else { currentLinePoints.push([p, y]); lastDevDrawClickMs = Date.now(); let _hid = 'temp_base_pt_'+Date.now(); visor360.addHotSpot({ pitch: p, yaw: y, id: _hid, createTooltipFunc: renderHiddenVertex, createTooltipArgs: { lineId: currentTempLineId, type: currentLineType, isGuide: true, idx: currentLinePoints.length-1, hsId: _hid }, }); syncSVGElements(); updateSVGPaths(); }
             } else if (isDevModePinsActive && isLineaPinesActive && !pickedPin) {
                 if (e.target && e.target.closest('.qa-btn')) return;
                 handleLineaPinesClick(mock);
@@ -4709,6 +4844,10 @@ function renderHiddenVertex(hotSpotDiv, args) {
     if (!DOMCache.markers[args.lineId]) DOMCache.markers[args.lineId] = { base: [] }; DOMCache.markers[args.lineId].base[args.idx] = hotSpotDiv; 
     if (args.lineId === currentTempLineId) { hotSpotDiv.classList.add('drawing-node'); }
     if (args.lineId === currentTempLineId && args.idx === 0 && currentLinePoints.length >= 3 && currentLineType !== 'cortar' && currentLineType !== 'eraser') { hotSpotDiv.classList.add('origin-vertex'); }
+    if (args.lineId === arq2TempLineId && args.idx === 0 && arq2LinePoints.length >= 3 && isArquitecto2Active) { hotSpotDiv.classList.add('origin-vertex'); }
+    if (closeOriginHighlighted && ((args.lineId === currentTempLineId && args.idx === 0) || (args.lineId === arq2TempLineId && args.idx === 0))) {
+        hotSpotDiv.classList.add('origin-vertex-ready');
+    }
     if (args.lineId === currentTempLineId && currentLineType === 'calle' && args.idx === currentLinePoints.length - 1 && currentLinePoints.length >= 2) {
         hotSpotDiv.classList.add('calle-finish-vertex');
     }
