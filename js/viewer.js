@@ -511,6 +511,26 @@ function arq2_syncOrganicLotePaths(lineData, cacheObj, getCamFn, cx, cySc, f) {
         paths[1].setAttribute('d', 'M -999 -999');
         paths[1].style.cssText = 'display:none !important;';
 
+        // Special case: 2-point costura = simple dividing LINE (not a polygon)
+        if (lineData.puntos.length === 2) {
+            const p1 = lineData.puntos[0], p2 = lineData.puntos[1];
+            const c1 = getCamFn(p1[0], p1[1]), c2 = getCamFn(p2[0], p2[1]);
+            let lineD = 'M -999 -999';
+            if (c1.z > 0.0001 && c2.z > 0.0001) {
+                const s1x = cx + (c1.x / c1.z) * f, s1y = cySc - (c1.y / c1.z) * f;
+                const s2x = cx + (c2.x / c2.z) * f, s2y = cySc - (c2.y / c2.z) * f;
+                lineD = `M ${s1x},${s1y} L ${s2x},${s2y}`;
+            }
+            paths[0].setAttribute('d', 'M -999 -999');
+            paths[0].style.cssText = 'display:none;';
+            paths[2].setAttribute('d', lineD);
+            paths[2].style.cssText = 'fill:none !important; stroke:rgba(255,255,255,0.92) !important; stroke-width:2px !important; stroke-dasharray:6,6 !important; vector-effect:non-scaling-stroke; pointer-events:none;';
+            paths[2].setAttribute('data-costura-style', 'punteada');
+            paths[3].setAttribute('d', 'M -999 -999');
+            paths[3].style.cssText = 'stroke:none !important; fill:none !important;';
+            return;
+        }
+
         // Build ALL edges of this lot (pass null to include every segment)
         const dAllEdges = arq2_buildNonSharedEdgePaths(lineData.puntos, null, true, getCamFn, cx, cySc, f);
         const edgesD = dAllEdges.trim() || 'M -999 -999';
@@ -3628,8 +3648,10 @@ function arq2_findNearestEdgeOrVertex(screenX, screenY, excludeLineId, radiusPx 
     const proj = getPanoramaScreenProjector();
     if (!proj) return null;
     const sx = screenX - DOMCache.viewport.left, sy = screenY - DOMCache.viewport.top;
-    const effectiveRadius = Math.max(radiusPx, 25);
+    // Use only the provided radius (no forced minimum) so snap isn't too aggressive in tight areas
+    const effectiveRadius = Math.max(radiusPx, 14);
     let best = null, bestD = effectiveRadius;
+
     const tryPt = (pitch, yaw, meta) => {
         const sc = proj.toScreen(pitch, yaw);
         if (!sc) return;
@@ -3940,28 +3962,43 @@ function arq2_registerSharedEdges(newLineId) {
 
 function arq2_snapVerticesToExisting(points) {
     if (!points || !points.length) return points;
+    const proj = getPanoramaScreenProjector();
     return points.map(pt => {
-        let best = null, bestD = 0.05;
+        // Threshold: 0.15 degrees (3x more permissive than before)
+        let best = null, bestD = 0.15;
         allDrawnLines.forEach(line => {
             if (!arq2_isUniversalSnapTarget(line)) return;
+            let linePts;
             if (line.tipo === 'calle-curva-arq2' || line.tipo === 'calle-curva-arq2-preview') {
-                const borders = [line.left || [], line.right || []];
-                borders.forEach(border => {
-                    border.forEach(v => {
-                        const d = Math.hypot(pt[0] - v[0], pt[1] - v[1]);
-                        if (d < bestD) { bestD = d; best = v; }
-                    });
-                });
-                return;
+                linePts = [...(line.left || []), ...(line.right || [])];
+            } else {
+                linePts = arq2_getSewPolygonPoints(line);
             }
-            arq2_getSnapPolylinePoints(line).forEach(v => {
+            if (!linePts || linePts.length < 2) return;
+            // 1. Vertex snap
+            linePts.forEach(v => {
                 const d = Math.hypot(pt[0] - v[0], pt[1] - v[1]);
                 if (d < bestD) { bestD = d; best = v; }
             });
+            // 2. Edge snap (nearest point on any segment of this line)
+            const isClosed = (line.tipo === 'lote-organico' || line.tipo === 'fila-variable-lote');
+            const segN = isClosed ? linePts.length : linePts.length - 1;
+            for (let i = 0; i < segN; i++) {
+                const p1 = linePts[i], p2 = linePts[(i + 1) % linePts.length];
+                const dx = p2[0] - p1[0], dy = p2[1] - p1[1];
+                const len2 = dx * dx + dy * dy;
+                if (len2 < 1e-10) continue;
+                let t = ((pt[0] - p1[0]) * dx + (pt[1] - p1[1]) * dy) / len2;
+                t = Math.max(0, Math.min(1, t));
+                const nearX = p1[0] + t * dx, nearY = p1[1] + t * dy;
+                const d = Math.hypot(pt[0] - nearX, pt[1] - nearY);
+                if (d < bestD) { bestD = d; best = [nearX, nearY]; }
+            }
         });
         return best ? [parseFloat(best[0].toFixed(4)), parseFloat(best[1].toFixed(4))] : [...pt];
     });
 }
+
 function arq2_weldVerticesToNeighbors(lineId) {
     const nue = allDrawnLines.find(l => l.id === lineId);
     const nuePts = nue?.puntos;
@@ -4337,35 +4374,42 @@ function arq2_finishLoteOrganico(rawPoints, useCostura) {
     const minPts = useCostura ? 2 : 3;
     if (!rawPoints || rawPoints.length < minPts) return;
     // For costura, snap vertices to existing neighbor polygons but do NOT stitch to streets
-    // (stitching to streets causes floating when the camera moves)
     const snappedRaw = useCostura ? arq2_snapVerticesToExisting(rawPoints) : rawPoints.map(p => [...p]);
     const anchors = snappedRaw.map(p => [...p]);
     const smoothIntensity = arq2SmoothIntensity;
     let smoothed;
+
+    // Special case: 2-point costura = pure dividing LINE (no polygon, no fill)
+    if (useCostura && snappedRaw.length === 2) {
+        const id = 'arq2_org_' + Date.now();
+        const costuraEstiloGuardado = arq2CosturaStyle || 'punteada';
+        const entry = {
+            id, tipo: 'lote-organico',
+            puntos: snappedRaw.map(p => [...p]),
+            sharedSegs: [], sharedSegStyles: {}, sharedSegMeta: {},
+            costuraStyle: costuraEstiloGuardado,
+            costuraEstilo: costuraEstiloGuardado,
+            esDivisoria: true   // marks this as a 2-point dividing line
+        };
+        allDrawnLines.push(entry);
+        arq2_clearDraft();
+        refreshAllHotspots(true);
+        saveToLocal();
+        flashScreenSuccess();
+        arq2_setStatusText('Línea divisoria guardada ✓');
+        return;
+    }
+
     if (useCostura) {
-        if (snappedRaw.length === 2) {
-            // 2 points: create a minimal degenerate triangle so the polygon closes
-            // This represents the simplest internal division line
-            smoothed = [...snappedRaw];
-        } else {
-            // For costura (internal subdivisions): keep anchor points exact, minimal smoothing
-            smoothed = arq2_adaptiveSmooth(snappedRaw, null, Math.min(smoothIntensity, 2));
-            smoothed = arq2_restoreAnchoredVertices(smoothed, anchors, 0.04);
-        }
+        // For costura (internal subdivisions): keep anchor points exact, minimal smoothing
+        smoothed = arq2_adaptiveSmooth(snappedRaw, null, Math.min(smoothIntensity, 2));
+        smoothed = arq2_restoreAnchoredVertices(smoothed, anchors, 0.04);
     } else {
         smoothed = arq2_adaptiveSmooth(snappedRaw, null, smoothIntensity);
         smoothed = arq2_restoreAnchoredVertices(smoothed, anchors, 0.08);
     }
     smoothed = arq2_sanitizePolylinePoints(smoothed);
-    if (smoothed.length < 3) {
-        if (useCostura && smoothed.length === 2) {
-            // Force a valid polygon with a small midpoint offset
-            const mid = [(smoothed[0][0] + smoothed[1][0]) / 2, (smoothed[0][1] + smoothed[1][1]) / 2];
-            smoothed = [smoothed[0], mid, smoothed[1]];
-        } else {
-            return;
-        }
-    }
+    if (smoothed.length < 3) return;
     const id = 'arq2_org_' + Date.now();
     const costuraEstiloGuardado = useCostura ? (arq2CosturaStyle || 'punteada') : null;
     const entry = { id, tipo: 'lote-organico', puntos: smoothed, sharedSegs: [], sharedSegStyles: {}, sharedSegMeta: {}, suavizadoIntensidad: smoothIntensity };
@@ -4387,6 +4431,7 @@ function arq2_finishLoteOrganico(rawPoints, useCostura) {
     flashScreenSuccess();
     arq2_setStatusText('Lote ' + entry.arq2Numero + ' guardado ✓');
 }
+
 function arq2_shouldAutoCloseAt(p, y, isDblClick) {
     const pts = arq2_getActiveDrawPoints();
     // Costura can close with 2 points (forming a line that divides a lot)
@@ -4599,12 +4644,18 @@ function arq2_onEnterKey() {
         arq2_finishFilaContour();
         return true;
     }
+    // Costura with 2+ points: create a straight dashed dividing line (not polygon close)
+    if (arq2Tool === 'costura' && arq2LinePoints.length >= 2) {
+        arq2_finishLoteOrganico([...arq2LinePoints], true);
+        return true;
+    }
     if (arq2Tool !== 'fila-variable' && arq2Tool !== 'calle-curva-arq2' && arq2LinePoints.length >= 3) {
         arq2_finishLoteOrganico([...arq2LinePoints], arq2Tool === 'costura');
         return true;
     }
     return false;
 }
+
 function arq2_setup() {
     document.getElementById('arq2-panel-close')?.addEventListener('click', () => arq2_toggleArquitecto2(false));
     document.querySelectorAll('.arq2-tool-btn').forEach(btn => btn.addEventListener('click', () => arq2_setTool(btn.dataset.arq2Tool)));
