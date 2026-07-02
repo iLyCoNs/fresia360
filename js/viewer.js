@@ -307,7 +307,9 @@ function revealLoteoOverlay() {
     if (renderer) hookRendererOverlay(renderer);
 }
 const DEFAULT_HFOV = 125, MAX_SCALE = 1.0, MIN_SCALE = 0.20, SNAP_DISTANCE = 8.0;
-let lastDevDrawClickMs = 0, lastArq2DrawClickMs = 0, closeOriginHighlighted = false, arq2CalleCurvaAncho = 8, draftCalleCurvaAlpha = 0.55, arq2SmoothIntensity = 5, arq2CalleRetorno = false, arq2Guideline = null;
+let lastDevDrawClickMs = 0, lastArq2DrawClickMs = 0, closeOriginHighlighted = false,
+    arq2CalleCurvaAncho = 8, draftCalleCurvaAlpha = 0.55, arq2SmoothIntensity = 5, arq2CalleRetorno = false, arq2Guideline = null,
+    draftCalleCurvaCurvatura = 5;
 
 function getCloseSnapScreenRadiusPx() {
     const hfov = visor360?.getHfov?.() || DEFAULT_HFOV;
@@ -495,6 +497,9 @@ function arq2_syncOrganicLotePaths(lineData, cacheObj, getCamFn, cx, cySc, f) {
     // A "costura lot" is one the user explicitly drew with the Costura tool
     const isCosturaLot = !!(lineData.costuraEstilo || lineData.costuraStyle);
 
+    // Mark the group element so CSS can target it
+    if (cacheObj.gNode) cacheObj.gNode.setAttribute('data-costura-estilo', isCosturaLot ? costuraEstilo : 'none');
+
     // Fill is always the same
     const dFill = arq2_projectPolylineD(lineData.puntos, true, getCamFn, cx, cySc, f);
     paths[0].setAttribute('d', dFill.trim() || 'M -999 -999');
@@ -502,30 +507,36 @@ function arq2_syncOrganicLotePaths(lineData, cacheObj, getCamFn, cx, cySc, f) {
 
     if (isCosturaLot) {
         // --- COSTURA LOT: render ALL edges in the costura style (dashed or solid) ---
-        // The solid perimeter is intentionally left empty; the parent Lote Libre
-        // already draws the outer boundary as solid white.
         // paths[1]: solid perimeter → hidden for costura lots
         paths[1].setAttribute('d', 'M -999 -999');
-        arq2_applyOrganicPathAttrs(paths[1], 'perimeter');
+        paths[1].style.cssText = 'display:none !important;';
 
         // Build ALL edges of this lot (pass null to include every segment)
         const dAllEdges = arq2_buildNonSharedEdgePaths(lineData.puntos, null, true, getCamFn, cx, cySc, f);
+        const edgesD = dAllEdges.trim() || 'M -999 -999';
 
         if (costuraEstilo === 'solida') {
             // paths[2]: dashed → empty; paths[3]: solid costura → all edges
             paths[2].setAttribute('d', 'M -999 -999');
-            arq2_applyCosturaEstiloToPath(paths[2], 'punteada');
-            paths[3].setAttribute('d', dAllEdges.trim() || 'M -999 -999');
-            arq2_applyCosturaEstiloToPath(paths[3], 'solida');
+            paths[2].style.cssText = 'stroke:none !important; fill:none !important;';
+            paths[3].setAttribute('d', edgesD);
+            // Force solid costura style directly
+            paths[3].style.cssText = 'fill:none !important; stroke:rgba(255,255,255,0.92) !important; stroke-width:2px !important; stroke-dasharray:none !important; vector-effect:non-scaling-stroke; pointer-events:none;';
+            paths[3].setAttribute('data-costura-style', 'solida');
         } else {
             // paths[2]: dashed → all edges; paths[3]: solid costura → empty
-            paths[2].setAttribute('d', dAllEdges.trim() || 'M -999 -999');
-            arq2_applyCosturaEstiloToPath(paths[2], 'punteada');
+            paths[2].setAttribute('d', edgesD);
+            // Force dashed costura style directly — maximum specificity via cssText
+            paths[2].style.cssText = 'fill:none !important; stroke:rgba(255,255,255,0.92) !important; stroke-width:2px !important; stroke-dasharray:6,6 !important; vector-effect:non-scaling-stroke; pointer-events:none;';
+            paths[2].setAttribute('data-costura-style', 'punteada');
             paths[3].setAttribute('d', 'M -999 -999');
-            arq2_applyCosturaEstiloToPath(paths[3], 'solida');
+            paths[3].style.cssText = 'stroke:none !important; fill:none !important;';
         }
     } else {
         // --- LOTE LIBRE: standard rendering with shared-segment awareness ---
+        paths[1].style.cssText = '';
+        paths[2].style.cssText = '';
+        paths[3].style.cssText = '';
         const shared = arq2_buildSharedEdgePaths(lineData.puntos, lineData.sharedSegs, lineData.sharedSegStyles, true, getCamFn, cx, cySc, f, costuraEstilo);
         const dPerimeter = arq2_buildNonSharedEdgePaths(lineData.puntos, lineData.sharedSegs, true, getCamFn, cx, cySc, f);
         paths[1].setAttribute('d', dPerimeter.trim() || 'M -999 -999');
@@ -535,8 +546,8 @@ function arq2_syncOrganicLotePaths(lineData, cacheObj, getCamFn, cx, cySc, f) {
         paths[3].setAttribute('d', shared.dSolida.trim() || 'M -999 -999');
         arq2_applyCosturaEstiloToPath(paths[3], 'solida');
     }
-
 }
+
 function updateCloseOriginHighlight(active) {
     closeOriginHighlighted = !!active;
     document.querySelectorAll('.vertex-marker.origin-vertex, .vertex-marker.origin-vertex-ready').forEach(el => {
@@ -2974,8 +2985,20 @@ function arq2_catmullRomOpen(points, segmentsPerCurve = 8) {
 }
 function arq2_smoothCalleAxis(points) {
     if (!points || points.length < 2) return points ? points.map(p => [...p]) : [];
-    return arq2_catmullRomOpen(points, 12);
+    const curvatura = draftCalleCurvaCurvatura; // 0=recta, 10=muy curva
+    if (curvatura <= 0) return points.map(p => [...p]); // completamente recta (sin suavizado)
+    const catmull = arq2_catmullRomOpen(points, 12);
+    if (curvatura >= 10) return catmull; // completamente curva
+    // Interpolate between raw points and catmullRom based on curvatura
+    const t = curvatura / 10;
+    const rawResample = arq2_resamplePolylineEqualArc(points.map(p => [...p]), catmull.length - 1);
+    if (!rawResample || rawResample.length !== catmull.length) return catmull;
+    return catmull.map((c, i) => {
+        const r = rawResample[i] || c;
+        return [r[0] + (c[0] - r[0]) * t, r[1] + (c[1] - r[1]) * t];
+    });
 }
+
 function arq2_estimateScreenCurvatureRadius(points, i, proj) {
     if (!points || points.length < 2 || !proj) return Infinity;
     const i0 = Math.max(0, i - 1), i1 = i, i2 = Math.min(points.length - 1, i + 1);
@@ -3266,8 +3289,11 @@ function arq2_ensurePanelExtras() {
         const rowEl = document.createElement('div');
         rowEl.id = 'arq2-calle-curva-row';
         rowEl.className = 'arq2-calle-curva-row';
-        rowEl.innerHTML = '<label>Ancho calle <span id="arq2-calle-ancho-val">8.0</span></label><input type="range" id="arq2-calle-ancho" min="4" max="15" step="0.5" value="8"><div id="arq2-calle-width-preview"><div id="arq2-calle-width-preview-bar"></div></div><label>Transparencia <span id="arq2-calle-alpha-val">55%</span></label><input type="range" id="arq2-calle-alpha" min="0.15" max="1" step="0.05" value="0.55">' + 
-                            '<div style="margin-top: 10px; display: flex; align-items: center; gap: 8px;"><input type="checkbox" id="arq2-calle-retorno" style="cursor:pointer;"><label for="arq2-calle-retorno" style="cursor:pointer; margin: 0; font-size: 11px; color: #fff;">Retorno Circular (Cul-de-sac)</label></div>';
+        rowEl.innerHTML = '<label>Ancho calle <span id="arq2-calle-ancho-val">8.0</span></label><input type="range" id="arq2-calle-ancho" min="4" max="15" step="0.5" value="8"><div id="arq2-calle-width-preview"><div id="arq2-calle-width-preview-bar"></div></div>' +
+            '<label>Curvatura <span id="arq2-calle-curvatura-val">5</span> <span style="font-size:10px;color:#94a3b8">(0=recta / 10=muy curva)</span></label><input type="range" id="arq2-calle-curvatura" min="0" max="10" step="1" value="5">' +
+            '<label>Transparencia <span id="arq2-calle-alpha-val">55%</span></label><input type="range" id="arq2-calle-alpha" min="0.15" max="1" step="0.05" value="0.55">' +
+            '<div style="margin-top: 10px; display: flex; align-items: center; gap: 8px;"><input type="checkbox" id="arq2-calle-retorno" style="cursor:pointer;"><label for="arq2-calle-retorno" style="cursor:pointer; margin: 0; font-size: 11px; color: #fff;">Retorno Circular (Cul-de-sac)</label></div>';
+
         document.getElementById('arq2-smooth-row')?.insertAdjacentElement('afterend', rowEl);
         document.getElementById('arq2-calle-ancho')?.addEventListener('input', (e) => {
             arq2CalleCurvaAncho = Math.max(4, Math.min(15, parseFloat(e.target.value) || 8));
@@ -3275,7 +3301,15 @@ function arq2_ensurePanelExtras() {
             syncSVGElements();
             updateSVGPaths();
         });
+        document.getElementById('arq2-calle-curvatura')?.addEventListener('input', (e) => {
+            draftCalleCurvaCurvatura = Math.max(0, Math.min(10, parseInt(e.target.value, 10) || 0));
+            const valEl = document.getElementById('arq2-calle-curvatura-val');
+            if (valEl) valEl.textContent = draftCalleCurvaCurvatura;
+            syncSVGElements();
+            updateSVGPaths();
+        });
         document.getElementById('arq2-calle-retorno')?.addEventListener('change', (e) => {
+
             arq2CalleRetorno = !!e.target.checked;
             syncSVGElements();
             updateSVGPaths();
@@ -3604,6 +3638,11 @@ function arq2_findNearestEdgeOrVertex(screenX, screenY, excludeLineId, radiusPx 
     };
     allDrawnLines.forEach(line => {
         if (line.id === excludeLineId || !arq2_isUniversalSnapTarget(line)) return;
+        // When drawing a street, ONLY snap to other street edges - NOT to lote polygon vertices
+        // (snapping to lot vertices causes the street path to jump/hook unexpectedly)
+        const isDrawingStreet = arq2Tool === 'calle-curva-arq2';
+        if (isDrawingStreet && line.tipo !== 'calle-curva-arq2' && line.tipo !== 'calle-curva-arq2-preview' && line.tipo !== 'calle') return;
+
         if (line.tipo === 'calle-curva-arq2' || line.tipo === 'calle-curva-arq2-preview') {
             const polylines = [line.left || [], line.right || []];
             polylines.forEach((poly, polyIdx) => {
@@ -4531,11 +4570,14 @@ function arq2_onPanoramaClick(mock, isDblClick) {
     if (arq2Tool === 'costura' && arq2LinePoints.length === 0 && !arq2CosturaSnap) {
         const selId = findClosestLineAtScreen(mock.clientX, mock.clientY, 28);
         const sel = selId && allDrawnLines.find(l => l.id === selId);
-        if (sel && (sel.tipo === 'lote-organico' || sel.tipo === 'fila-variable-lote') && sel.sharedSegs?.length) {
+        // Select ANY costura lot (with or without sharedSegs) so user can change its style
+        if (sel && (sel.tipo === 'lote-organico' || sel.tipo === 'fila-variable-lote') &&
+            (sel.costuraEstilo || sel.costuraStyle || sel.sharedSegs?.length)) {
             arq2_selectCosturaLine(selId);
             return;
         }
     }
+
     if (arq2Tool === 'fila-variable' && arq2LinePoints.length === 0) arq2_stopDemoAnimation();
     arq2SelectedLineId = null;
     document.querySelectorAll('.arq2-costura-selected').forEach(g => g.classList.remove('arq2-costura-selected'));
