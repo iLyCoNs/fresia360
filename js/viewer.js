@@ -491,18 +491,51 @@ function arq2_syncOrganicLotePaths(lineData, cacheObj, getCamFn, cx, cySc, f) {
     }
     if (!cacheObj.base || cacheObj.base.length < 4) return;
     const paths = cacheObj.base;
-    const costuraDefault = arq2_getCosturaEstilo(lineData);
-    const shared = arq2_buildSharedEdgePaths(lineData.puntos, lineData.sharedSegs, lineData.sharedSegStyles, true, getCamFn, cx, cySc, f, costuraDefault);
+    const costuraEstilo = arq2_getCosturaEstilo(lineData);
+    // A "costura lot" is one the user explicitly drew with the Costura tool
+    const isCosturaLot = !!(lineData.costuraEstilo || lineData.costuraStyle);
+
+    // Fill is always the same
     const dFill = arq2_projectPolylineD(lineData.puntos, true, getCamFn, cx, cySc, f);
-    const dPerimeter = arq2_buildNonSharedEdgePaths(lineData.puntos, lineData.sharedSegs, true, getCamFn, cx, cySc, f);
     paths[0].setAttribute('d', dFill.trim() || 'M -999 -999');
     arq2_applyOrganicPathAttrs(paths[0], 'fill');
-    paths[1].setAttribute('d', dPerimeter.trim() || 'M -999 -999');
-    arq2_applyOrganicPathAttrs(paths[1], 'perimeter');
-    paths[2].setAttribute('d', shared.dPunteada.trim() || 'M -999 -999');
-    arq2_applyCosturaEstiloToPath(paths[2], 'punteada');
-    paths[3].setAttribute('d', shared.dSolida.trim() || 'M -999 -999');
-    arq2_applyCosturaEstiloToPath(paths[3], 'solida');
+
+    if (isCosturaLot) {
+        // --- COSTURA LOT: render ALL edges in the costura style (dashed or solid) ---
+        // The solid perimeter is intentionally left empty; the parent Lote Libre
+        // already draws the outer boundary as solid white.
+        // paths[1]: solid perimeter → hidden for costura lots
+        paths[1].setAttribute('d', 'M -999 -999');
+        arq2_applyOrganicPathAttrs(paths[1], 'perimeter');
+
+        // Build ALL edges of this lot (pass null to include every segment)
+        const dAllEdges = arq2_buildNonSharedEdgePaths(lineData.puntos, null, true, getCamFn, cx, cySc, f);
+
+        if (costuraEstilo === 'solida') {
+            // paths[2]: dashed → empty; paths[3]: solid costura → all edges
+            paths[2].setAttribute('d', 'M -999 -999');
+            arq2_applyCosturaEstiloToPath(paths[2], 'punteada');
+            paths[3].setAttribute('d', dAllEdges.trim() || 'M -999 -999');
+            arq2_applyCosturaEstiloToPath(paths[3], 'solida');
+        } else {
+            // paths[2]: dashed → all edges; paths[3]: solid costura → empty
+            paths[2].setAttribute('d', dAllEdges.trim() || 'M -999 -999');
+            arq2_applyCosturaEstiloToPath(paths[2], 'punteada');
+            paths[3].setAttribute('d', 'M -999 -999');
+            arq2_applyCosturaEstiloToPath(paths[3], 'solida');
+        }
+    } else {
+        // --- LOTE LIBRE: standard rendering with shared-segment awareness ---
+        const shared = arq2_buildSharedEdgePaths(lineData.puntos, lineData.sharedSegs, lineData.sharedSegStyles, true, getCamFn, cx, cySc, f, costuraEstilo);
+        const dPerimeter = arq2_buildNonSharedEdgePaths(lineData.puntos, lineData.sharedSegs, true, getCamFn, cx, cySc, f);
+        paths[1].setAttribute('d', dPerimeter.trim() || 'M -999 -999');
+        arq2_applyOrganicPathAttrs(paths[1], 'perimeter');
+        paths[2].setAttribute('d', shared.dPunteada.trim() || 'M -999 -999');
+        arq2_applyCosturaEstiloToPath(paths[2], 'punteada');
+        paths[3].setAttribute('d', shared.dSolida.trim() || 'M -999 -999');
+        arq2_applyCosturaEstiloToPath(paths[3], 'solida');
+    }
+
 }
 function updateCloseOriginHighlight(active) {
     closeOriginHighlighted = !!active;
@@ -2783,10 +2816,11 @@ function arq2_updatePanelStep() {
     if (costuraRow) costuraRow.style.display = toolKey === 'costura' ? 'flex' : 'none';
     if (costuraToggle) {
         const sel = arq2SelectedLineId && allDrawnLines.find(l => l.id === arq2SelectedLineId);
-        const showSel = toolKey === 'costura' && sel?.sharedSegs?.length;
+        // Show toggle for any costura lot (even without sharedSegs, the new rendering uses costuraEstilo directly)
+        const showSel = toolKey === 'costura' && sel && (sel.costuraEstilo || sel.costuraStyle || sel.sharedSegs?.length);
         costuraToggle.style.display = showSel ? 'block' : 'none';
         if (showSel) {
-            const cur = sel.sharedSegStyles?.[sel.sharedSegs[0]] || sel.costuraStyle || 'punteada';
+            const cur = sel.costuraEstilo || sel.costuraStyle || sel.sharedSegStyles?.[sel.sharedSegs?.[0]] || 'punteada';
             costuraToggle.textContent = cur === 'punteada' ? 'Cambiar a sólida' : 'Cambiar a punteada';
         }
     }
@@ -3955,9 +3989,13 @@ function arq2_selectCosturaLine(lineId) {
 function arq2_toggleSelectedCosturaStyle() {
     if (!arq2SelectedLineId) return;
     const line = allDrawnLines.find(l => l.id === arq2SelectedLineId);
-    if (!line?.sharedSegs?.length) return;
-    const cur = line.sharedSegStyles?.[line.sharedSegs[0]] || line.costuraStyle || 'punteada';
+    // Work for any costura lot even without sharedSegs
+    if (!line || !(line.costuraEstilo || line.costuraStyle || line.sharedSegs?.length)) return;
+    const cur = line.costuraEstilo || line.costuraStyle || line.sharedSegStyles?.[line.sharedSegs?.[0]] || 'punteada';
     const next = cur === 'punteada' ? 'solida' : 'punteada';
+    // Update the lot's style properties directly
+    line.costuraEstilo = next;
+    line.costuraStyle = next;
     arq2_setCosturaStyleForLine(arq2SelectedLineId, next);
     syncSVGElements();
     updateSVGPaths();
@@ -3965,6 +4003,7 @@ function arq2_toggleSelectedCosturaStyle() {
     arq2_updatePanelStep();
     arq2_setStatusText('Costura lote ' + (line.arq2Numero || line.franjaNumero || '') + ': ' + (next === 'punteada' ? 'punteada ✓' : 'sólida ✓'));
 }
+
 function arq2_clearDemoTimeouts() {
     arq2DemoTimers.forEach(t => clearTimeout(t));
     arq2DemoTimers = [];
@@ -4542,15 +4581,25 @@ function arq2_setup() {
     arq2_ensureSmoothIntensityPanel();
     document.getElementById('arq2-costura-punteada')?.addEventListener('click', () => {
         arq2CosturaStyle = 'punteada';
-        if (arq2SelectedLineId) arq2_setCosturaStyleForLine(arq2SelectedLineId, 'punteada');
+        if (arq2SelectedLineId) {
+            const sel = allDrawnLines.find(l => l.id === arq2SelectedLineId);
+            if (sel) { sel.costuraEstilo = 'punteada'; sel.costuraStyle = 'punteada'; }
+            arq2_setCosturaStyleForLine(arq2SelectedLineId, 'punteada');
+        }
         arq2_updatePanelStep();
         updateSVGPaths();
+        saveToLocal();
     });
     document.getElementById('arq2-costura-solida')?.addEventListener('click', () => {
         arq2CosturaStyle = 'solida';
-        if (arq2SelectedLineId) arq2_setCosturaStyleForLine(arq2SelectedLineId, 'solida');
+        if (arq2SelectedLineId) {
+            const sel = allDrawnLines.find(l => l.id === arq2SelectedLineId);
+            if (sel) { sel.costuraEstilo = 'solida'; sel.costuraStyle = 'solida'; }
+            arq2_setCosturaStyleForLine(arq2SelectedLineId, 'solida');
+        }
         arq2_updatePanelStep();
         updateSVGPaths();
+        saveToLocal();
     });
     document.getElementById('arq2-costura-toggle-selected')?.addEventListener('click', arq2_toggleSelectedCosturaStyle);
     document.getElementById('arq2-fila-demo-replay')?.addEventListener('click', () => arq2_startDemoAnimation(true));
