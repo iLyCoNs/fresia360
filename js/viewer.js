@@ -347,13 +347,15 @@ function arq2_sanitizePolylinePoints(pts) {
     });
     return out;
 }
-function arq2_restoreAnchoredVertices(smoothed, anchors, tol = 0.06) {
+function arq2_restoreAnchoredVertices(smoothed, anchors, tol = 0.08) {
     if (!anchors?.length || !smoothed?.length) return smoothed;
-    return smoothed.map((pt, i) => {
-        if (i >= anchors.length) return pt;
-        const a = anchors[i];
-        if (Math.hypot(pt[0] - a[0], pt[1] - a[1]) < tol) return [parseFloat(a[0].toFixed(4)), parseFloat(a[1].toFixed(4))];
-        return pt;
+    return smoothed.map(pt => {
+        let best = null, bestD = tol;
+        anchors.forEach(a => {
+            const d = Math.hypot(pt[0] - a[0], pt[1] - a[1]);
+            if (d < bestD) { bestD = d; best = a; }
+        });
+        return best ? [parseFloat(best[0].toFixed(4)), parseFloat(best[1].toFixed(4))] : pt;
     });
 }
 function arq2_mergeSharedBoundaryVertices(lineId) {
@@ -540,7 +542,18 @@ function attemptSplit(lineStart, lineEnd) {
             didSplit = true;
         } else { newLines.push(l); }
     }
-    if (didSplit) { allDrawnLines = newLines; flashScreenSuccess(); return true; } return false;
+    if (didSplit) {
+        allDrawnLines = newLines;
+        newLines.forEach(line => {
+            if (line.id.startsWith('lote_') && (line.id.includes('_A_') || line.id.includes('_B_'))) {
+                arq2_registerSharedEdges(line.id);
+                arq2_syncCosturaStylesFromLineEstilo(line.id);
+            }
+        });
+        flashScreenSuccess();
+        return true;
+    }
+    return false;
 }
 
 function getMockEvent(e) { let cx = e.clientX, cy = e.clientY; if(cx === undefined && e.changedTouches && e.changedTouches.length > 0) { cx = e.changedTouches[0].clientX; cy = e.changedTouches[0].clientY; } return { clientX: cx, clientY: cy }; }
@@ -1532,6 +1545,7 @@ function buildMasterplanAristas(fills) {
     });
     const aristas = []; let idx = 0;
     edgeMap.forEach(edge => {
+        if (arq2_isEdgeSharedWithOrganicLote(edge.p1, edge.p2)) return;
         aristas.push({ id: 'arista_mp_' + Date.now() + '_' + (idx++), tipo: edge.count === 1 ? 'arista_solida' : 'arista_punteada', puntos: [edge.p1, edge.p2] });
     });
     return aristas;
@@ -3439,17 +3453,12 @@ function arq2_isLineClosedForSnap(line) {
     const pts = arq2_getSewPolygonPoints(line);
     return pts.length >= 3;
 }
-function arq2_getSewPolygonPoints(line) {
-    if (line.tipo === 'franja-curva-grupo' && line.frente?.length >= 2 && line.fondo?.length >= 2) {
-        return [...line.frente, ...[...line.fondo].reverse()];
-    }
-    return line.puntos || [];
-}
 function arq2_findNearestEdgeOrVertex(screenX, screenY, excludeLineId, radiusPx = 15) {
     const proj = getPanoramaScreenProjector();
     if (!proj) return null;
     const sx = screenX - DOMCache.viewport.left, sy = screenY - DOMCache.viewport.top;
-    let best = null, bestD = radiusPx;
+    const effectiveRadius = Math.max(radiusPx, 25);
+    let best = null, bestD = effectiveRadius;
     const tryPt = (pitch, yaw, meta) => {
         const sc = proj.toScreen(pitch, yaw);
         if (!sc) return;
@@ -3458,6 +3467,30 @@ function arq2_findNearestEdgeOrVertex(screenX, screenY, excludeLineId, radiusPx 
     };
     allDrawnLines.forEach(line => {
         if (line.id === excludeLineId || !arq2_isUniversalSnapTarget(line)) return;
+        if (line.tipo === 'calle-curva-arq2' || line.tipo === 'calle-curva-arq2-preview') {
+            const polylines = [line.left || [], line.right || []];
+            polylines.forEach((poly, polyIdx) => {
+                if (poly.length < 2) return;
+                poly.forEach((pt, vi) => tryPt(pt[0], pt[1], { lineId: line.id, kind: 'vertex', vertexIdx: vi, side: polyIdx === 0 ? 'left' : 'right' }));
+                const segCount = poly.length - 1;
+                for (let i = 0; i < segCount; i++) {
+                    const p1 = poly[i], p2 = poly[i + 1];
+                    const s1 = proj.toScreen(p1[0], p1[1]), s2 = proj.toScreen(p2[0], p2[1]);
+                    if (!s1 || !s2) continue;
+                    const dx = s2[0] - s1[0], dy = s2[1] - s1[1], len2 = dx * dx + dy * dy;
+                    if (len2 < 1e-6) continue;
+                    let t = ((sx - s1[0]) * dx + (sy - s1[1]) * dy) / len2;
+                    t = Math.max(0, Math.min(1, t));
+                    const px = s1[0] + t * dx, py = s1[1] + t * dy;
+                    const d = Math.hypot(px - sx, py - sy);
+                    if (d < bestD) {
+                        const pyPt = proj.toPY(px, py);
+                        if (pyPt) best = { pitch: pyPt[0], yaw: pyPt[1], screenX: DOMCache.viewport.left + px, screenY: DOMCache.viewport.top + py, lineId: line.id, kind: 'edge', side: polyIdx === 0 ? 'left' : 'right', segIdx: i, t };
+                    }
+                }
+            });
+            return;
+        }
         const pts = arq2_getSnapPolylinePoints(line);
         pts.forEach((pt, vi) => tryPt(pt[0], pt[1], { lineId: line.id, kind: 'vertex', vertexIdx: vi }));
         const closed = arq2_isLineClosedForSnap(line);
@@ -3480,6 +3513,12 @@ function arq2_findNearestEdgeOrVertex(screenX, screenY, excludeLineId, radiusPx 
     });
     return best;
 }
+function arq2_getSewPolygonPoints(line) {
+    if (line.tipo === 'franja-curva-grupo' && line.frente?.length >= 2 && line.fondo?.length >= 2) {
+        return [...line.frente, ...[...line.fondo].reverse()];
+    }
+    return line.puntos || [];
+}
 function arq2_segMatchTol(p1, p2, q1, q2, tol = 0.05) {
     const d11 = Math.hypot(p1[0] - q1[0], p1[1] - q1[1]), d22 = Math.hypot(p2[0] - q2[0], p2[1] - q2[1]);
     const d12 = Math.hypot(p1[0] - q2[0], p1[1] - q2[1]), d21 = Math.hypot(p2[0] - q1[0], p2[1] - q1[1]);
@@ -3493,6 +3532,189 @@ function arq2_segMatchScreenOrPY(p1, p2, q1, q2, proj, tolDeg = 0.08, tolPx = 10
     if (!s1 || !s2 || !t1 || !t2) return false;
     return (Math.hypot(s1[0] - t1[0], s1[1] - t1[1]) < tolPx && Math.hypot(s2[0] - t2[0], s2[1] - t2[1]) < tolPx)
         || (Math.hypot(s1[0] - t2[0], s1[1] - t2[1]) < tolPx && Math.hypot(s2[0] - t1[0], s2[1] - t1[1]) < tolPx);
+}
+function arq2_isEdgeSharedWithOrganicLote(p1, p2) {
+    const proj = getPanoramaScreenProjector();
+    const organicLots = allDrawnLines.filter(l => l.tipo === 'lote-organico' || l.tipo === 'fila-variable-lote');
+    for (let lot of organicLots) {
+        const pts = lot.puntos;
+        if (!pts) continue;
+        for (let i = 0; i < pts.length; i++) {
+            const q1 = pts[i], q2 = pts[(i + 1) % pts.length];
+            if (arq2_segMatchScreenOrPY(p1, p2, q1, q2, proj, 0.08, 12)) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+function arq2_projectPointOnPolyline(p, poly) {
+    if (!poly || poly.length < 2) return null;
+    let bestDist = Infinity;
+    let bestPt = null;
+    let bestIdx = -1;
+    let bestT = 0;
+    for (let i = 0; i < poly.length - 1; i++) {
+        const a = poly[i], b = poly[i + 1];
+        const proj = projectPointOnSegment(p, a, b);
+        const d = Math.hypot(p[0] - proj[0], p[1] - proj[1]);
+        if (d < bestDist) {
+            bestDist = d;
+            bestPt = proj;
+            bestIdx = i;
+            bestT = projectionT(p, a, b);
+            bestT = Math.max(0, Math.min(1, bestT));
+        }
+    }
+    return { dist: bestDist, point: bestPt, idx: bestIdx, t: bestT };
+}
+function arq2_stitchOrganicLoteToStreets(pts) {
+    if (!pts || pts.length < 3) return pts;
+    const tol = 0.08; // tolerance in degrees (pitch/yaw) for snapping to street border
+    const stitched = [];
+    const n = pts.length;
+    
+    for (let i = 0; i < n; i++) {
+        const p1 = pts[i];
+        const p2 = pts[(i + 1) % n];
+        
+        let matchedStreet = null;
+        let matchedBorder = null; // 'left' or 'right'
+        let proj1 = null;
+        let proj2 = null;
+        
+        const streets = allDrawnLines.filter(l => l.tipo === 'calle-curva-arq2');
+        for (let street of streets) {
+            const leftProj = arq2_projectPointOnPolyline(p1, street.left);
+            const rightProj = arq2_projectPointOnPolyline(p1, street.right);
+            
+            if (leftProj && leftProj.dist < tol) {
+                const leftProj2 = arq2_projectPointOnPolyline(p2, street.left);
+                if (leftProj2 && leftProj2.dist < tol) {
+                    matchedStreet = street;
+                    matchedBorder = 'left';
+                    proj1 = leftProj;
+                    proj2 = leftProj2;
+                    break;
+                }
+            }
+            if (rightProj && rightProj.dist < tol) {
+                const rightProj2 = arq2_projectPointOnPolyline(p2, street.right);
+                if (rightProj2 && rightProj2.dist < tol) {
+                    matchedStreet = street;
+                    matchedBorder = 'right';
+                    proj1 = rightProj;
+                    proj2 = rightProj2;
+                    break;
+                }
+            }
+        }
+        
+        if (matchedStreet && matchedBorder && proj1 && proj2) {
+            const border = matchedBorder === 'left' ? matchedStreet.left : matchedStreet.right;
+            const segmentPoints = [];
+            
+            const idx1 = proj1.idx, idx2 = proj2.idx;
+            const t1 = proj1.t, t2 = proj2.t;
+            
+            segmentPoints.push(proj1.point);
+            
+            if (idx1 < idx2 || (idx1 === idx2 && t1 < t2)) {
+                for (let k = idx1 + 1; k <= idx2; k++) {
+                    segmentPoints.push(border[k]);
+                }
+            } else if (idx1 > idx2 || (idx1 === idx2 && t1 > t2)) {
+                for (let k = idx1; k > idx2; k--) {
+                    segmentPoints.push(border[k]);
+                }
+            }
+            segmentPoints.push(proj2.point);
+            
+            for (let k = 0; k < segmentPoints.length - 1; k++) {
+                stitched.push(segmentPoints[k]);
+            }
+        } else {
+            stitched.push(p1);
+        }
+    }
+    return stitched;
+}
+function arq2_insertVerticesIntoMatchingEdges(lineId) {
+    const line = allDrawnLines.find(l => l.id === lineId);
+    if (!line?.puntos || line.puntos.length < 3) return;
+    const proj = getPanoramaScreenProjector();
+    
+    allDrawnLines.forEach(other => {
+        if (other.id === lineId) return;
+        const oPts = arq2_getSewPolygonPoints(other);
+        if (!oPts || oPts.length < 3) return;
+        if (other.tipo === 'divisoria' || other.tipo === 'cortar' || other.tipo === 'linea-pines-guia') return;
+        
+        const closed = other.tipo !== 'calle';
+        const segCount = closed ? oPts.length : oPts.length - 1;
+        
+        const insertions = [];
+        
+        line.puntos.forEach(pt => {
+            for (let i = 0; i < segCount; i++) {
+                const p1 = oPts[i], p2 = oPts[(i + 1) % oPts.length];
+                
+                const dToP1 = Math.hypot(pt[0] - p1[0], pt[1] - p1[1]);
+                const dToP2 = Math.hypot(pt[0] - p2[0], pt[1] - p2[1]);
+                if (dToP1 < 0.02 || dToP2 < 0.02) continue;
+                
+                let isNear = false;
+                let t = 0.5;
+                if (proj) {
+                    const sPt = proj.toScreen(pt[0], pt[1]);
+                    const s1 = proj.toScreen(p1[0], p1[1]);
+                    const s2 = proj.toScreen(p2[0], p2[1]);
+                    if (sPt && s1 && s2) {
+                        const dx = s2[0] - s1[0], dy = s2[1] - s1[1];
+                        const len2 = dx * dx + dy * dy;
+                        if (len2 > 1e-6) {
+                            t = ((sPt[0] - s1[0]) * dx + (sPt[1] - s1[1]) * dy) / len2;
+                            if (t > 0.01 && t < 0.99) {
+                                const px = s1[0] + t * dx, py = s1[1] + t * dy;
+                                const d = Math.hypot(px - sPt[0], py - sPt[1]);
+                                if (d < 10) {
+                                    isNear = true;
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    const dx = p2[0] - p1[0], dy = p2[1] - p1[1];
+                    const len2 = dx * dx + dy * dy;
+                    if (len2 > 1e-8) {
+                        t = ((pt[0] - p1[0]) * dx + (pt[1] - p1[1]) * dy) / len2;
+                        if (t > 0.01 && t < 0.99) {
+                            const px = p1[0] + t * dx, py = p1[1] + t * dy;
+                            const d = Math.hypot(px - pt[0], py - pt[1]);
+                            if (d < 0.04) {
+                                isNear = true;
+                            }
+                        }
+                    }
+                }
+                
+                if (isNear) {
+                    insertions.push({ segIdx: i, pt: [...pt], t });
+                    break;
+                }
+            }
+        });
+        
+        if (insertions.length > 0) {
+            insertions.sort((a, b) => {
+                if (a.segIdx !== b.segIdx) return b.segIdx - a.segIdx;
+                return b.t - a.t;
+            });
+            insertions.forEach(ins => {
+                other.puntos.splice(ins.segIdx + 1, 0, ins.pt);
+            });
+        }
+    });
 }
 function arq2_registerSharedEdges(newLineId) {
     const nue = allDrawnLines.find(l => l.id === newLineId);
@@ -3536,6 +3758,16 @@ function arq2_snapVerticesToExisting(points) {
         let best = null, bestD = 0.05;
         allDrawnLines.forEach(line => {
             if (!arq2_isUniversalSnapTarget(line)) return;
+            if (line.tipo === 'calle-curva-arq2' || line.tipo === 'calle-curva-arq2-preview') {
+                const borders = [line.left || [], line.right || []];
+                borders.forEach(border => {
+                    border.forEach(v => {
+                        const d = Math.hypot(pt[0] - v[0], pt[1] - v[1]);
+                        if (d < bestD) { bestD = d; best = v; }
+                    });
+                });
+                return;
+            }
             arq2_getSnapPolylinePoints(line).forEach(v => {
                 const d = Math.hypot(pt[0] - v[0], pt[1] - v[1]);
                 if (d < bestD) { bestD = d; best = v; }
@@ -3908,7 +4140,8 @@ function arq2_finishLoteOrganico(rawPoints, useCostura) {
     const anchors = snappedRaw.map(p => [...p]);
     const smoothIntensity = arq2SmoothIntensity;
     let smoothed = arq2_adaptiveSmooth(snappedRaw, null, smoothIntensity);
-    if (useCostura) smoothed = arq2_restoreAnchoredVertices(smoothed, anchors, 0.06);
+    smoothed = arq2_restoreAnchoredVertices(smoothed, anchors, 0.08);
+    smoothed = arq2_stitchOrganicLoteToStreets(smoothed);
     smoothed = arq2_sanitizePolylinePoints(smoothed);
     if (smoothed.length < 3) return;
     const id = 'arq2_org_' + Date.now();
@@ -3922,6 +4155,7 @@ function arq2_finishLoteOrganico(rawPoints, useCostura) {
     allDrawnLines.push(entry);
     if (useCostura) {
         console.log('Costura guardada:', JSON.parse(JSON.stringify(entry)));
+        arq2_insertVerticesIntoMatchingEdges(id);
         arq2_weldVerticesToNeighbors(id);
         arq2_registerSharedEdges(id);
         arq2_mergeSharedBoundaryVertices(id);
@@ -4691,12 +4925,32 @@ function bindPanoramaPointerEvents() {
                 finishCalleDrawing();
                 return;
             }
-            let coords = visor360.mouseEventToCoords(mock);
-            if(coords && !isNaN(coords[0])) applyDraggedVertexCoords(coords);
+            let snap = arq2_findNearestEdgeOrVertex(mock.clientX, mock.clientY, draggingVertex.lineId, 25);
+            let coords;
+            if (snap) {
+                coords = [snap.pitch, snap.yaw];
+            } else {
+                coords = visor360.mouseEventToCoords(mock);
+            }
+            if (snapCursor) snapCursor.classList.remove('active', 'is-costura');
+            if (coords && !isNaN(coords[0])) {
+                applyDraggedVertexCoords(coords);
+                const lineId = draggingVertex.lineId;
+                const line = allDrawnLines.find(l => l.id === lineId);
+                if (line && (line.tipo === 'lote-organico' || line.tipo === 'fila-variable-lote')) {
+                    line.puntos = arq2_stitchOrganicLoteToStreets(line.puntos);
+                    arq2_insertVerticesIntoMatchingEdges(lineId);
+                    arq2_weldVerticesToNeighbors(lineId);
+                    arq2_registerSharedEdges(lineId);
+                    arq2_mergeSharedBoundaryVertices(lineId);
+                    arq2_registerSharedEdges(lineId);
+                    arq2_syncCosturaStylesFromLineEstilo(lineId);
+                }
+            }
             draggingVertex = null; 
             window.lastMouseX = undefined;
             window.lastMouseY = undefined;
-            refreshAllHotspots(); 
+            refreshAllHotspots(true); 
             saveToLocal(); 
             return; 
         }
@@ -4811,7 +5065,19 @@ function bindPanoramaPointerEvents() {
             if (e.cancelable) e.preventDefault();
             window.lastMouseX = mock.clientX; window.lastMouseY = mock.clientY;
             try {
-                const coords = visor360?.mouseEventToCoords(mock);
+                let snap = arq2_findNearestEdgeOrVertex(mock.clientX, mock.clientY, draggingVertex.lineId, 25);
+                let coords;
+                if (snap) {
+                    coords = [snap.pitch, snap.yaw];
+                    if (snapCursor) {
+                        snapCursor.style.left = snap.screenX + 'px';
+                        snapCursor.style.top = snap.screenY + 'px';
+                        snapCursor.classList.add('active', 'is-costura');
+                    }
+                } else {
+                    coords = visor360?.mouseEventToCoords(mock);
+                    if (snapCursor) snapCursor.classList.remove('active', 'is-costura');
+                }
                 if (coords && !isNaN(coords[0])) applyDraggedVertexCoords(coords);
             } catch(err) {}
             syncSVGElements(); updateSVGPaths();
