@@ -437,10 +437,15 @@ function arq2_buildSharedEdgePaths(pts, sharedSegs, sharedStyles, isClosed, getC
         else { const t = c1.z / (c1.z - c2.z); s1 = { x: cx + ((c1.x + t * (c2.x - c1.x)) / 0.0001) * f, y: cySc - ((c1.y + t * (c2.y - c1.y)) / 0.0001) * f }; }
         if (c2.z > 0.0001) s2 = { x: cx + (c2.x / c2.z) * f, y: cySc - (c2.y / c2.z) * f };
         else { const t = c2.z / (c2.z - c1.z); s2 = { x: cx + ((c2.x + t * (c1.x - c2.x)) / 0.0001) * f, y: cySc - ((c2.y + t * (c1.y - c2.y)) / 0.0001) * f }; }
-        const seg = `M ${s1.x},${s1.y} L ${s2.x},${s2.y} `;
+        let segStr;
+        if (s1.x < s2.x || (s1.x === s2.x && s1.y < s2.y)) {
+            segStr = `M ${s1.x},${s1.y} L ${s2.x},${s2.y} `;
+        } else {
+            segStr = `M ${s2.x},${s2.y} L ${s1.x},${s1.y} `;
+        }
         const style = (sharedStyles && sharedStyles[i]) || defaultStyle;
-        if (style === 'solida') dSolida += seg;
-        else dPunteada += seg;
+        if (style === 'solida') dSolida += segStr;
+        else dPunteada += segStr;
     }
     return { dPunteada, dSolida };
 }
@@ -560,7 +565,6 @@ function attemptSplit(lineStart, lineEnd) {
         newLines.forEach(line => {
             if (line.id.startsWith('lote_') && (line.id.includes('_A_') || line.id.includes('_B_'))) {
                 arq2_registerSharedEdges(line.id);
-                arq2_syncCosturaStylesFromLineEstilo(line.id);
             }
         });
         flashScreenSuccess();
@@ -3845,11 +3849,43 @@ function arq2_registerSharedEdges(newLineId) {
                 if (!arq2_segMatchScreenOrPY(a1, a2, b1, b2, proj, 0.08, 12)) continue;
                 if (!nue.sharedSegs.includes(i)) nue.sharedSegs.push(i);
                 const oIdx = j % oPts.length;
-                if (!other.sharedSegs.includes(oIdx)) other.sharedSegs.push(oIdx);
-                nue.sharedSegStyles[i] = styleDefault;
-                other.sharedSegStyles[oIdx] = styleDefault;
-                nue.sharedSegMeta[i] = { lineId: other.id, segIdx: oIdx };
-                other.sharedSegMeta[oIdx] = { lineId: nue.id, segIdx: i };
+                const otherAlreadyHadIt = other.sharedSegs.includes(oIdx);
+                if (!otherAlreadyHadIt) other.sharedSegs.push(oIdx);
+                
+                // Determine if they are siblings from a recent attemptSplit
+                let areSiblings = false;
+                if (nue.id.startsWith('lote_') && other.id.startsWith('lote_')) {
+                    const pNue = nue.id.split('_');
+                    const pOther = other.id.split('_');
+                    if (pNue.length >= 4 && pOther.length >= 4 && pNue[1] === pOther[1] && pNue[3] === pOther[3]) {
+                        areSiblings = true;
+                    }
+                }
+                
+                let finalStyle = styleDefault;
+                let isExteriorForce = false;
+                if (!areSiblings) {
+                    if (otherAlreadyHadIt && other.sharedSegStyles && other.sharedSegStyles[oIdx]) {
+                        finalStyle = other.sharedSegStyles[oIdx];
+                    } else {
+                        // It was an exterior edge of `other`, so it should remain solid
+                        finalStyle = 'solida';
+                        isExteriorForce = true;
+                    }
+                }
+
+                nue.sharedSegStyles[i] = finalStyle;
+                other.sharedSegStyles[oIdx] = finalStyle;
+                
+                const metaNew = { lineId: other.id, segIdx: oIdx };
+                if (isExteriorForce || (other.sharedSegMeta && other.sharedSegMeta[oIdx] && other.sharedSegMeta[oIdx].isExteriorForce)) {
+                    metaNew.isExteriorForce = true;
+                }
+                nue.sharedSegMeta[i] = metaNew;
+                
+                const metaOther = { lineId: nue.id, segIdx: i };
+                if (metaNew.isExteriorForce) metaOther.isExteriorForce = true;
+                other.sharedSegMeta[oIdx] = metaOther;
             }
         }
     });
@@ -3925,7 +3961,8 @@ function arq2_setCosturaStyleForLine(lineId, style) {
         const meta = line.sharedSegMeta?.[i];
         const other = meta ? allDrawnLines.find(l => l.id === meta.lineId) : null;
         const isStreet = other && (other.tipo === 'calle-curva-arq2' || other.tipo === 'calle-curva-arq2-preview' || other.tipo === 'calle');
-        const finalStyle = isStreet ? 'solida' : style;
+        const isExterior = meta?.isExteriorForce;
+        const finalStyle = (isStreet || isExterior) ? 'solida' : style;
         
         line.sharedSegStyles[i] = finalStyle;
         if (meta?.lineId && other && other.sharedSegStyles) {
@@ -4271,7 +4308,6 @@ function arq2_finishLoteOrganico(rawPoints, useCostura) {
         arq2_registerSharedEdges(id);
         arq2_mergeSharedBoundaryVertices(id);
         arq2_registerSharedEdges(id);
-        arq2_syncCosturaStylesFromLineEstilo(id);
     }
     const areaPx = arq2_estimatePolygonScreenAreaPx(smoothed);
     if (areaPx < 40) arq2_showSmallShapeSmoothHint(id);
