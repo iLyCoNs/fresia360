@@ -3283,9 +3283,6 @@ function arq2_reprocessLineSmoothing(lineId, intensity) {
     line.suavizadoIntensidad = intensity;
     if (line.sharedSegs?.length || line.costuraEstilo) {
         arq2_registerSharedEdges(lineId);
-        arq2_mergeSharedBoundaryVertices(lineId);
-        arq2_registerSharedEdges(lineId);
-        arq2_syncCosturaStylesFromLineEstilo(lineId);
     }
     syncSVGElements();
     refreshAllHotspots(true);
@@ -3826,10 +3823,11 @@ function arq2_registerSharedEdges(newLineId) {
     const nue = allDrawnLines.find(l => l.id === newLineId);
     const nuePts = arq2_getSewPolygonPoints(nue);
     if (!nue || !nuePts || nuePts.length < 3) return;
-    nue.sharedSegs = nue.sharedSegs || [];
-    nue.sharedSegStyles = nue.sharedSegStyles || {};
-    nue.sharedSegMeta = nue.sharedSegMeta || {};
-    const styleDefault = arq2_getCosturaEstilo(nue);
+    // Always reset to avoid stale data from previous registrations
+    nue.sharedSegs = [];
+    nue.sharedSegStyles = {};
+    nue.sharedSegMeta = {};
+    const costuraEstilo = arq2_getCosturaEstilo(nue);
     const nSeg = nuePts.length;
     const proj = getPanoramaScreenProjector();
     allDrawnLines.forEach(other => {
@@ -3840,56 +3838,33 @@ function arq2_registerSharedEdges(newLineId) {
         other.sharedSegs = other.sharedSegs || [];
         other.sharedSegStyles = other.sharedSegStyles || {};
         other.sharedSegMeta = other.sharedSegMeta || {};
-        const oClosed = other.tipo !== 'calle';
+        const isStreet = (other.tipo === 'calle-curva-arq2' || other.tipo === 'calle-curva-arq2-preview' || other.tipo === 'calle');
+        const oClosed = !isStreet && other.tipo !== 'calle';
         const oSegCount = oClosed ? oPts.length : oPts.length - 1;
         for (let i = 0; i < nSeg; i++) {
             const a1 = nuePts[i], a2 = nuePts[(i + 1) % nSeg];
             for (let j = 0; j < oSegCount; j++) {
                 const b1 = oPts[j], b2 = oPts[(j + 1) % oPts.length];
                 if (!arq2_segMatchScreenOrPY(a1, a2, b1, b2, proj, 0.08, 12)) continue;
-                if (!nue.sharedSegs.includes(i)) nue.sharedSegs.push(i);
                 const oIdx = j % oPts.length;
-                const otherAlreadyHadIt = other.sharedSegs.includes(oIdx);
-                if (!otherAlreadyHadIt) other.sharedSegs.push(oIdx);
-                
-                // Determine if they are siblings from a recent attemptSplit
-                let areSiblings = false;
-                if (nue.id.startsWith('lote_') && other.id.startsWith('lote_')) {
-                    const pNue = nue.id.split('_');
-                    const pOther = other.id.split('_');
-                    if (pNue.length >= 4 && pOther.length >= 4 && pNue[1] === pOther[1] && pNue[3] === pOther[3]) {
-                        areSiblings = true;
-                    }
+                // Style: solid if touching a street, dashed if touching another lote
+                const style = isStreet ? 'solida' : costuraEstilo;
+                if (!nue.sharedSegs.includes(i)) nue.sharedSegs.push(i);
+                nue.sharedSegStyles[i] = style;
+                nue.sharedSegMeta[i] = { lineId: other.id, segIdx: oIdx, isStreet };
+                // Mirror on the other polygon only if it's also a lote (not a street)
+                if (!isStreet) {
+                    if (!other.sharedSegs.includes(oIdx)) other.sharedSegs.push(oIdx);
+                    other.sharedSegStyles[oIdx] = style;
+                    other.sharedSegMeta[oIdx] = { lineId: nue.id, segIdx: i, isStreet: false };
                 }
-                
-                let finalStyle = styleDefault;
-                let isExteriorForce = false;
-                if (!areSiblings) {
-                    if (otherAlreadyHadIt && other.sharedSegStyles && other.sharedSegStyles[oIdx]) {
-                        finalStyle = other.sharedSegStyles[oIdx];
-                    } else {
-                        // It was an exterior edge of `other`, so it should remain solid
-                        finalStyle = 'solida';
-                        isExteriorForce = true;
-                    }
-                }
-
-                nue.sharedSegStyles[i] = finalStyle;
-                other.sharedSegStyles[oIdx] = finalStyle;
-                
-                const metaNew = { lineId: other.id, segIdx: oIdx };
-                if (isExteriorForce || (other.sharedSegMeta && other.sharedSegMeta[oIdx] && other.sharedSegMeta[oIdx].isExteriorForce)) {
-                    metaNew.isExteriorForce = true;
-                }
-                nue.sharedSegMeta[i] = metaNew;
-                
-                const metaOther = { lineId: nue.id, segIdx: i };
-                if (metaNew.isExteriorForce) metaOther.isExteriorForce = true;
-                other.sharedSegMeta[oIdx] = metaOther;
             }
         }
     });
 }
+
+
+
 function arq2_snapVerticesToExisting(points) {
     if (!points || !points.length) return points;
     return points.map(pt => {
@@ -3959,19 +3934,17 @@ function arq2_setCosturaStyleForLine(lineId, style) {
     line.costuraEstilo = style;
     line.sharedSegs.forEach(i => {
         const meta = line.sharedSegMeta?.[i];
-        const other = meta ? allDrawnLines.find(l => l.id === meta.lineId) : null;
-        const isStreet = other && (other.tipo === 'calle-curva-arq2' || other.tipo === 'calle-curva-arq2-preview' || other.tipo === 'calle');
-        const isExterior = meta?.isExteriorForce;
-        const finalStyle = (isStreet || isExterior) ? 'solida' : style;
-        
+        // Segments touching a street are always solid, others get the user-chosen style
+        const finalStyle = meta?.isStreet ? 'solida' : style;
         line.sharedSegStyles[i] = finalStyle;
-        if (meta?.lineId && other && other.sharedSegStyles) {
-            if (other.sharedSegs?.includes(meta.segIdx)) {
-                other.sharedSegStyles[meta.segIdx] = finalStyle;
-            }
+        // Mirror on the neighboring lot
+        const other = meta ? allDrawnLines.find(l => l.id === meta.lineId) : null;
+        if (other && other.sharedSegStyles && other.sharedSegs?.includes(meta.segIdx)) {
+            other.sharedSegStyles[meta.segIdx] = finalStyle;
         }
     });
 }
+
 function arq2_selectCosturaLine(lineId) {
     arq2SelectedLineId = lineId;
     document.querySelectorAll('g.lote-organico[data-line-id], g.fila-variable-lote[data-line-id]').forEach(g => {
@@ -4283,15 +4256,38 @@ function arq2_buildSegmentPaths(pts, sharedSegs, isClosed, getCamFn, cx, cySc, f
     return arq2_buildSharedEdgePaths(pts, sharedSegs, null, isClosed, getCamFn, cx, cySc, f, costuraDefault);
 }
 function arq2_finishLoteOrganico(rawPoints, useCostura) {
-    if (!rawPoints || rawPoints.length < 3) return;
+    const minPts = useCostura ? 2 : 3;
+    if (!rawPoints || rawPoints.length < minPts) return;
+    // For costura, snap vertices to existing neighbor polygons but do NOT stitch to streets
+    // (stitching to streets causes floating when the camera moves)
     const snappedRaw = useCostura ? arq2_snapVerticesToExisting(rawPoints) : rawPoints.map(p => [...p]);
     const anchors = snappedRaw.map(p => [...p]);
     const smoothIntensity = arq2SmoothIntensity;
-    let smoothed = arq2_adaptiveSmooth(snappedRaw, null, smoothIntensity);
-    smoothed = arq2_restoreAnchoredVertices(smoothed, anchors, 0.08);
-    smoothed = arq2_stitchOrganicLoteToStreets(smoothed);
+    let smoothed;
+    if (useCostura) {
+        if (snappedRaw.length === 2) {
+            // 2 points: create a minimal degenerate triangle so the polygon closes
+            // This represents the simplest internal division line
+            smoothed = [...snappedRaw];
+        } else {
+            // For costura (internal subdivisions): keep anchor points exact, minimal smoothing
+            smoothed = arq2_adaptiveSmooth(snappedRaw, null, Math.min(smoothIntensity, 2));
+            smoothed = arq2_restoreAnchoredVertices(smoothed, anchors, 0.04);
+        }
+    } else {
+        smoothed = arq2_adaptiveSmooth(snappedRaw, null, smoothIntensity);
+        smoothed = arq2_restoreAnchoredVertices(smoothed, anchors, 0.08);
+    }
     smoothed = arq2_sanitizePolylinePoints(smoothed);
-    if (smoothed.length < 3) return;
+    if (smoothed.length < 3) {
+        if (useCostura && smoothed.length === 2) {
+            // Force a valid polygon with a small midpoint offset
+            const mid = [(smoothed[0][0] + smoothed[1][0]) / 2, (smoothed[0][1] + smoothed[1][1]) / 2];
+            smoothed = [smoothed[0], mid, smoothed[1]];
+        } else {
+            return;
+        }
+    }
     const id = 'arq2_org_' + Date.now();
     const costuraEstiloGuardado = useCostura ? (arq2CosturaStyle || 'punteada') : null;
     const entry = { id, tipo: 'lote-organico', puntos: smoothed, sharedSegs: [], sharedSegStyles: {}, sharedSegMeta: {}, suavizadoIntensidad: smoothIntensity };
@@ -4302,11 +4298,7 @@ function arq2_finishLoteOrganico(rawPoints, useCostura) {
     if (!arq2_applyAutoFill(entry)) return;
     allDrawnLines.push(entry);
     if (useCostura) {
-        console.log('Costura guardada:', JSON.parse(JSON.stringify(entry)));
-        arq2_insertVerticesIntoMatchingEdges(id);
-        arq2_weldVerticesToNeighbors(id);
-        arq2_registerSharedEdges(id);
-        arq2_mergeSharedBoundaryVertices(id);
+        // Only register shared edges (do NOT weld/merge/insert vertices - these corrupt existing lots)
         arq2_registerSharedEdges(id);
     }
     const areaPx = arq2_estimatePolygonScreenAreaPx(smoothed);
@@ -4319,7 +4311,8 @@ function arq2_finishLoteOrganico(rawPoints, useCostura) {
 }
 function arq2_shouldAutoCloseAt(p, y, isDblClick) {
     const pts = arq2_getActiveDrawPoints();
-    const minPts = arq2Tool === 'fila-variable' ? 4 : 3;
+    // Costura can close with 2 points (forming a line that divides a lot)
+    const minPts = arq2Tool === 'fila-variable' ? 4 : (arq2Tool === 'costura' ? 2 : 3);
     if (pts.length < minPts) return false;
     if (!isNearPolygonOriginPY(p, y, pts[0])) return false;
     return isDblClick || canTriggerPolygonAutoClose();
@@ -4327,7 +4320,7 @@ function arq2_shouldAutoCloseAt(p, y, isDblClick) {
 function arq2_tryClosePolygon(isDblClick, p, y) {
     if (arq2Tool === 'calle-curva-arq2') return false;
     const pts = arq2LinePoints;
-    const minPts = arq2Tool === 'fila-variable' ? 4 : 3;
+    const minPts = arq2Tool === 'fila-variable' ? 4 : (arq2Tool === 'costura' ? 2 : 3);
     if (pts.length < minPts) return false;
     if (p == null || y == null) return false;
     if (!arq2_shouldAutoCloseAt(p, y, isDblClick)) return false;
@@ -5199,13 +5192,10 @@ function bindPanoramaPointerEvents() {
                 const lineId = draggingVertex.lineId;
                 const line = allDrawnLines.find(l => l.id === lineId);
                 if (line && (line.tipo === 'lote-organico' || line.tipo === 'fila-variable-lote')) {
-                    line.puntos = arq2_stitchOrganicLoteToStreets(line.puntos);
-                    arq2_insertVerticesIntoMatchingEdges(lineId);
-                    arq2_weldVerticesToNeighbors(lineId);
-                    arq2_registerSharedEdges(lineId);
-                    arq2_mergeSharedBoundaryVertices(lineId);
-                    arq2_registerSharedEdges(lineId);
-                    arq2_syncCosturaStylesFromLineEstilo(lineId);
+                    // Re-register shared edges after moving a vertex (no stitch/weld - those cause floating)
+                    if (line.sharedSegs?.length || line.costuraEstilo) {
+                        arq2_registerSharedEdges(lineId);
+                    }
                 }
             }
             draggingVertex = null; 
